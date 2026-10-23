@@ -186,6 +186,14 @@ settings still win where set. The brand supplies:
   message values (never keys);
 - whether the "Powered by" line and the community (Discord) link show.
 
+The backend has a matching env var, `PRODUCT_BRAND`
+(`backend/onyx/configs/constants.py`). With `deepx` it sets
+`ONYX_DEFAULT_APPLICATION_NAME` to "Deep X" (email subjects and bodies, the
+MCP OAuth client name), uses `backend/static/images/logo-deepx.png` as the
+email logo fallback, and drops the Discord line from emails
+(`onyx/auth/email_utils.py:build_html_email`). Set both env vars to the same
+value.
+
 Internal identifiers (`Onyx*` types, the `onyx` package, env names) do not
 change. `web/src/lib/brand.test.ts` fails if any "Onyx" remains in the
 rewritten English catalog.
