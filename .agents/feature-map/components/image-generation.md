@@ -25,8 +25,9 @@ existing image (one the user attached, or one it generated earlier in the
 conversation) instead of generating from scratch.
 
 An admin configures the capability at `/admin/image-generation`: pick a
-provider (OpenAI, Azure, or Vertex AI), supply credentials, and choose it as
-default. The model list in the admin form includes the GPT Image 2.5 variants
+provider (OpenAI, Azure, Vertex AI, or Deep X Route), supply credentials, and
+choose it as default. The Deep X build (`BRAND.id === "deepx"`) lists the Deep X
+Route group first. The model list in the admin form includes the GPT Image 2.5 variants
 (`gpt-image-2.5-flare`, `gpt-image-2.5-sunburst`) next to `gpt-image-2`, `gpt-image-1.5`, and
 `gpt-image-1` (`web/src/views/admin/ImageGenerationPage/constants.ts`).
 Until an admin does this, the tool does not appear at all. Missing or
@@ -43,7 +44,7 @@ never sees an image generation tool it cannot use, and a user is never told
 
 | Method | Path | Handler | Notes |
 |---|---|---|---|
-| POST | `/admin/image-generation/test` | `test_image_generation` (`server/manage/image_generation/api.py`) | Validates a candidate provider/credentials pair by generating a test image. |
+| POST | `/admin/image-generation/test` | `test_image_generation` (`server/manage/image_generation/api.py`) | Validates a candidate provider/credentials pair through `ImageGenerationProvider.check_connection`. The default generates a test image; Deep X Route calls `GET /v1/key` instead, which does not charge credit. |
 | POST | `/admin/image-generation/config` | `create_config` | Creates a config from a provider and its credentials. |
 | GET | `/admin/image-generation/config` | `get_all_configs` | Lists configs for the admin table. |
 | GET | `/admin/image-generation/config/{image_provider_id}/credentials` | `get_config_credentials` | Returns credentials with the API key masked (`models.py:_mask_api_key`). |
@@ -94,17 +95,34 @@ does not test that the provider accepts the credentials.
 required method, `generate_image(prompt, model, size, n, quality,
 reference_images, **kwargs)`, plus `validate_credentials` /
 `build_from_credentials` classmethods and two capability properties,
-`supports_reference_images` and `max_reference_images`. Three providers
-implement it, registered in `image_gen/factory.py:PROVIDERS`:
+`supports_reference_images` and `max_reference_images`, and an overridable
+`check_connection` that the admin test endpoint calls. Four providers implement
+it, registered in `image_gen/factory.py:PROVIDERS`:
 
 | `ImageGenerationProviderName` | Class | Reference-image support |
 |---|---|---|
 | `openai` | `providers/openai_img_gen.py:OpenAIImageGenerationProvider` | Yes, up to 16 for `gpt-image-*`. `dall-e-2` rejects more than one reference image with a `ValueError` |
 | `azure` | `providers/azure_img_gen.py:AzureImageGenerationProvider` | Same as OpenAI, via an Azure deployment name |
 | `vertex_ai` | `providers/vertex_img_gen.py:VertexImageGenerationProvider` | Yes, up to 14, via Gemini image editing (`genai.Client`) instead of LiteLLM's `image_edit` |
+| `deepx_route` | `providers/deepx_route_img_gen.py:DeepXRouteImageGenerationProvider` | Yes, 1. Any request with a reference image runs on `dxr-edit` |
 
-All three use `litellm.image_generation` for plain generation. OpenAI and Azure
-use `litellm.image_edit` for reference-image edits. Vertex uses `genai.Client`.
+OpenAI, Azure and Vertex use `litellm.image_generation` for plain generation.
+OpenAI and Azure use `litellm.image_edit` for reference-image edits. Vertex uses
+`genai.Client`.
+
+Deep X Route has no LiteLLM image route. Its provider calls the asynchronous
+media API with `httpx` at the pinned `DEEPX_ROUTE_API_BASE`
+(`llm/well_known_providers/constants.py`), whatever the stored `api_base` says.
+For each of the `n` images it submits `POST /media/jobs`, polls
+`GET /media/jobs/{id}` every `JOB_POLL_INTERVAL_SECONDS` until a terminal state
+or `JOB_TIMEOUT_SECONDS`, then downloads `GET /media/jobs/{id}/asset` and returns
+it as `b64_json`. An edit first uploads the reference image
+(`POST /media/uploads`, PNG/JPEG/WebP, 10 MB or less). The states `failed`,
+`cancelled` and `review`, a timeout, and HTTP errors raise `ImageProviderError`
+(401/403 raise `ImageProviderCredentialsError`). The Onyx `WxH` size is mapped
+to a shape and then to the model's `W*H` size from the `MODEL_SIZES` table
+(`1024*1024`, `1080*1920`, `1920*1080`); `dxr-edit` always sends `auto`.
+`dxr-edit` without a reference image raises a `ValueError`.
 All provider calls are wrapped in
 `tracing.llm_utils.traced_llm_call` with `LLMFlow.IMAGE_GENERATION` or
 `LLMFlow.IMAGE_EDIT` (`onyx/tracing/flows.py`). See [[observability]].
@@ -118,11 +136,16 @@ creates a fresh `LLMProvider` row and `ModelConfiguration` row, then an
 (`db/image_generation.py:create_image_generation_config__no_commit`).
 `_build_llm_provider_request` calls `validate_credentials`
 (`image_gen/factory.py`) before persisting. An update with an unchanged (masked)
-key keeps the old provider's key. These `LLMProvider` rows are left out of the
+key keeps the old provider's key. A request can send `source_llm_provider_id`
+instead of a key (`api.py:_resolve_source_llm_provider_api_key`): the backend
+copies the stored key from that LLM provider at save time. Only providers in
+`_KEY_REUSE_PROVIDERS` (Deep X Route, whose endpoint is pinned) accept this, and
+the source row must be the same provider type. A later key rotation on the
+source row does not reach the copy. These `LLMProvider` rows are left out of the
 admin LLM provider list unless the caller passes `include_image_gen=true`, as
 the Terraform provider does (`db/llm.py:fetch_existing_llm_providers`).
-`test_image_generation` is a separate, optional step: it lets an admin
-generate a throwaway test image before saving.
+`test_image_generation` is a separate, optional step: it runs the provider's
+`check_connection` before saving.
 
 ### Resolving the default config
 
@@ -257,7 +280,7 @@ the returned base64 data.
 
 | If your change... | Also check |
 |---|---|
-| adds a fourth image provider | `image_gen/factory.py:PROVIDERS`, `web/src/views/admin/ImageGenerationPage/forms/` (needs a matching form + `getImageGenForm.tsx`), and whether it needs `supports_reference_images`/`max_reference_images` overrides |
+| adds another image provider | `image_gen/factory.py:PROVIDERS`, `web/src/views/admin/ImageGenerationPage/forms/` (needs a matching form + `getImageGenForm.tsx`), and whether it needs `supports_reference_images`/`max_reference_images` overrides |
 | changes the packet schema (`ImageGenerationToolStart`, `Heartbeat`, `Final`, `GeneratedImage`) | `web/src/app/app/services/streamingModels.ts`'s `PacketType` string values (they must match `StreamingType` in `streaming_models.py` exactly) and `ImageToolRenderer.tsx` |
 | changes what counts as a "stopping tool" or removes `ImageGenerationTool` from `STOPPING_TOOLS_NAMES` | `llm_loop.py`'s cycle-forcing logic and `IMAGE_GEN_REMINDER` text; a tool leaving this list can now chain further tool calls in the same turn |
 | changes how a config becomes "default" | `db/image_generation.py:set_default_image_generation_config`'s atomic clear-then-set; a race here would let two configs claim default simultaneously |
