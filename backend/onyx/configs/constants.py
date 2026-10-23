@@ -5,7 +5,11 @@ import re
 import socket
 from enum import Enum, auto
 
-ONYX_DEFAULT_APPLICATION_NAME = "Onyx"
+# Product brand: "onyx" (stock) or "deepx" (Deep X white-label). Match the
+# web build arg NEXT_PUBLIC_BRAND.
+PRODUCT_BRAND = "deepx" if os.environ.get("PRODUCT_BRAND") == "deepx" else "onyx"
+IS_STOCK_BRAND = PRODUCT_BRAND == "onyx"
+ONYX_DEFAULT_APPLICATION_NAME = "Onyx" if IS_STOCK_BRAND else "Deep X"
 ONYX_DISCORD_URL = "https://discord.gg/4NA5SbzrWb"
 ONYX_UTM_SOURCE = "onyx_app"
 SLACK_USER_TOKEN_PREFIX = "xoxp-"

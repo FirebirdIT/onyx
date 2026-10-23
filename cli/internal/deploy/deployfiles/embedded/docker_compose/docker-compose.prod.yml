@@ -186,6 +186,9 @@ services:
         - NEXT_PUBLIC_FORGOT_PASSWORD_ENABLED=${NEXT_PUBLIC_FORGOT_PASSWORD_ENABLED:-}
         # Enterprise Edition only
         - NEXT_PUBLIC_THEME=${NEXT_PUBLIC_THEME:-}
+        # Build-time product brand: "onyx" (default) or "deepx"
+        - NEXT_PUBLIC_BRAND=${NEXT_PUBLIC_BRAND:-}
+        - NEXT_PUBLIC_BRAND_SUPPORT_EMAIL=${NEXT_PUBLIC_BRAND_SUPPORT_EMAIL:-}
         - NODE_OPTIONS=${NODE_OPTIONS:-"--max-old-space-size=4096"}
     env_file:
       - path: .env

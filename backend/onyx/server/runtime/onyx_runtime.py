@@ -17,6 +17,7 @@ from onyx.configs.app_configs import (
 )
 from onyx.configs.constants import (
     CLOUD_BUILD_FENCE_LOOKUP_TABLE_INTERVAL_DEFAULT,
+    IS_STOCK_BRAND,
     ONYX_CLOUD_REDIS_RUNTIME,
     ONYX_CLOUD_TENANT_ID,
     ONYX_EMAILABLE_LOGO_MAX_DIM,
@@ -66,7 +67,11 @@ class OnyxRuntime:
 
     @staticmethod
     def get_logo() -> FileWithMimeType:
-        STATIC_FILENAME = "static/images/logo.png"
+        STATIC_FILENAME = (
+            "static/images/logo.png"
+            if IS_STOCK_BRAND
+            else "static/images/logo-deepx.png"
+        )
 
         db_filename: str | None = fetch_ee_implementation_or_noop(
             "onyx.server.enterprise_settings.store", "get_logo_filename", None

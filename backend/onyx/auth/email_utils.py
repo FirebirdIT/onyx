@@ -32,7 +32,11 @@ from onyx.configs.app_configs import (
     SMTP_USER,
     WEB_DOMAIN,
 )
-from onyx.configs.constants import ONYX_DEFAULT_APPLICATION_NAME, ONYX_DISCORD_URL
+from onyx.configs.constants import (
+    IS_STOCK_BRAND,
+    ONYX_DEFAULT_APPLICATION_NAME,
+    ONYX_DISCORD_URL,
+)
 from onyx.db.models import User
 from onyx.server.runtime.onyx_runtime import OnyxRuntime
 from onyx.utils.logger import setup_logger
@@ -165,7 +169,7 @@ def build_html_email(
     cta_link: str | None = None,
 ) -> str:
     community_link_fragment = ""
-    if application_name == ONYX_DEFAULT_APPLICATION_NAME:
+    if IS_STOCK_BRAND and application_name == ONYX_DEFAULT_APPLICATION_NAME:
         community_link_fragment = f'<br>Have questions? Join our Discord community <a href="{ONYX_DISCORD_URL}">here</a>.'
 
     if cta_text and cta_link:
