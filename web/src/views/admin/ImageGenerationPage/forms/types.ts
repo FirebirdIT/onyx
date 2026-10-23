@@ -63,4 +63,6 @@ export interface ImageGenSubmitPayload {
   apiVersion?: string;
   deploymentName?: string;
   customConfig?: Record<string, string>;
+  /** Copy the API key from this LLM provider instead of sending one. */
+  sourceLlmProviderId?: number;
 }

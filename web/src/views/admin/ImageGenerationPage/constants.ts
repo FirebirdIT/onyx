@@ -1,3 +1,5 @@
+import { BRAND } from "@/lib/brand";
+
 /**
  * Message key of a provider blurb, inside the `admin.imageGeneration`
  * namespace. Held as a key (not copy) so the catalog stays the single source
@@ -16,7 +18,10 @@ export type ImageProviderDescriptionKey =
   | "providers.azureGptImage1.description"
   | "providers.gemini25FlashImage.description"
   | "providers.gemini3ProImage.description"
-  | "providers.gemini3ProImagePreview.description";
+  | "providers.gemini3ProImagePreview.description"
+  | "providers.deepxRouteImage.description"
+  | "providers.deepxRouteImagePro.description"
+  | "providers.deepxRouteEdit.description";
 
 export interface ImageProvider {
   image_provider_id: string; // Static unique key for UI-DB mapping
@@ -33,7 +38,36 @@ export interface ProviderGroup {
   providers: ImageProvider[];
 }
 
-export const IMAGE_PROVIDER_GROUPS: ProviderGroup[] = [
+export const DEEPX_ROUTE_IMAGE_PROVIDER_NAME = "deepx_route";
+
+const DEEPX_ROUTE_GROUP: ProviderGroup = {
+  name: "Deep X Route",
+  providers: [
+    {
+      image_provider_id: "deepx_route_dxr_image",
+      model_name: "dxr-image",
+      provider_name: DEEPX_ROUTE_IMAGE_PROVIDER_NAME,
+      title: "DXR Image",
+      descriptionKey: "providers.deepxRouteImage.description",
+    },
+    {
+      image_provider_id: "deepx_route_dxr_image_pro",
+      model_name: "dxr-image-pro",
+      provider_name: DEEPX_ROUTE_IMAGE_PROVIDER_NAME,
+      title: "DXR Image Pro",
+      descriptionKey: "providers.deepxRouteImagePro.description",
+    },
+    {
+      image_provider_id: "deepx_route_dxr_edit",
+      model_name: "dxr-edit",
+      provider_name: DEEPX_ROUTE_IMAGE_PROVIDER_NAME,
+      title: "DXR Edit",
+      descriptionKey: "providers.deepxRouteEdit.description",
+    },
+  ],
+};
+
+const STOCK_PROVIDER_GROUPS: ProviderGroup[] = [
   {
     name: "OpenAI",
     providers: [
@@ -142,3 +176,9 @@ export const IMAGE_PROVIDER_GROUPS: ProviderGroup[] = [
     ],
   },
 ];
+
+// The Deep X build lists its own gateway first.
+export const IMAGE_PROVIDER_GROUPS: ProviderGroup[] =
+  BRAND.id === "deepx"
+    ? [DEEPX_ROUTE_GROUP, ...STOCK_PROVIDER_GROUPS]
+    : [...STOCK_PROVIDER_GROUPS, DEEPX_ROUTE_GROUP];

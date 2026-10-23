@@ -6727,6 +6727,9 @@
           "loading": "جارٍ اختبار بيانات الاعتماد مع {title}...",
           "success": "بيانات الاعتماد صالحة. تم حفظ التهيئة."
         },
+        "deepxRouteApiKey": {
+          "idle": "الصق مفتاح API الخاص بـ Deep X Route. تُرسل الطلبات دائمًا إلى https://api.deepxroute.com/v1."
+        },
         "editHeader": {
           "title": "تعديل {title}"
         },
@@ -6742,6 +6745,10 @@
           "idle": "مشروع GCP الذي فُعّل فيه Vertex AI. يصادق {appName} بحساب الخدمة المرتبط بالحاوية (GKE Workload Identity).",
           "label": "معرّف مشروع GCP",
           "required": "معرّف المشروع مطلوب"
+        },
+        "reuseLlmProviderKey": {
+          "description": "انسخ مفتاح API من موفّر نموذج اللغة {name}.",
+          "label": "استخدام مفتاح موفّر نموذج اللغة"
         },
         "targetUri": {
           "idle": "الصق عنوان URI الهدف لنقطة النهاية من <link>Azure OpenAI</link> (بما في ذلك عنوان API الأساسي واسم النشر وإصدار API).",
@@ -6779,6 +6786,15 @@
         },
         "azureGptImage25Sunburst": {
           "description": "نموذج توليد الصور GPT Image 2.5 Sunburst مستضاف على Microsoft Azure."
+        },
+        "deepxRouteEdit": {
+          "description": "نموذج Deep X Route يعدّل صورة مرفقة واحدة وفق تعليمات."
+        },
+        "deepxRouteImage": {
+          "description": "نموذج Deep X Route لتحويل النص إلى صورة بأقل سعر، للمسودات والرسوم التوضيحية."
+        },
+        "deepxRouteImagePro": {
+          "description": "نموذج Deep X Route بجودة أعلى للصور النهائية بالتنسيقات المربعة والعمودية والأفقية."
         },
         "gemini25FlashImage": {
           "description": "نموذج Gemini 2.5 Flash Image ‏(Nano Banana) مصمم للسرعة والكفاءة."

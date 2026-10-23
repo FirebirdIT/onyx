@@ -6727,6 +6727,9 @@
           "loading": "正在通过 {title} 测试凭证...",
           "success": "凭证有效。配置已保存。"
         },
+        "deepxRouteApiKey": {
+          "idle": "粘贴您的 Deep X Route API 密钥。请求始终发送到 https://api.deepxroute.com/v1。"
+        },
         "editHeader": {
           "title": "编辑 {title}"
         },
@@ -6742,6 +6745,10 @@
           "idle": "已启用 Vertex AI 的 GCP 项目。{appName} 使用 pod 绑定的服务账号进行身份验证（GKE Workload Identity）。",
           "label": "GCP 项目 ID",
           "required": "项目 ID 为必填项"
+        },
+        "reuseLlmProviderKey": {
+          "description": "从语言模型提供商 {name} 复制 API 密钥。",
+          "label": "使用语言模型提供商密钥"
         },
         "targetUri": {
           "idle": "粘贴来自 <link>Azure OpenAI</link> 的端点目标 URI（包括 API 端点基址、部署名称和 API 版本）。",
@@ -6779,6 +6786,15 @@
         },
         "azureGptImage25Sunburst": {
           "description": "托管在 Microsoft Azure 上的 GPT Image 2.5 Sunburst 图像生成模型。"
+        },
+        "deepxRouteEdit": {
+          "description": "按照指令编辑一张附加图片的 Deep X Route 模型。"
+        },
+        "deepxRouteImage": {
+          "description": "Deep X Route 价格最低的文生图模型，适合草稿和插图。"
+        },
+        "deepxRouteImagePro": {
+          "description": "更高质量的 Deep X Route 模型，用于方形、竖版和横版的最终图像。"
         },
         "gemini25FlashImage": {
           "description": "Gemini 2.5 Flash Image (Nano Banana) 模型专为速度和效率而设计。"

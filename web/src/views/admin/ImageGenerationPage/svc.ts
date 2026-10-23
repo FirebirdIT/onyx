@@ -38,6 +38,8 @@ export interface ImageGenerationConfigCreateOptions {
   apiVersion?: string;
   deploymentName?: string;
   customConfig?: Record<string, string>;
+  /** Copy the API key from this LLM provider instead of sending one. */
+  sourceLlmProviderId?: number;
 }
 
 // API Endpoints
@@ -56,6 +58,7 @@ export async function testImageGenerationApiKey(
     apiVersion?: string;
     deploymentName?: string;
     customConfig?: Record<string, string>;
+    sourceLlmProviderId?: number;
   }
 ): Promise<TestApiKeyResult> {
   try {
@@ -70,6 +73,7 @@ export async function testImageGenerationApiKey(
         api_version: options.apiVersion || null,
         deployment_name: options.deploymentName || null,
         custom_config: options.customConfig || null,
+        source_llm_provider_id: options.sourceLlmProviderId ?? null,
       }),
     });
 
@@ -139,6 +143,7 @@ export async function createImageGenerationConfig(
       api_version: options.apiVersion,
       deployment_name: options.deploymentName,
       custom_config: options.customConfig,
+      source_llm_provider_id: options.sourceLlmProviderId ?? null,
     }),
   });
 
@@ -159,6 +164,8 @@ export interface ImageGenerationConfigUpdateOptions {
   apiVersion?: string;
   deploymentName?: string;
   customConfig?: Record<string, string>;
+  /** Copy the API key from this LLM provider instead of sending one. */
+  sourceLlmProviderId?: number;
 
   // If true, apiKey was changed by user; if false, backend preserves existing key
   apiKeyChanged?: boolean;
@@ -183,6 +190,7 @@ export async function updateImageGenerationConfig(
       api_version: options.apiVersion,
       deployment_name: options.deploymentName,
       custom_config: options.customConfig,
+      source_llm_provider_id: options.sourceLlmProviderId ?? null,
       // If false, backend preserves existing API key
       api_key_changed: options.apiKeyChanged ?? false,
     }),
