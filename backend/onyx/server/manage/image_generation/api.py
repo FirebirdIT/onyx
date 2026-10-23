@@ -12,14 +12,18 @@ from onyx.db.image_generation import (
     set_default_image_generation_config,
     unset_default_image_generation_config,
 )
-from onyx.db.llm import remove_llm_provider
+from onyx.db.llm import fetch_existing_llm_provider_by_id, remove_llm_provider
 from onyx.db.models import LLMProvider as LLMProviderModel
 from onyx.db.models import ModelConfiguration, User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.image_gen.exceptions import ImageProviderCredentialsError
+from onyx.image_gen.exceptions import (
+    ImageProviderCredentialsError,
+    ImageProviderError,
+)
 from onyx.image_gen.factory import get_image_generation_provider, validate_credentials
 from onyx.image_gen.interfaces import ImageGenerationProviderCredentials
+from onyx.llm.constants import LlmProviderNames
 from onyx.llm.exceptions import litellm_exception_to_safe_error
 from onyx.llm.model_capabilities import get_max_input_tokens
 from onyx.llm.utils import collect_credential_values
@@ -44,6 +48,41 @@ from onyx.utils.logger import setup_logger
 logger = setup_logger()
 
 admin_router = APIRouter(prefix="/admin/image-generation")
+
+# Providers whose endpoint is pinned server-side, so a key copied from their
+# LLM provider row can only ever reach that same vendor.
+_KEY_REUSE_PROVIDERS: frozenset[str] = frozenset({LlmProviderNames.DEEPX_ROUTE})
+
+
+def _resolve_source_llm_provider_api_key(
+    provider: str | None,
+    api_key: str | None,
+    source_llm_provider_id: int | None,
+    db_session: Session,
+) -> str | None:
+    """Return the key stored on `source_llm_provider_id`, else `api_key`."""
+    if source_llm_provider_id is None:
+        return api_key
+    if provider not in _KEY_REUSE_PROVIDERS:
+        raise OnyxError(
+            OnyxErrorCode.VALIDATION_ERROR,
+            f"Provider '{provider}' cannot reuse a language model provider's API key",
+        )
+    source = fetch_existing_llm_provider_by_id(
+        source_llm_provider_id, db_session, include_model_configurations=False
+    )
+    if source is None or source.provider != provider:
+        raise OnyxError(
+            OnyxErrorCode.VALIDATION_ERROR,
+            f"The source provider must be a '{provider}' language model provider",
+        )
+    stored_key = source.api_key.get_value(apply_mask=False) if source.api_key else None
+    if not stored_key:
+        raise OnyxError(
+            OnyxErrorCode.VALIDATION_ERROR,
+            "The source language model provider has no API key",
+        )
+    return stored_key
 
 
 def _get_test_quality_for_model(model_name: str) -> str | None:
@@ -155,16 +194,23 @@ def _create_image_gen_llm_provider__no_commit(
 def test_image_generation(
     test_request: TestImageGenerationRequest,
     _: User = Depends(require_permission(Permission.FULL_ADMIN_PANEL_ACCESS)),
+    db_session: Session = Depends(get_session),
 ) -> None:
     """Test if an API key is valid for image generation.
 
-    Makes a minimal image generation request to verify credentials using LiteLLM.
+    Runs the provider's connection check (by default, one minimal generation).
     """
-    api_key = test_request.api_key
     provider = test_request.provider
 
     if provider is None:
         raise OnyxError(OnyxErrorCode.VALIDATION_ERROR, "No provider provided")
+
+    api_key = _resolve_source_llm_provider_api_key(
+        provider,
+        test_request.api_key,
+        test_request.source_llm_provider_id,
+        db_session,
+    )
 
     custom_config = _validate_and_normalize_vertex_auth(
         provider, test_request.custom_config
@@ -198,19 +244,16 @@ def test_image_generation(
 
     quality = _get_test_quality_for_model(test_request.model_name)
     try:
-        image_provider.generate_image(
-            prompt="a simple blue circle on white background",
-            model=test_request.model_name,
-            size="1024x1024",
-            n=1,
-            quality=quality,
-        )
+        image_provider.check_connection(model=test_request.model_name, quality=quality)
     except HTTPException:
         raise
     except Exception as e:
         logger.warning("Image generation test failed: %s", type(e).__name__)
         safe_error = litellm_exception_to_safe_error(
-            e, secrets=collect_credential_values(api_key, custom_config)
+            e,
+            secrets=collect_credential_values(api_key, custom_config),
+            # Our own provider errors carry a message written for the admin.
+            fallback_to_error_msg=isinstance(e, ImageProviderError),
         )
         raise OnyxError(OnyxErrorCode.VALIDATION_ERROR, safe_error.message)
 
@@ -236,13 +279,20 @@ def create_config(
             detail=f"ImageGenerationConfig with image_provider_id '{config_create.image_provider_id}' already exists",
         )
 
+    api_key = _resolve_source_llm_provider_api_key(
+        config_create.provider,
+        config_create.api_key,
+        config_create.source_llm_provider_id,
+        db_session,
+    )
+
     try:
         # Build and create LLM provider
         provider_request = _build_llm_provider_request(
             image_provider_id=config_create.image_provider_id,
             model_name=config_create.model_name,
             provider=config_create.provider,
-            api_key=config_create.api_key,
+            api_key=api_key,
             api_base=config_create.api_base,
             api_version=config_create.api_version,
             deployment_name=config_create.deployment_name,
@@ -318,6 +368,16 @@ def update_config(
     4. Update ImageGenerationConfig to point to new model config
     5. Delete old LLM provider (safe now - nothing references it)
     """
+    reused_api_key = (
+        _resolve_source_llm_provider_api_key(
+            config_update.provider,
+            config_update.api_key,
+            config_update.source_llm_provider_id,
+            db_session,
+        )
+        if config_update.source_llm_provider_id is not None
+        else None
+    )
     try:
         # 1. Get existing config
         existing_config = get_image_generation_config(db_session, image_provider_id)
@@ -338,7 +398,9 @@ def update_config(
 
         # Use the provided api_key, or preserve the existing one if not changed
         actual_api_key = config_update.api_key
-        if old_provider:
+        if reused_api_key is not None:
+            actual_api_key = reused_api_key
+        elif old_provider:
             # Check if we should preserve existing API key:
             # - api_key_changed=False AND (key is None/empty OR looks masked)
             provided_key_is_masked = (

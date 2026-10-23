@@ -30,6 +30,10 @@ class TestImageGenerationRequest(BaseModel):
     api_version: str | None = None
     deployment_name: str | None = None
 
+    # Copy the API key from this LLM provider instead of sending one. Only
+    # providers with a pinned endpoint (Deep X Route) accept this.
+    source_llm_provider_id: int | None = None
+
 
 class ImageGenerationConfigCreate(BaseModel):
     """Request model for creating an image generation config.
@@ -47,6 +51,9 @@ class ImageGenerationConfigCreate(BaseModel):
     api_version: str | None = None
     deployment_name: str | None = None
     custom_config: dict[str, str] | None = None
+    # Copy the API key from this LLM provider instead of sending one. Only
+    # providers with a pinned endpoint (Deep X Route) accept this.
+    source_llm_provider_id: int | None = None
 
     is_default: bool = False
 
@@ -66,6 +73,9 @@ class ImageGenerationConfigUpdate(BaseModel):
     api_version: str | None = None
     deployment_name: str | None = None
     custom_config: dict[str, str] | None = None
+    # Copy the API key from this LLM provider instead of sending one. Only
+    # providers with a pinned endpoint (Deep X Route) accept this.
+    source_llm_provider_id: int | None = None
 
     # If False, preserve existing API key from DB
     api_key_changed: bool = False
