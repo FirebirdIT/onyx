@@ -314,6 +314,14 @@ Service URL, including the release namespace and Service port. An explicit
 `configMap.ONYX_SERVER_URL` overrides both. Kubernetes sandbox callbacks need no
 host gateway alias or public ingress by default.
 
+The sandbox's opencode calls `{ONYX_SERVER_URL}/gateway/v1/chat/completions`
+(`session/llm_config.py:build_onyx_gateway_config`). The egress proxy sets the
+sandbox PAT on requests to that host
+(`onyx/sandbox_proxy/resolvers/onyx_pat.py`). On a Deep X build the MIT
+gateway answers these calls ([[llm-gateway]] §4.10). It serves only Chat
+Completions and the model list, which is what the `@ai-sdk/openai-compatible`
+provider in `sandbox/util/opencode_config.py` uses.
+
 **The exec sidecar** (`_SIDECAR_CONTAINER_NAME = "sidecar"`) is a K8s
 "restartable init container" (`restartPolicy: Always` on an `initContainers`
 entry): it starts before the main container, keeps running for the pod's whole

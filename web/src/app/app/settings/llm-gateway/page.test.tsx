@@ -1,8 +1,7 @@
 import { render, screen, waitFor } from "@tests/setup/test-utils";
-import { useTierAtLeast } from "@/lib/tiers/hooks";
+import { useLLMGatewayAvailable } from "@/lib/tiers/hooks";
 import { useLanguageModels } from "@/lib/languageModels/hooks";
 import { useSettings } from "@/lib/settings/hooks";
-import { Tier } from "@/lib/tiers/types";
 import LLMGatewayPage from "@/app/app/settings/llm-gateway/page";
 
 const mockReplace = jest.fn();
@@ -12,7 +11,7 @@ jest.mock("next/navigation", () => ({
 }));
 jest.mock("@/lib/tiers/hooks", () => ({
   ...jest.requireActual("@/lib/tiers/hooks"),
-  useTierAtLeast: jest.fn(),
+  useLLMGatewayAvailable: jest.fn(),
 }));
 jest.mock("@/lib/languageModels/hooks", () => ({
   useLanguageModels: jest.fn(),
@@ -24,9 +23,8 @@ jest.mock("@/views/SettingsPage", () => ({
   LLMGatewaySettings: () => <div>Gateway settings</div>,
 }));
 
-const mockUseTierAtLeast = useTierAtLeast as jest.MockedFunction<
-  typeof useTierAtLeast
->;
+const mockUseLLMGatewayAvailable =
+  useLLMGatewayAvailable as jest.MockedFunction<typeof useLLMGatewayAvailable>;
 const mockUseLanguageModels = useLanguageModels as jest.MockedFunction<
   typeof useLanguageModels
 >;
@@ -35,7 +33,7 @@ const mockUseSettings = useSettings as jest.MockedFunction<typeof useSettings>;
 describe("LLMGatewayPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseTierAtLeast.mockReturnValue(true);
+    mockUseLLMGatewayAvailable.mockReturnValue(true);
     mockUseSettings.mockReturnValue({ isLoading: false } as ReturnType<
       typeof useSettings
     >);
@@ -46,16 +44,16 @@ describe("LLMGatewayPage", () => {
     } as unknown as ReturnType<typeof useLanguageModels>);
   });
 
-  it("renders the Gateway for the Business minimum tier", () => {
+  it("renders the Gateway when the deployment serves it", () => {
     render(<LLMGatewayPage />);
 
-    expect(mockUseTierAtLeast).toHaveBeenCalledWith(Tier.BUSINESS);
+    expect(mockUseLLMGatewayAvailable).toHaveBeenCalled();
     expect(screen.getByText("Gateway settings")).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("redirects users below Business", async () => {
-    mockUseTierAtLeast.mockReturnValue(false);
+  it("redirects when the deployment does not serve the gateway", async () => {
+    mockUseLLMGatewayAvailable.mockReturnValue(false);
 
     render(<LLMGatewayPage />);
 

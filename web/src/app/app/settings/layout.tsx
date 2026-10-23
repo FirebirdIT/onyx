@@ -9,8 +9,7 @@ import { SvgSliders } from "@opal/icons";
 import { useUser } from "@/providers/UserProvider";
 import { useIsMultiTenant } from "@/lib/auth/hooks";
 import { Section } from "@/layouts/general-layouts";
-import { useTierAtLeast } from "@/lib/tiers/hooks";
-import { LLM_GATEWAY_MIN_TIER } from "@/lib/tiers/utils";
+import { useLLMGatewayAvailable } from "@/lib/tiers/hooks";
 import { useLanguageModels } from "@/lib/languageModels/hooks";
 import { hasVisibleLLMModel } from "@/lib/languageModels/utils";
 
@@ -29,7 +28,7 @@ export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const { user } = useUser();
   const isMultiTenant = useIsMultiTenant();
-  const gatewayTier = useTierAtLeast(LLM_GATEWAY_MIN_TIER);
+  const gatewayTier = useLLMGatewayAvailable();
   const { llmProviders } = useLanguageModels();
 
   const showPasswordSection = Boolean(user?.password_configured);

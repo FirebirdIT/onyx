@@ -52,7 +52,11 @@ from onyx.server.settings.store import (
     settings_write_lock,
     store_settings,
 )
-from onyx.server.settings.tier_order import get_current_tier, tier_at_least
+from onyx.server.settings.tier_order import (
+    get_current_tier,
+    is_llm_gateway_available,
+    tier_at_least,
+)
 from onyx.utils.audit import (
     AuditAction,
     AuditOutcome,
@@ -127,10 +131,10 @@ def admin_patch_settings(
                 OnyxErrorCode.FEATURE_NOT_AVAILABLE,
                 "Chat history retention requires the Enterprise plan.",
             )
-        # The LLM gateway is Business+; keep the write gate aligned with the
-        # tier_gate middleware that rejects /api/gateway calls below it.
+        # Keep the write gate aligned with where the gateway is served: the
+        # Business tier, or a Deep X build with the MIT gateway.
         if merged.llm_gateway_enabled != existing.llm_gateway_enabled and (
-            not tier_at_least(current_tier, Tier.BUSINESS)
+            not is_llm_gateway_available(current_tier)
         ):
             raise OnyxError(
                 OnyxErrorCode.FEATURE_NOT_AVAILABLE,
@@ -251,6 +255,7 @@ def fetch_settings(
         onyx_craft_enabled=onyx_craft_enabled_for_user,
         onyx_craft_available=onyx_craft_available,
         onyx_craft_requires_upgrade=onyx_craft_requires_upgrade,
+        llm_gateway_available=is_llm_gateway_available(resolved_tier),
         opencode_debugging_enabled=ENABLE_OPENCODE_DEBUGGING,
         vector_db_enabled=not DISABLE_VECTOR_DB,
         hide_onyx_branding=HIDE_ONYX_BRANDING

@@ -121,7 +121,7 @@ the coding-agent sandbox).
 | Method | Path | Handler | Permission |
 |---|---|---|---|
 | CRUD | `/admin/api-key*` | `server/api_key/api.py` | `Permission.MANAGE_SERVICE_ACCOUNT_API_KEYS`. Creating or updating a key is **admin-equivalent by design**: `group_ids` is uncapped, so a holder can add a key to the Admin group (`api.py:create_api_key` comment). |
-| GET | `/user/pats/scopes` | `server/pat/api.py:list_selectable_scopes` | `Permission.BASIC_ACCESS`. Drops scopes whose `min_tier` is above the current tier (`use:llm_gateway` is Business+), and drops `use:llm_gateway` while the workspace `llm_gateway_enabled` setting is off. |
+| GET | `/user/pats/scopes` | `server/pat/api.py:list_selectable_scopes` | `Permission.BASIC_ACCESS`. Drops scopes whose `min_tier` is above the current tier (`use:llm_gateway` follows gateway availability: Business+, or Deep X without EE code), and drops `use:llm_gateway` while the workspace `llm_gateway_enabled` setting is off. |
 | GET/POST/DELETE | `/user/pats` | `server/pat/api.py` | Create needs `CREATE_USER_API_KEYS`. The seeded Basic group grants it by default, and a full admin can switch it off or on from the Basic group's page (`auth/permissions.py:DEFAULT_GROUP_TOGGLEABLE_PERMISSIONS`). The same permission gates MCP OAuth consent (`server/oauth_provider/api.py`), so the toggle covers both. List and delete need `BASIC_ACCESS`, and a user only ever sees or revokes their own. Minting a PAT with a scope above the current tier is rejected with `FEATURE_NOT_AVAILABLE`, and minting one with `use:llm_gateway` while the setting is off is rejected with `INVALID_INPUT` (`server/pat/api.py:_validate_assignable_scopes`). |
 | GET/PUT | `/admin/security`, GET `/admin/security/pinned-fields` | `server/security/api.py` | `FULL_ADMIN_PANEL_ACCESS`. Workspace security overrides: password policy, `password_auth_enabled`, `valid_email_domains`, JWT validation fields, SSRF level, incognito availability, `allow_connector_group_restrictions`, and `allow_connector_check_findings` (on by default; off, capability checks store and return no findings). Env-pinned fields win over stored values. Turning on `allow_connector_group_restrictions` needs the Business tier. |
 | CRUD | `/admin/user-group*` | `ee/onyx/server/user_group/api.py` | See [[access-control]] §2; this is where group membership, and thus `PermissionGrant`-derived capability, is actually assigned. |
@@ -663,9 +663,12 @@ is marked as such.
 - [[llm-gateway]]: the `use:llm_gateway` PAT scope (`Permission.
   USE_LLM_GATEWAY`, `db/enums.py`) is a `SELECTABLE_PAT_SCOPES` entry
   (`server/pat/models.py`) minted and checked entirely by this component's
-  PAT machinery. The workspace `llm_gateway_enabled` setting and the scope's
-  Business `min_tier` both hide it in `list_selectable_scopes` and block minting it, but only for third-party
-  PATs; a Craft sandbox's `craft_sandbox`-scoped PAT is unaffected.
+  PAT machinery. The workspace `llm_gateway_enabled` setting and gateway
+  availability (`server/pat/api.py:_is_scope_available`, which uses
+  `settings/tier_order.py:is_llm_gateway_available`: Business `min_tier`, or a
+  Deep X build without EE code) both hide it in `list_selectable_scopes` and
+  block minting it, but only for third-party PATs; a Craft sandbox's
+  `craft_sandbox`-scoped PAT is unaffected.
 - [[cc-pairs-and-credentials]]: connector credentials are a separate
   encrypted-secret concept from user auth; both use the same
   `EncryptedString`/`EncryptedJson` column types but are unrelated tables.

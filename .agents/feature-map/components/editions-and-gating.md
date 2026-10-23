@@ -27,7 +27,9 @@ still gets **Enterprise code running underneath**, because
 `backend/Dockerfile:COPY --chown=onyx:onyx ./ee /app/ee` ships the `ee` package
 in every standard image, and
 `backend/onyx/utils/variable_functionality.py:set_is_ee_if_available` loads it
-whenever the build ships it. No environment variable turns Enterprise code off.
+whenever the build ships it. The one exception is a Deep X build
+(`PRODUCT_BRAND=deepx`, `onyx/configs/constants.py:IS_STOCK_BRAND`): it never
+loads Enterprise code, so it runs the MIT code only at `Tier.COMMUNITY`.
 What changes with a license is not which code runs but which
 paths are unlocked: `backend/ee/onyx/server/middleware/license_enforcement.py`
 blocks or allows requests, and `backend/ee/onyx/utils/tier.py:get_tier` decides
@@ -244,6 +246,22 @@ Two shapes of flag exist, both on `FeatureFlagProvider`
   The base class and `NoOpFeatureFlagProvider` return `None`. The PostHog
   provider keys the flag on `tenant_id`
   (`backend/ee/onyx/feature_flags/posthog_provider.py`).
+
+### 4.3a LLM gateway availability (Deep X)
+
+`settings/tier_order.py:is_llm_gateway_available(tier)` is true when the tier
+reaches `LLM_GATEWAY_MIN_TIER`, or on a Deep X build without EE code. It does
+not change the tier: other tier-gated features stay locked. These use it
+instead of a direct tier check: Craft availability and its upgrade lock
+(`server/features/build/utils.py`), the `use:llm_gateway` PAT scope
+(`server/pat/api.py`), the `llm_gateway_enabled` write gate
+(`server/settings/api.py:admin_patch_settings`), and the mount of the MIT
+gateway router (`onyx/main.py`, see [[llm-gateway]] §4.10). `/settings` reports
+it as `llm_gateway_available`. The web reads it through
+`lib/tiers/hooks.ts:useLLMGatewayAvailable` for the gateway pages and PAT scope
+pickers, and the admin `LLM_GATEWAY` route uses `unlockedWhen`. The Craft
+sidebar tab follows `onyx_craft_enabled`, not the tier. Stock Onyx gives the
+same results as the old tier checks.
 
 ### 4.4 Licensing
 

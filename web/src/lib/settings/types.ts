@@ -75,6 +75,9 @@ export interface Settings {
   // Craft is switched on but the tier is too low: show the upgrade prompt.
   onyx_craft_requires_upgrade?: boolean;
 
+  // The deployment serves the LLM gateway: Business tier, or Deep X.
+  llm_gateway_available?: boolean;
+
   // Workspace default for Craft access; per-user overrides win.
   craft_default_enabled?: boolean;
 

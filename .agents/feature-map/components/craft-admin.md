@@ -191,7 +191,7 @@ require_onyx_craft_enabled                  server/features/build/api.py
   └─ is_craft_enabled_for_user              server/features/build/utils.py
        ├─ User.craft_enabled override        (per-user; short-circuits if False)
        ├─ Settings.craft_default_enabled      (workspace default, when override is None)
-       └─ is_craft_available_for_deployment   (PostHog flag or ENABLE_CRAFT, AND tier >= LLM_GATEWAY_MIN_TIER)
+       └─ is_craft_available_for_deployment   (PostHog flag or ENABLE_CRAFT, AND is_llm_gateway_available)
 ```
 
 `is_craft_enabled_for_user` (`build/utils.py:177`) is the single source of
@@ -384,10 +384,13 @@ not cover:
   entirely; per-user OAuth credentials for external apps depend on the acting
   user's identity.
 - [[editions-and-gating]]: `is_craft_available_for_deployment` reads a
-  PostHog feature flag (or `ENABLE_CRAFT`) and also requires the deployment
-  tier to reach `LLM_GATEWAY_MIN_TIER` (Business), because every Craft turn
-  goes through the tier-gated `/gateway`; Community never gets Craft.
-  When the flag is on but the tier is too low, `is_craft_locked_by_tier` sets
+  PostHog feature flag (or `ENABLE_CRAFT`) and also requires
+  `settings/tier_order.py:is_llm_gateway_available`, because every Craft turn
+  goes through `/gateway`. That is true at `LLM_GATEWAY_MIN_TIER` (Business)
+  or higher, or on a Deep X build (`PRODUCT_BRAND=deepx`) without EE code,
+  which serves the MIT gateway ([[llm-gateway]] §4.10). Stock Community never
+  gets Craft. When the flag is on but the gateway is not available,
+  `is_craft_locked_by_tier` sets
   `onyx_craft_requires_upgrade` in `/settings`: the sidebar keeps Craft with a
   Business tag and `/craft/*` renders `CraftUpgradePage`; `/build` stays 403.
   `requiredTier: null` on all three routes confirms Craft admin visibility is

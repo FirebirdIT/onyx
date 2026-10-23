@@ -152,6 +152,8 @@ class UserSettings(Settings):
     onyx_craft_available: bool = False
     # Craft is switched on but the tier is too low: show the upgrade prompt.
     onyx_craft_requires_upgrade: bool = False
+    # The deployment serves the LLM gateway: Business tier, or Deep X.
+    llm_gateway_available: bool = False
     # Dev/debug flag: when true, the FE renders a button that streams the
     # user's sandbox pod's opencode-serve logs. Gated by the
     # ENABLE_OPENCODE_DEBUGGING env var; never set in prod.

@@ -549,7 +549,9 @@ separate `UserUsageTracingProcessor`, independent of Braintrust/Langfuse.
 - [[agents-personas]]: `Persona.default_model_configuration_id` and
   provider/persona whitelisting live on the persona.
 - [[llm-gateway]]: the OpenAI-compatible gateway routes external calls through
-  this same factory and tags them `LLMFlow.LLM_GATEWAY`.
+  this same factory and tags them `LLMFlow.LLM_GATEWAY`. On Deep X the MIT
+  gateway (`server/gateway/completions.py`) uses `llm_from_provider` and the
+  `invoke_raw`/`stream_raw` methods, with the same provider access rules.
 - [[document-index]]: contextual RAG chunk summarization resolves its model
   through `get_contextual_rag_llm_for_search_settings`.
 - Craft (`craft-sessions`): `LLMModelFlowType.CRAFT` and

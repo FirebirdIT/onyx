@@ -120,6 +120,7 @@ from onyx.server.features.usage.api import router as cost_override_router
 from onyx.server.features.user_oauth_token.api import router as user_oauth_token_router
 from onyx.server.features.web_search.api import router as web_search_router
 from onyx.server.federated.api import router as federated_router
+from onyx.server.gateway.api import router as gateway_router
 from onyx.server.kg.api import admin_router as kg_admin_router
 from onyx.server.manage.administrative import router as admin_router
 from onyx.server.manage.code_interpreter.api import (
@@ -168,6 +169,10 @@ from onyx.server.security.api import admin_router as security_admin_router
 from onyx.server.security.store import seed_jwt_settings_from_env
 from onyx.server.settings.api import admin_router as settings_admin_router
 from onyx.server.settings.api import basic_router as settings_router
+from onyx.server.settings.tier_order import (
+    get_current_tier,
+    is_llm_gateway_available,
+)
 from onyx.server.sso_discovery import router as sso_discovery_router
 from onyx.server.utils import BasicAuthenticationError
 from onyx.setup import setup_multitenant_onyx, setup_onyx
@@ -645,6 +650,11 @@ def get_application(lifespan_override: Lifespan | None = None) -> FastAPI:
     include_router_with_global_prefix_prepended(application, skill_router)
 
     include_router_with_global_prefix_prepended(application, pat_router)
+    # EE serves its own gateway. Without EE, a Deep X build serves the MIT one.
+    if not global_version.is_ee_version() and is_llm_gateway_available(
+        get_current_tier()
+    ):
+        include_router_with_global_prefix_prepended(application, gateway_router)
     include_router_with_global_prefix_prepended(application, captcha_router)
 
     if OAUTH_PROVIDER_SETTINGS is not None:

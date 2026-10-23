@@ -8,13 +8,17 @@
 
 **Verified against:** `268e4d5a3d` (2026-10-05)
 **Domain:** platform (EE surface, consumed by Craft and by external tools)
-**Edition:** EE only. The router only exists when EE code loads
-(`backend/ee/onyx/main.py`), and the path prefix is gated at
-`Tier.BUSINESS` (`backend/onyx/server/gateway/configs.py`).
+**Edition:** Two routers serve `/gateway`. When EE code loads, the EE router
+(`backend/ee/onyx/main.py`) serves it, gated at `Tier.BUSINESS`
+(`backend/onyx/server/gateway/configs.py`). A Deep X build
+(`PRODUCT_BRAND=deepx`) never loads EE code and serves the smaller MIT router
+instead (§4.10). Stock Onyx without EE code serves no gateway.
 **Owns:**
 `backend/ee/onyx/server/gateway/api.py`, `openai_passthrough.py`,
 `anthropic_passthrough.py`, `stream_bridge.py`,
 `backend/onyx/server/gateway/configs.py`, `models.py`, `model_catalog.py`,
+`backend/onyx/server/gateway/api.py`, `completions.py`, `model_resolution.py`,
+`request_translation.py`,
 `backend/onyx/server/features/build/craft_gateway.py`
 
 **Does not own:** the provider factory, the LiteLLM wrapper, model defaults,
@@ -413,6 +417,52 @@ as a different status code), then always drains for trailing usage
 (`_drain_for_usage`, bounded by `_USAGE_DRAIN_MAX_CHUNKS` /
 `_USAGE_DRAIN_MAX_SECONDS`), closes the upstream iterator/`ExitStack`, and
 records the span before signalling `_STREAM_END`.
+
+### 4.10 The MIT gateway (Deep X)
+
+A Deep X build runs the MIT code only, so the EE router above is absent.
+`onyx/main.py:get_application` mounts the MIT router
+(`backend/onyx/server/gateway/api.py`) when EE code is not loaded and
+`settings/tier_order.py:is_llm_gateway_available` is true. That helper is
+true at `LLM_GATEWAY_MIN_TIER` or higher, or on a Deep X build without EE code.
+Stock Onyx without EE code is Community, so it mounts nothing.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/gateway/v1/models` | `ModelListResponse` from `build_gateway_model_catalog`. |
+| POST | `/gateway/v1/chat/completions` | Stream and non-stream, tools and tool calls, usage. |
+
+There is no `/v1/responses`, `/v1/messages` or `count_tokens`, and no native
+passthrough. Every provider goes through the translation path.
+
+- **Auth.** The same two gates: `require_permission(Permission.USE_LLM_GATEWAY)`
+  and `craft_gateway.py:gateway_request_flow`, then the workspace
+  `llm_gateway_enabled` switch for `LLMFlow.LLM_GATEWAY` callers only
+  (`api.py:authorize_gateway_request`). Session and API-key auth get 403.
+- **Models.** `model_resolution.py:resolve_gateway_model` parses
+  `"<provider_id>/<model_name>"` on the first `/`, loads the provider through
+  `fetch_accessible_llm_provider_by_id`, and requires a visible chat model.
+  Any failure is `NOT_FOUND`, with no default fallback.
+- **Requests.** `request_translation.py` turns the wire messages into
+  `onyx/llm/model_request.py` messages (`system`/`developer`, `user` with text
+  and `image_url` parts, `assistant` with `tool_calls`, `tool`). Unknown fields
+  are ignored. Other roles and content parts are `INVALID_INPUT`.
+- **Calls.** `completions.py` builds the client with `llm_from_provider` and
+  calls `LitellmLLM.invoke_raw` or `stream_raw` inside `llm_gateway_trace` and
+  `llm_generation_span`, tagged with the resolved flow. The Craft session is
+  bound by `craft_session_binder`. Usage reaches `user_usage` through the
+  span, as above.
+- **Streaming.** A worker thread started with `start_thread_with_context`
+  (with the request context) owns the trace and span and passes SSE frames to
+  the response through an `asyncio.Queue`. A provider failure after the 200
+  is an in-band `{"error": {...}}` frame with no `[DONE]`. A client disconnect
+  stops the worker.
+- **No limits.** The MIT router does not call `check_token_rate_limits` or the
+  cloud cost cap: Deep X has no spending limits.
+
+Tests: `backend/tests/unit/onyx/server/gateway/test_model_resolution.py`,
+`test_request_translation.py`, and the mock-LLM integration test
+`backend/tests/integration/tests/gateway/test_chat_completions_gateway.py`.
 
 ---
 

@@ -13,6 +13,7 @@ from onyx.configs.app_configs import (
     APP_PORT,
     DEV_MODE,
 )
+from onyx.configs.constants import IS_STOCK_BRAND
 from onyx.utils.logger import setup_logger
 
 logger = setup_logger()
@@ -51,8 +52,14 @@ def is_ee_available() -> bool:
 def set_is_ee_if_available() -> None:
     """Loads the Enterprise Edition code when the build ships it. Loading
     unlocks nothing: every paid feature is gated on the license, so a
-    deployment with no license behaves as Community Edition."""
+    deployment with no license behaves as Community Edition.
+
+    A Deep X build (PRODUCT_BRAND=deepx) runs the MIT code only, so it never
+    loads the Enterprise Edition code."""
     if global_version.is_ee_version() or not is_ee_available():
+        return
+    if not IS_STOCK_BRAND:
+        logger.notice("Deep X runs the MIT code only; Enterprise code is not loaded.")
         return
 
     logger.notice(
