@@ -269,3 +269,43 @@ def test_check_connection_reads_key_without_generating() -> None:
 def test_check_connection_rejects_unknown_model() -> None:
     with pytest.raises(ValueError):
         _provider().check_connection(model="gpt-image-1")
+
+
+def test_busy_submit_retries_with_same_idempotency_key() -> None:
+    fake = _FakeDeepXRoute(poll_states=["completed"])
+    busy_bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and not busy_bodies:
+            busy_bodies.append(json.loads(request.content))
+            return httpx.Response(429, headers={"Retry-After": "5"})
+        return fake.handle(request)
+
+    provider = _provider_with(handler)
+    with patch.object(dxr.time, "sleep") as sleep:
+        response = provider.generate_image(
+            prompt="x", model="dxr-image", size="1024x1024", n=1
+        )
+
+    assert response.data is not None and len(response.data) == 1
+    sleep.assert_any_call(5.0)
+    assert (
+        busy_bodies[0]["idempotencyKey"] == fake.submitted_bodies[0]["idempotencyKey"]
+    )
+
+
+@pytest.mark.usefixtures("no_sleep")
+def test_busy_submit_gives_up_after_max_wait() -> None:
+    step = dxr.BUSY_RETRY_MAX_WAIT_SECONDS / 2
+    calls: list[float] = []
+
+    def fake_monotonic() -> float:
+        calls.append(step)
+        return sum(calls)
+
+    provider = _provider_with(lambda _: httpx.Response(429))
+    with patch.object(dxr.time, "monotonic", side_effect=fake_monotonic):
+        with pytest.raises(ImageProviderError, match="HTTP 429"):
+            provider.generate_image(
+                prompt="x", model="dxr-image", size="1024x1024", n=1
+            )

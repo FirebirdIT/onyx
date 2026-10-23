@@ -71,6 +71,11 @@ ASSET_DOWNLOAD_TIMEOUT_SECONDS = 120.0
 JOB_POLL_INTERVAL_SECONDS = 3.0
 JOB_TIMEOUT_SECONDS = 300.0
 _ERROR_DETAIL_MAX_CHARS = 300
+# The service answers 429 with Retry-After when its job slots are full. A retry
+# with the same idempotency key cannot charge twice.
+HTTP_TOO_MANY_REQUESTS = 429
+BUSY_RETRY_DEFAULT_SECONDS = 5.0
+BUSY_RETRY_MAX_WAIT_SECONDS = 60.0
 
 JOB_STATE_COMPLETED = "completed"
 JOB_STATE_FAILED = "failed"
@@ -119,6 +124,14 @@ def resolve_deepx_route_size(model: str, size: str) -> str:
     if sizes is None:
         raise ValueError(f"Unsupported Deep X Route image model: '{model}'")
     return sizes[shape_from_size(size)]
+
+
+def _retry_after_seconds(response: httpx.Response) -> float:
+    try:
+        seconds = float(response.headers.get("Retry-After", ""))
+    except ValueError:
+        return BUSY_RETRY_DEFAULT_SECONDS
+    return min(max(seconds, 0.0), BUSY_RETRY_MAX_WAIT_SECONDS)
 
 
 def _error_detail(response: httpx.Response) -> str:
@@ -263,14 +276,24 @@ class DeepXRouteImageGenerationProvider(ImageGenerationProvider):
         client: httpx.Client,
         method: str,
         path: str,
+        retry_when_busy: bool = False,
         **request_kwargs: Any,
     ) -> httpx.Response:
-        try:
-            response = client.request(method, path, **request_kwargs)
-        except httpx.HTTPError as e:
-            raise ImageProviderError(
-                f"Could not reach Deep X Route ({type(e).__name__})."
-            ) from e
+        busy_deadline = time.monotonic() + BUSY_RETRY_MAX_WAIT_SECONDS
+        while True:
+            try:
+                response = client.request(method, path, **request_kwargs)
+            except httpx.HTTPError as e:
+                raise ImageProviderError(
+                    f"Could not reach Deep X Route ({type(e).__name__})."
+                ) from e
+            if not (
+                retry_when_busy
+                and response.status_code == HTTP_TOO_MANY_REQUESTS
+                and time.monotonic() < busy_deadline
+            ):
+                break
+            time.sleep(_retry_after_seconds(response))
         if response.status_code in (401, 403):
             raise ImageProviderCredentialsError(
                 "Deep X Route rejected the API key. Check the key and its permissions."
@@ -311,7 +334,9 @@ class DeepXRouteImageGenerationProvider(ImageGenerationProvider):
         }
         if input_image_ids:
             body["input_images"] = input_image_ids
-        response = self._send(client, "POST", "/media/jobs", json=body)
+        response = self._send(
+            client, "POST", "/media/jobs", retry_when_busy=True, json=body
+        )
         job = DeepXRouteMediaJob.model_validate(response.json())
         job = self._wait_for_job(client, job)
 
