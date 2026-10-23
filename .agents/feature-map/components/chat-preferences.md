@@ -179,7 +179,9 @@ Every row is one setting, traced from its UI control through storage to where
 | `auto_detect_search_filters` | Admin, "Auto-detect filters" toggle | `Settings.auto_detect_search_filters` (KV) | Not a prompt section: read directly in `process_message.py` and `server/features/search/api.py` to decide whether a turn runs filter auto-detection at all |
 | Reminder text (persona task prompt) | **Not settable on this page.** Owned by [[agents-personas]] (`Persona.task_prompt`), edited per-agent | `Persona.task_prompt` | `prompt_utils.py:build_reminder_message`, placed last by [[context-assembly]] §4.5 |
 
-Chat Preferences shows built-in tool cards and a link to Plugins. MCP and OpenAPI
+Chat Preferences shows built-in tool cards and a link to Plugins. One "Office
+Files" card turns the three Office file tools (`create_document`,
+`create_spreadsheet`, `create_presentation`) on or off together. MCP and OpenAPI
 default Chat selection is configured in Plugins, not on Chat Preferences.
 OpenAPI selection does not disable custom-agent use; deleting the action removes it from the workspace.
 

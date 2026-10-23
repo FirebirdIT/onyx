@@ -161,7 +161,9 @@ once per turn. A turn that runs three tool cycles calls
    present in the base prompt.
 4. Per-tool guidance sections, each gated on the turn's configured tools
    list (not the tools exposed in this cycle): search, internal-search, web-search, open-URL, Python, image
-   generation, memory (`prompts/tool_prompts.py`). `include_all_guidance=True`
+   generation, memory, and Office files (`OFFICE_FILES_GUIDANCE`, added when any of
+   `create_document`, `create_spreadsheet` or `create_presentation` is configured)
+   (`prompts/tool_prompts.py`). `include_all_guidance=True`
    forces every section on; `calculate_reserved_tokens` uses this to size a
    worst-case prompt up front (§4.8).
 
@@ -289,8 +291,10 @@ merges:
   `ANSWER_COMPLETENESS_REMINDER`, appended whenever a search-like tool has run
   this turn (`should_cite_documents or always_cite_documents`) and kept on every
   subsequent cycle until the turn ends, not just the cycle the search ran in.
-- `prompts/chat_prompts.py:FILE_REMINDER`, appended when the Python tool
-  generated a file this turn.
+- `prompts/chat_prompts.py:FILE_REMINDER`, appended when a tool generated a
+  file this turn: the Python tool or an Office file tool (any tool whose
+  `rich_response` is a `PythonToolRichResponse` with `generated_files`,
+  `llm_loop.py:run_llm_loop`).
 
 The result is one `MessageType.USER_REMINDER` message, appended last by
 `construct_message_history` regardless of anything else in the list. There is

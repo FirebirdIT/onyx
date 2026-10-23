@@ -404,6 +404,10 @@ incognito mode does not persist content skip the naming call.
 - [[context-assembly]]: reads this history back out to build the next turn's
   prompt (injects system/reminder messages that this component never stores).
 - [[streaming-protocol]]: the `Packet` vocabulary that replay reconstructs.
+  Office file tool calls (`create_document`, `create_spreadsheet`,
+  `create_presentation`) replay as custom-tool file packets
+  (`session_loading.py:create_office_file_packets`), the same packets they
+  stream live.
 - [[background-jobs]]: hosts the EE chat-TTL Celery chain.
 - [[multi-tenancy]]: every table here is tenant-scoped like the rest of the
   schema.
