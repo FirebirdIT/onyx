@@ -50,6 +50,7 @@ export interface FeatureFlags {
   hooksEnabled: boolean;
   queryHistoryEnabled: boolean;
   craftAvailable: boolean;
+  llmGatewayAvailable: boolean;
 }
 
 /**
@@ -80,6 +81,9 @@ export interface FeatureFlags {
  *   visible (subject to the permission and tier checks above).** When
  *   provided, the predicate is evaluated against the resolved feature flags;
  *   returning `false` hides the route from the sidebar.
+ * - `unlockedWhen`: Optional feature-flag predicate. When it returns `true`,
+ *   the route is active even below `requiredTier` (the backend grants the
+ *   feature another way, e.g. the MIT LLM gateway on Deep X).
  * - `beta`: Shows a Beta tag on the sidebar entry.
  */
 export interface AdminRouteEntry {
@@ -91,6 +95,7 @@ export interface AdminRouteEntry {
   section: string;
   requiredTier: Tier | null;
   visibleWhen: ((flags: FeatureFlags) => boolean) | null;
+  unlockedWhen?: (flags: FeatureFlags) => boolean;
   beta?: boolean;
 }
 
@@ -176,6 +181,7 @@ export const ADMIN_ROUTES = {
     section: "",
     requiredTier: Tier.BUSINESS,
     visibleWhen: null,
+    unlockedWhen: (f: FeatureFlags) => f.llmGatewayAvailable,
   },
   // ── Craft ─────────────────────────────────────────────────────────
   CRAFT_ACCESS: {

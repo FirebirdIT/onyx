@@ -75,7 +75,7 @@ import {
 } from "@/lib/constants/chatBackgrounds";
 import { SvgCheck } from "@opal/icons";
 import { cn } from "@opal/utils";
-import { useTierAtLeast } from "@/lib/tiers/hooks";
+import { useLLMGatewayAvailable, useTierAtLeast } from "@/lib/tiers/hooks";
 import { Tier } from "@/lib/tiers/types";
 import { useIsSearchModeAvailable, useSettings } from "@/lib/settings/hooks";
 import {
@@ -85,7 +85,7 @@ import {
   UNSET_REASONING_STOP,
   reasoningStopIndex,
 } from "@/sections/model-selector/setting-controls";
-import { LLM_GATEWAY_MIN_TIER, tierAtLeast } from "@/lib/tiers/utils";
+import { tierAtLeast } from "@/lib/tiers/utils";
 import { Tooltip } from "@opal/components";
 import { useCloudSubscription } from "@/hooks/useCloudSubscription";
 import { useSmoothStreaming } from "@/hooks/useSmoothStreaming";
@@ -124,6 +124,19 @@ interface PatScopeOption {
   description: string;
   min_tier: Tier;
   implies: string[];
+}
+
+const LLM_GATEWAY_SCOPE = "use:llm_gateway";
+
+// The gateway scope follows gateway availability, which Deep X also grants.
+function isScopeOptionAvailable(
+  option: PatScopeOption,
+  tier: Tier | undefined,
+  gatewayAvailable: boolean
+): boolean {
+  if (option.scope === LLM_GATEWAY_SCOPE) return gatewayAvailable;
+  // Undefined tier (settings loading/failed) must not hide Community scopes.
+  return tierAtLeast(tier ?? Tier.COMMUNITY, option.min_tier);
 }
 
 type AccessMode = "full" | "limited";
@@ -1739,7 +1752,7 @@ function GatewayAccessSection({
 }: GatewayAccessSectionProps) {
   const t = useTranslations("settings");
   const { appName } = useSettings();
-  const gatewayTier = useTierAtLeast(LLM_GATEWAY_MIN_TIER);
+  const gatewayTier = useLLMGatewayAvailable();
   const { llmProviders } = useLanguageModels();
   const [gatewayUrl, setGatewayUrl] = useState("");
 
@@ -1898,6 +1911,7 @@ function LLMGatewaySettings() {
     defaultScopes: ["use:llm_gateway"],
   });
   const currentTier = useSettings().tier;
+  const gatewayAvailable = useLLMGatewayAvailable();
   const { data: allScopeOptions = [], error: scopeOptionsError } = useSWR<
     PatScopeOption[]
   >(canCreateTokens ? SWR_KEYS.userPatScopes : null, errorHandlingFetcher, {
@@ -1906,9 +1920,9 @@ function LLMGatewaySettings() {
   const scopeOptions = useMemo(
     () =>
       allScopeOptions.filter((option) =>
-        tierAtLeast(currentTier ?? Tier.COMMUNITY, option.min_tier)
+        isScopeOptionAvailable(option, currentTier, gatewayAvailable)
       ),
-    [allScopeOptions, currentTier]
+    [allScopeOptions, currentTier, gatewayAvailable]
   );
   const canCreateGatewayToken =
     canCreateTokens &&
@@ -2012,13 +2026,13 @@ function AccountsAccessSettings() {
     { fallbackData: [] }
   );
   const { tier: currentTier, appName } = useSettings();
+  const gatewayAvailable = useLLMGatewayAvailable();
   const scopeOptions = useMemo(
     () =>
-      // Undefined tier (settings loading/failed) must not hide Community scopes.
       allScopeOptions.filter((option) =>
-        tierAtLeast(currentTier ?? Tier.COMMUNITY, option.min_tier)
+        isScopeOptionAvailable(option, currentTier, gatewayAvailable)
       ),
-    [allScopeOptions, currentTier]
+    [allScopeOptions, currentTier, gatewayAvailable]
   );
   const tokenCreation = usePATCreation({
     onCreateSuccess: async () => {

@@ -16,6 +16,7 @@ const flags: FeatureFlags = {
   hooksEnabled: false,
   queryHistoryEnabled: false,
   craftAvailable: false,
+  llmGatewayAvailable: false,
 };
 
 test("shows one Plugins link for an action manager", () => {
@@ -73,6 +74,21 @@ test("Craft-enabled admins have one Plugins entry and no separate Apps entry", (
   expect(links.filter((link) => link === "/admin/plugins")).toHaveLength(1);
   expect(links).not.toContain("/admin/craft/apps");
 });
+
+test.each([
+  [false, true],
+  [true, false],
+])(
+  "LLM Gateway below Business with gateway available=%s is disabled=%s",
+  (llmGatewayAvailable, disabled) => {
+    const gateway = buildItems(
+      [Permission.FULL_ADMIN_PANEL_ACCESS],
+      { ...flags, llmGatewayAvailable },
+      null
+    ).find((item) => item.link === ADMIN_ROUTES.LLM_GATEWAY.path);
+    expect(gateway?.disabled).toBe(disabled);
+  }
+);
 
 test.each(["/admin/plugins/external-app/7", "/admin/craft/apps"])(
   "retains full-admin authorization for %s",

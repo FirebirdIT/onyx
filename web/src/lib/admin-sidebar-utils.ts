@@ -224,7 +224,8 @@ export function buildItems(
 
     const disabled =
       route.requiredTier !== null &&
-      !tierAtLeast(flags.tier, route.requiredTier);
+      !tierAtLeast(flags.tier, route.requiredTier) &&
+      !(route.unlockedWhen?.(flags) ?? false);
 
     const item: SidebarItemEntry = {
       nameId,

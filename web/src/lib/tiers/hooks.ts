@@ -8,7 +8,7 @@ import type { IconFunctionComponent } from "@opal/types";
 import { markdown } from "@opal/utils";
 import type { PlanColor, PlanMetadata } from "@/lib/tiers/types";
 import { Tier } from "@/lib/tiers/types";
-import { tierAtLeast } from "@/lib/tiers/utils";
+import { LLM_GATEWAY_MIN_TIER, tierAtLeast } from "@/lib/tiers/utils";
 import { useSettings } from "@/lib/settings/hooks";
 
 /**
@@ -22,6 +22,19 @@ import { useSettings } from "@/lib/settings/hooks";
 export function useTierAtLeast(required: Tier): boolean {
   const settings = useSettings();
   return tierAtLeast(settings.tier, required);
+}
+
+/**
+ * True when the deployment serves the LLM gateway (and so Craft). The backend
+ * decides: Business tier or higher, or a Deep X build with the MIT gateway.
+ * Falls back to the tier while the setting is not loaded.
+ */
+export function useLLMGatewayAvailable(): boolean {
+  const settings = useSettings();
+  return (
+    settings.llm_gateway_available ??
+    tierAtLeast(settings.tier, LLM_GATEWAY_MIN_TIER)
+  );
 }
 
 const PLAN_STYLES: Record<

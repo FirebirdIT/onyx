@@ -8,7 +8,7 @@ import { SettingsLayouts, toast } from "@opal/layouts";
 import { Content, InputHorizontal } from "@opal/layouts";
 import { Card, InputSwitch, MessageCard } from "@opal/components";
 import { Disabled } from "@opal/core";
-import { usePlans, useTierAtLeast } from "@/lib/tiers/hooks";
+import { useLLMGatewayAvailable, usePlans } from "@/lib/tiers/hooks";
 import { Section } from "@/layouts/general-layouts";
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
 import { useSettings } from "@/lib/settings/hooks";
@@ -22,7 +22,7 @@ export default function LLMGatewayPage() {
   const plans = usePlans();
   const router = useRouter();
   const settings = useSettings();
-  const businessTier = useTierAtLeast(Tier.BUSINESS);
+  const gatewayAvailable = useLLMGatewayAvailable();
   const enabled = settings.llm_gateway_enabled ?? true;
 
   async function save(checked: boolean) {
@@ -54,24 +54,24 @@ export default function LLMGatewayPage() {
           />
           <Card border="solid" rounding={4}>
             <Disabled
-              disabled={!businessTier}
-              allowClick={businessTier}
-              tooltip={!businessTier ? t("tierTooltip") : undefined}
+              disabled={!gatewayAvailable}
+              allowClick={gatewayAvailable}
+              tooltip={!gatewayAvailable ? t("tierTooltip") : undefined}
             >
               <InputHorizontal
                 title={t("access.toggle.title")}
-                tag={!businessTier ? plans[Tier.BUSINESS].tag : undefined}
+                tag={!gatewayAvailable ? plans[Tier.BUSINESS].tag : undefined}
                 description={t("access.toggle.description")}
-                disabled={!businessTier}
+                disabled={!gatewayAvailable}
                 withLabel
               >
                 <InputSwitch
                   id="llm_gateway_enabled"
-                  checked={businessTier ? enabled : false}
+                  checked={gatewayAvailable ? enabled : false}
                   onCheckedChange={(checked) => {
                     void save(checked);
                   }}
-                  disabled={!businessTier}
+                  disabled={!gatewayAvailable}
                 />
               </InputHorizontal>
             </Disabled>

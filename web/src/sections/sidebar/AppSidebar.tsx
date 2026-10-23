@@ -55,7 +55,7 @@ import { useShowLogoWhenFolded } from "@/lib/sidebar/hooks";
 import { Button as OpalButton } from "@opal/components";
 import { cn } from "@opal/utils";
 import { Disabled } from "@opal/core";
-import { usePlans, useTierAtLeast } from "@/lib/tiers/hooks";
+import { usePlans } from "@/lib/tiers/hooks";
 import { BetaTag } from "@/lib/tiers/components";
 import { Tier } from "@/lib/tiers/types";
 import { DRAG_TYPES, LOCAL_STORAGE_KEYS } from "@/lib/sidebar/constants";
@@ -274,8 +274,8 @@ export default function AppSidebar() {
   const isOnyxCraftUpsell =
     !isOnyxCraftEnabled &&
     combinedSettingsData?.onyx_craft_requires_upgrade === true;
-  // Gated like a Business admin page: below that tier the tab is disabled.
-  const hasCraftTier = useTierAtLeast(Tier.BUSINESS);
+  // The backend decides: without Craft for this tier the tab is disabled.
+  const hasCraftTier = isOnyxCraftEnabled;
   const plans = usePlans();
 
   // Fetch notifications for build mode intro
