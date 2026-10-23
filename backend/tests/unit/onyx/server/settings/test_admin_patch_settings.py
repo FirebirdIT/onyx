@@ -127,6 +127,16 @@ def test_llm_gateway_enabled_updates_on_business_tier(
     assert result.llm_gateway_enabled is False
 
 
+def test_llm_gateway_enabled_updates_on_deepx_without_ee(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from onyx.server.settings import tier_order
+
+    monkeypatch.setattr(tier_order, "IS_STOCK_BRAND", False)
+    result = _patch_settings({"llm_gateway_enabled": False}, Settings(), monkeypatch)
+    assert result.llm_gateway_enabled is False
+
+
 def test_routing_target_must_be_a_router(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

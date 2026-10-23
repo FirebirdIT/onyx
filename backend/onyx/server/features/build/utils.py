@@ -16,9 +16,8 @@ from onyx.server.features.build.configs import (
     MAX_UPLOAD_FILE_SIZE_BYTES,
     OPENCODE_DISABLED_TOOLS,
 )
-from onyx.server.gateway.configs import LLM_GATEWAY_MIN_TIER
 from onyx.server.settings.store import load_settings
-from onyx.server.settings.tier_order import get_current_tier, tier_at_least
+from onyx.server.settings.tier_order import get_current_tier, is_llm_gateway_available
 from onyx.utils.logger import setup_logger
 from shared_configs.contextvars import get_current_tenant_id
 
@@ -156,22 +155,22 @@ def _craft_flag_enabled(user: User) -> bool:
 def is_craft_available_for_deployment(user: User) -> bool:
     """
     Check whether Onyx Craft (Build Mode) is available at the deployment level:
-    the craft flag must be on and the tier must reach LLM_GATEWAY_MIN_TIER,
-    since every Craft turn goes through the tier-gated LLM gateway.
+    the craft flag must be on and the LLM gateway must be available, since
+    every Craft turn goes through the gateway.
     """
     if not _craft_flag_enabled(user):
         return False
-    return tier_at_least(get_current_tier(), LLM_GATEWAY_MIN_TIER)
+    return is_llm_gateway_available(get_current_tier())
 
 
 def is_craft_locked_by_tier(user: User) -> bool:
-    """Craft is switched on but the tier is below LLM_GATEWAY_MIN_TIER, so the
-    UI shows an upgrade prompt instead of Craft."""
+    """Craft is switched on but the LLM gateway is not available on this tier,
+    so the UI shows an upgrade prompt instead of Craft."""
     if user.account_type == AccountType.ANONYMOUS:
         return False
     if not _craft_flag_enabled(user):
         return False
-    return not tier_at_least(get_current_tier(), LLM_GATEWAY_MIN_TIER)
+    return not is_llm_gateway_available(get_current_tier())
 
 
 def is_craft_enabled_for_user(

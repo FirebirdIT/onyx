@@ -62,3 +62,15 @@ def test_ee_loads_only_when_the_build_ships_it(available: bool) -> None:
         assert global_version.is_ee_version() is available
     finally:
         global_version.unset_ee()
+
+
+def test_deepx_brand_never_loads_ee() -> None:
+    with (
+        patch.object(variable_functionality, "is_ee_available", return_value=True),
+        patch.object(variable_functionality, "IS_STOCK_BRAND", False),
+    ):
+        set_is_ee_if_available()
+    try:
+        assert not global_version.is_ee_version()
+    finally:
+        global_version.unset_ee()

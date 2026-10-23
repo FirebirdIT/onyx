@@ -17,13 +17,25 @@ from onyx.server.pat.models import (
     PatScopeOption,
     TokenResponse,
 )
+from onyx.server.settings.models import Tier
 from onyx.server.settings.store import load_settings
-from onyx.server.settings.tier_order import get_current_tier, tier_at_least
+from onyx.server.settings.tier_order import (
+    get_current_tier,
+    is_llm_gateway_available,
+    tier_at_least,
+)
 from onyx.utils.logger import setup_logger
 
 logger = setup_logger()
 
 router = APIRouter(prefix="/user/pats")
+
+
+def _is_scope_available(option: PatScopeOption, tier: Tier) -> bool:
+    # The gateway scope follows gateway availability, which Deep X also grants.
+    if option.scope == Permission.USE_LLM_GATEWAY:
+        return is_llm_gateway_available(tier)
+    return tier_at_least(tier, option.min_tier)
 
 
 def _validate_assignable_scopes(scopes: list[Permission] | None) -> None:
@@ -43,7 +55,7 @@ def _validate_assignable_scopes(scopes: list[Permission] | None) -> None:
         )
     tier = get_current_tier()
     below_tier = [
-        s for s in scopes if not tier_at_least(tier, SELECTABLE_PAT_SCOPES[s].min_tier)
+        s for s in scopes if not _is_scope_available(SELECTABLE_PAT_SCOPES[s], tier)
     ]
     if below_tier:
         raise OnyxError(
@@ -70,7 +82,7 @@ def list_selectable_scopes(
     options = [
         option
         for option in SELECTABLE_PAT_SCOPES.values()
-        if tier_at_least(tier, option.min_tier)
+        if _is_scope_available(option, tier)
     ]
     if not load_settings(raise_on_error=True).llm_gateway_enabled:
         options = [

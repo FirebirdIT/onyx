@@ -296,3 +296,21 @@ def test_craft_not_locked_when_flag_off(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setattr(build_utils, "get_current_tier", lambda: Tier.COMMUNITY)
 
     assert build_utils.is_craft_locked_by_tier(_make_user()) is False
+
+
+def test_craft_available_on_deepx_without_ee(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Deep X serves the MIT gateway, so Craft is not locked on Community."""
+    from onyx.server.settings import tier_order
+
+    monkeypatch.setattr(build_utils, "ENABLE_CRAFT", True)
+    monkeypatch.setattr(
+        build_utils,
+        "get_default_feature_flag_provider",
+        lambda: NoOpFeatureFlagProvider(),
+    )
+    monkeypatch.setattr(build_utils, "get_current_tier", lambda: Tier.COMMUNITY)
+    monkeypatch.setattr(tier_order, "IS_STOCK_BRAND", False)
+    monkeypatch.setattr(tier_order.global_version, "is_ee_version", lambda: False)
+
+    assert build_utils.is_craft_available_for_deployment(_make_user()) is True
+    assert build_utils.is_craft_locked_by_tier(_make_user()) is False

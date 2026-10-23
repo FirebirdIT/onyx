@@ -95,3 +95,22 @@ def test_gateway_scope_hidden_and_rejected_on_community() -> None:
         assert exc_info.value.error_code == OnyxErrorCode.FEATURE_NOT_AVAILABLE
         pat_api._validate_assignable_scopes([Permission.READ_SEARCH])
         pat_api._validate_assignable_scopes(None)
+
+
+def test_gateway_scope_listed_and_mintable_on_deepx_without_ee() -> None:
+    from onyx.server.settings import tier_order
+
+    with (
+        patch.object(pat_api, "get_current_tier", return_value=Tier.COMMUNITY),
+        patch.object(tier_order, "IS_STOCK_BRAND", False),
+        patch.object(tier_order.global_version, "is_ee_version", return_value=False),
+        patch.object(
+            pat_api,
+            "load_settings",
+            MagicMock(return_value=Settings(llm_gateway_enabled=True)),
+        ),
+    ):
+        assert Permission.USE_LLM_GATEWAY in [
+            option.scope for option in pat_api.list_selectable_scopes(MagicMock())
+        ]
+        pat_api._validate_assignable_scopes([Permission.USE_LLM_GATEWAY])
