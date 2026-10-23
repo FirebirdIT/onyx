@@ -6727,6 +6727,9 @@
           "loading": "{title}에서 자격 증명을 테스트하는 중...",
           "success": "자격 증명이 유효합니다. 구성을 저장했습니다."
         },
+        "deepxRouteApiKey": {
+          "idle": "Deep X Route API 키를 붙여 넣으세요. 요청은 항상 https://api.deepxroute.com/v1 로 전송됩니다."
+        },
         "editHeader": {
           "title": "{title} 편집"
         },
@@ -6742,6 +6745,10 @@
           "idle": "Vertex AI가 활성화된 GCP 프로젝트입니다. {appName}는 Pod에 연결된 서비스 계정으로 인증합니다 (GKE Workload Identity).",
           "label": "GCP 프로젝트 ID",
           "required": "프로젝트 ID는 필수입니다"
+        },
+        "reuseLlmProviderKey": {
+          "description": "언어 모델 공급자 {name}의 API 키를 복사합니다.",
+          "label": "언어 모델 공급자 키 사용"
         },
         "targetUri": {
           "idle": "<link>Azure OpenAI</link>의 엔드포인트 대상 URI를 붙여넣으세요. API 엔드포인트 기본 주소, 배포 이름, API 버전이 포함되어야 합니다.",
@@ -6779,6 +6786,15 @@
         },
         "azureGptImage25Sunburst": {
           "description": "Microsoft Azure에서 호스팅되는 GPT Image 2.5 Sunburst 이미지 생성 모델입니다."
+        },
+        "deepxRouteEdit": {
+          "description": "첨부한 이미지 한 장을 지시에 따라 편집하는 Deep X Route 모델입니다."
+        },
+        "deepxRouteImage": {
+          "description": "초안과 일러스트용으로 가장 저렴한 Deep X Route 텍스트-이미지 모델입니다."
+        },
+        "deepxRouteImagePro": {
+          "description": "정사각형, 세로, 가로 형식의 최종 이미지를 위한 고품질 Deep X Route 모델입니다."
         },
         "gemini25FlashImage": {
           "description": "Gemini 2.5 Flash Image (Nano Banana) 모델은 속도와 효율성에 중점을 둡니다."

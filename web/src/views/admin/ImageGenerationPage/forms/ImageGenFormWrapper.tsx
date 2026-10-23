@@ -122,8 +122,11 @@ export function ImageGenFormWrapper<T extends FormValues>({
 
       const apiKeyValue = (values as Record<string, unknown>).api_key as string;
       // Check if the API key was changed from its masked value
-      // A masked key contains "****", so if present, user hasn't entered a new key
-      const apiKeyChanged = !apiKeyValue?.includes("****");
+      // A masked key contains "****", so if present, user hasn't entered a new key.
+      // A key copied from an LLM provider always counts as a new key.
+      const apiKeyChanged =
+        payload.sourceLlmProviderId !== undefined ||
+        !apiKeyValue?.includes("****");
 
       // Test the API key first (only if changed or creating new config)
       if (apiKeyChanged) {
@@ -134,6 +137,7 @@ export function ImageGenFormWrapper<T extends FormValues>({
           apiVersion: payload.apiVersion,
           deploymentName: payload.deploymentName,
           customConfig: payload.customConfig,
+          sourceLlmProviderId: payload.sourceLlmProviderId,
         });
 
         if (!result.ok) {
@@ -156,6 +160,7 @@ export function ImageGenFormWrapper<T extends FormValues>({
           apiVersion: payload.apiVersion,
           deploymentName: payload.deploymentName,
           customConfig: payload.customConfig,
+          sourceLlmProviderId: payload.sourceLlmProviderId,
           apiKeyChanged,
         });
       } else {
@@ -168,6 +173,7 @@ export function ImageGenFormWrapper<T extends FormValues>({
           apiVersion: payload.apiVersion,
           deploymentName: payload.deploymentName,
           customConfig: payload.customConfig,
+          sourceLlmProviderId: payload.sourceLlmProviderId,
           isDefault: true,
         });
       }

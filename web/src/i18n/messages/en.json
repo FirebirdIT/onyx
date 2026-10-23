@@ -6727,6 +6727,9 @@
           "loading": "Testing credentials with {title}...",
           "success": "Credentials valid. Configuration saved."
         },
+        "deepxRouteApiKey": {
+          "idle": "Paste your Deep X Route API key. Requests always go to https://api.deepxroute.com/v1."
+        },
         "editHeader": {
           "title": "Edit {title}"
         },
@@ -6742,6 +6745,10 @@
           "idle": "The GCP project where Vertex AI is enabled. {appName} authenticates with the pod's bound service account (GKE Workload Identity).",
           "label": "GCP Project ID",
           "required": "Project ID is required"
+        },
+        "reuseLlmProviderKey": {
+          "description": "Copy the API key from the {name} language model provider.",
+          "label": "Use Language Model Provider Key"
         },
         "targetUri": {
           "idle": "Paste your endpoint target URI from <link>Azure OpenAI</link> (including API endpoint base, deployment name, and API version).",
@@ -6779,6 +6786,15 @@
         },
         "azureGptImage25Sunburst": {
           "description": "GPT Image 2.5 Sunburst image generation model hosted on Microsoft Azure."
+        },
+        "deepxRouteEdit": {
+          "description": "Deep X Route model that edits one attached image with an instruction."
+        },
+        "deepxRouteImage": {
+          "description": "Deep X Route text-to-image model at the lowest price, for drafts and illustrations."
+        },
+        "deepxRouteImagePro": {
+          "description": "Higher-quality Deep X Route model for final visuals in square, portrait and landscape formats."
         },
         "gemini25FlashImage": {
           "description": "Gemini 2.5 Flash Image (Nano Banana) model is designed for speed and efficiency."

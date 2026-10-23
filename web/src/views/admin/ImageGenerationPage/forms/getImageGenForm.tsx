@@ -3,6 +3,8 @@ import { ImageGenFormBaseProps } from "@/views/admin/ImageGenerationPage/forms/t
 import { OpenAIImageGenForm } from "@/views/admin/ImageGenerationPage/forms/OpenAIImageGenForm";
 import { AzureImageGenForm } from "@/views/admin/ImageGenerationPage/forms/AzureImageGenForm";
 import { VertexImageGenForm } from "@/views/admin/ImageGenerationPage/forms/VertexImageGenForm";
+import { DeepXRouteImageGenForm } from "@/views/admin/ImageGenerationPage/forms/DeepXRouteImageGenForm";
+import { DEEPX_ROUTE_IMAGE_PROVIDER_NAME } from "@/views/admin/ImageGenerationPage/constants";
 
 /**
  * Factory function that routes to the correct provider-specific form
@@ -18,6 +20,8 @@ export function getImageGenForm(props: ImageGenFormBaseProps): React.ReactNode {
       return <AzureImageGenForm {...props} />;
     case "vertex_ai":
       return <VertexImageGenForm {...props} />;
+    case DEEPX_ROUTE_IMAGE_PROVIDER_NAME:
+      return <DeepXRouteImageGenForm {...props} />;
     default:
       // Fallback to OpenAI form for unknown providers
       console.warn(

@@ -11,6 +11,9 @@ from onyx.image_gen.exceptions import ImageProviderCredentialsError
 if TYPE_CHECKING:
     from litellm.types.utils import ImageResponse as ImageGenerationResponse
 
+CONNECTION_TEST_PROMPT = "a simple blue circle on white background"
+CONNECTION_TEST_SIZE = "1024x1024"
+
 
 class ImageShape(str, Enum):
     SQUARE = "square"
@@ -85,3 +88,17 @@ class ImageGenerationProvider(abc.ABC):
     ) -> ImageGenerationResponse:
         """Generates an image based on a prompt."""
         raise NotImplementedError("generate_image not implemented")
+
+    def check_connection(self, model: str, quality: str | None = None) -> None:
+        """Raises if the credentials cannot use `model`.
+
+        The default makes one small generation. Providers with a cheaper
+        credential check override this.
+        """
+        self.generate_image(
+            prompt=CONNECTION_TEST_PROMPT,
+            model=model,
+            size=CONNECTION_TEST_SIZE,
+            n=1,
+            quality=quality,
+        )
