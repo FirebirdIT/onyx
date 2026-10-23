@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "编码智能体"
+      },
+      "wordDocument": {
+        "label": "Word 文档"
+      },
+      "excelSpreadsheet": {
+        "label": "Excel 电子表格"
+      },
+      "powerpointPresentation": {
+        "label": "PowerPoint 演示文稿"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "搜索网络以获取实时信息和最新结果。",
           "title": "网络搜索"
+        },
+        "officeFiles": {
+          "title": "Office 文件",
+          "description": "创建可下载的 Word 文档、Excel 电子表格和 PowerPoint 演示文稿。"
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "在网络上搜索实时信息和最新结果。",
           "title": "网络搜索"
+        },
+        "officeFiles": {
+          "title": "Office 文件",
+          "description": "创建可下载的 Word 文档、Excel 电子表格和 PowerPoint 演示文稿。"
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "正在等待响应..."
+        },
+        "createdFileStatus": {
+          "text": "已创建 {toolName}"
         }
       },
       "customToolAuth": {

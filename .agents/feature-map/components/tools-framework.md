@@ -10,7 +10,8 @@
 **Owns:**
 `backend/onyx/tools/interface.py`, `models.py`, `tool_constructor.py`, `tool_runner.py`,
 `built_in_tools.py`, `tool_name.py`, `constants.py`, `utils.py`,
-`backend/onyx/tools/fake_tools/`, `backend/onyx/server/features/tool/api.py`,
+`backend/onyx/tools/fake_tools/`, `backend/onyx/tools/tool_implementations/office/`,
+`backend/onyx/server/features/tool/api.py`,
 `backend/onyx/db/tools.py`
 
 **Read first:** `[[core-chat-loop]]`. This component supplies the tool set that
@@ -22,7 +23,7 @@
 
 When an agent needs to do something beyond generating text, it calls a tool: search
 the company index, search the web, open a URL, generate an image, run Python, read
-an attached file, or remember a fact about the user. The user sees a tool block in
+an attached file, create a Word, Excel or PowerPoint file, or remember a fact about the user. The user sees a tool block in
 the transcript (queries, a spinner, then a result) while the tool runs, and the
 final answer folds the result back into prose with citations where relevant.
 
@@ -162,7 +163,27 @@ runtime lookup `tool_constructor.py` uses for every persona-attached built-in to
 | File reader | `FileReaderTool` : `tool_implementations/file_reader/file_reader_tool.py` | `read_file` | Read an attached or project file's contents on demand. | `DISABLE_VECTOR_DB` only, gated behind a TODO pending generalization (`file_reader_tool.py:is_available`). |
 | Memory | `MemoryTool` : `tool_implementations/memory/memory_tool.py` | `add_memory` | Persist a fact about the user across sessions. | No override; default `True`. Injection is gated by `user.enable_memory_tool`, not by `is_available` (see §5). |
 | Coding agent | `CodingAgentTool` : `tool_implementations/coding_agent/coding_agent_tool.py` | value of `CODING_AGENT_TOOL_NAME` | Runs a sub-agent loop against a cloned repo. | `True` iff `BashTool.is_available` is `True` (`coding_agent_tool.py:is_available`). |
+| Word document | `CreateDocumentTool` : `tool_implementations/office/office_tools.py` | `create_document` | Build a .docx (title, headings, paragraphs, lists, tables, page breaks) and save it as a generated file. | No override; default `True`. |
+| Excel spreadsheet | `CreateSpreadsheetTool` : `tool_implementations/office/office_tools.py` | `create_spreadsheet` | Build a .xlsx (sheets, typed cells, formulas, frozen header, native bar/line/pie charts). | No override; default `True`. |
+| PowerPoint presentation | `CreatePresentationTool` : `tool_implementations/office/office_tools.py` | `create_presentation` | Build a 16:9 .pptx (title, section, bullets, two-column, table and chart layouts, speaker notes). | No override; default `True`. |
 | Bash | `BashTool` : `tool_implementations/bash/bash_tool.py` | `bash` | Run a shell command in an isolated code-interpreter session. | `True` if `CODE_INTERPRETER_BASE_URL` is set, the server is enabled, its health check passes, and it `supports(...)` the session/bash routes (`bash_tool.py:is_available`). Not persona-attachable (see §5). |
+
+The three Office file tools share `OfficeFileTool` (`office/office_tools.py`). They run in
+the API server process, not in the Code Interpreter. Each tool validates its arguments
+with a pydantic spec (`office/docx_builder.py`, `xlsx_builder.py`, `pptx_builder.py`;
+the size limits are module constants there), builds the file in memory, and saves it with
+`FileOrigin.CHAT_IMAGE_GEN` and `chat_image_gen_metadata(chat_session_id)`, like
+`run_python` output. `sanitize_file_name` (`office/models.py`) removes path parts and sets
+the format's extension. Invalid arguments raise `ToolCallException`, so the model can
+try again. The tools stream `CustomToolStart` and a `CustomToolDelta` with
+`response_type="file"` and `file_ids`, so `CustomToolRenderer` shows them with no new
+packet type. `rich_response` is a `PythonToolRichResponse`, so `llm_loop.py` adds the
+file reminder and `save_chat.py` attaches the file when the answer links it. The
+`llm_facing_response` is an `OfficeFileResult` JSON (file name, file id, file link,
+summary). `session_loading.py:create_office_file_packets` replays it. Migration
+`7bad622c5b00_seed_office_file_tools.py` seeds the three `Tool` rows and attaches them
+to the default persona. The agent editor and the admin Chat Preferences page switch the
+three tools with one "Office Files" toggle. There is no approval step.
 
 `KnowledgeGraphTool` (`tool_implementations/knowledge_graph/knowledge_graph_tool.py`)
 belongs to the knowledge graph, an incomplete feature (see INDEX.md, Incomplete
@@ -198,7 +219,8 @@ For each `db_tool_model` in `persona.tools`, in order:
    `try/except` that treats a raised exception as `False`
    (`tool_constructor.py:_construct_tools_impl`), then dispatch to a class-specific
    constructor branch (`SearchTool`, `ImageGenerationTool`, `WebSearchTool`,
-   `OpenURLTool`, `PythonTool`, `CodingAgentTool`, `FileReaderTool`). The
+   `OpenURLTool`, `PythonTool`, the Office file tools in `OFFICE_TOOL_CLASSES`,
+   `CodingAgentTool`, `FileReaderTool`). The
    `SearchTool` branch skips the tool when `search_usage_forcing_setting` is
    `SearchToolUsage.DISABLED`.
 4. For a custom tool (`openapi_schema` set), resolve OAuth (per-tool OAuth config,

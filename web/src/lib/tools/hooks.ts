@@ -16,6 +16,9 @@ import { useAppPosition } from "@/lib/position/hooks";
 import { useActiveAgent } from "@/lib/agents/hooks";
 import {
   CODING_AGENT_TOOL_ID,
+  CREATE_DOCUMENT_TOOL_ID,
+  CREATE_PRESENTATION_TOOL_ID,
+  CREATE_SPREADSHEET_TOOL_ID,
   FILE_READER_TOOL_ID,
   IMAGE_GENERATION_TOOL_ID,
   KNOWLEDGE_GRAPH_TOOL_ID,
@@ -576,6 +579,11 @@ export function useBuiltInToolNames(): Record<string, string> {
       [FILE_READER_TOOL_ID]: t("toolNames.fileReader.label"),
       [MEMORY_TOOL_ID]: t("toolNames.addMemory.label"),
       [CODING_AGENT_TOOL_ID]: t("toolNames.codingAgent.label"),
+      [CREATE_DOCUMENT_TOOL_ID]: t("toolNames.wordDocument.label"),
+      [CREATE_SPREADSHEET_TOOL_ID]: t("toolNames.excelSpreadsheet.label"),
+      [CREATE_PRESENTATION_TOOL_ID]: t(
+        "toolNames.powerpointPresentation.label"
+      ),
     }),
     [t]
   );

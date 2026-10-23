@@ -770,6 +770,9 @@ if __name__ == "__main__":
     from onyx.server.query_and_chat.placement import Placement
     from onyx.tools.models import ToolCallKickoff
     from onyx.tools.tool_constructor import construct_tools
+    from onyx.tools.tool_implementations.office.office_tools import (
+        OFFICE_TOOL_CLASSES,
+    )
 
     # === CONFIGURE YOUR RESEARCH PROMPT HERE ===
     RESEARCH_PROMPT = "Your test research task."
@@ -808,7 +811,11 @@ if __name__ == "__main__":
                 tool.id
                 for tool in persona.tools
                 if tool.in_code_tool_id
-                not in (ImageGenerationTool.__name__, PythonTool.__name__)
+                not in (
+                    ImageGenerationTool.__name__,
+                    PythonTool.__name__,
+                    *(cls.__name__ for cls in OFFICE_TOOL_CLASSES),
+                )
             ],
         )
         tools = [tool for tool_list in tool_dict.values() for tool in tool_list]

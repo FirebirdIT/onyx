@@ -257,7 +257,9 @@ class ChatFile(BaseModel):
 
 
 class PythonToolRichResponse(BaseModel):
-    """Rich response from the Python tool carrying generated files."""
+    """Generated files from the Python tool or an Office file tool.
+
+    llm_loop persists them on the tool call so the answer can link them."""
 
     generated_files: list[PythonExecutionFile] = []
 

@@ -1,11 +1,14 @@
 import type { IconProps } from "@opal/types";
 import {
   SvgCpu,
+  SvgExcelFile,
   SvgGlobe,
   SvgImage,
   SvgLink,
+  SvgPowerpointFile,
   SvgSearch,
   SvgTerminal,
+  SvgWordFile,
 } from "@opal/icons";
 
 // Tool names as referenced by tool results / tool calls
@@ -25,6 +28,16 @@ export const FILE_READER_TOOL_ID = "FileReaderTool";
 export const CODING_AGENT_TOOL_ID = "CodingAgentTool";
 export const KNOWLEDGE_GRAPH_TOOL_ID = "KnowledgeGraphTool";
 export const MEMORY_TOOL_ID = "MemoryTool";
+export const CREATE_DOCUMENT_TOOL_ID = "CreateDocumentTool";
+export const CREATE_SPREADSHEET_TOOL_ID = "CreateSpreadsheetTool";
+export const CREATE_PRESENTATION_TOOL_ID = "CreatePresentationTool";
+
+// The Word, Excel and PowerPoint tools. Settings pages switch them as one group.
+export const OFFICE_FILE_TOOL_IDS: readonly string[] = [
+  CREATE_DOCUMENT_TOOL_ID,
+  CREATE_SPREADSHEET_TOOL_ID,
+  CREATE_PRESENTATION_TOOL_ID,
+];
 
 // Icon mappings for system tools
 export const SYSTEM_TOOL_ICONS: Record<
@@ -37,6 +50,9 @@ export const SYSTEM_TOOL_ICONS: Record<
   [PYTHON_TOOL_ID]: SvgTerminal,
   [OPEN_URL_TOOL_ID]: SvgLink,
   [CODING_AGENT_TOOL_ID]: SvgCpu,
+  [CREATE_DOCUMENT_TOOL_ID]: SvgWordFile,
+  [CREATE_SPREADSHEET_TOOL_ID]: SvgExcelFile,
+  [CREATE_PRESENTATION_TOOL_ID]: SvgPowerpointFile,
 };
 
 import { ADMIN_ROUTES } from "@/lib/admin-routes";

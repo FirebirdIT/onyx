@@ -69,6 +69,24 @@ EXPECTED_TOOLS = {
         in_code_tool_id="CodingAgentTool",
         user_id=None,
     ),
+    "CreateDocumentTool": ToolSeedingExpectedResult(
+        name="create_document",
+        display_name="Word Document",
+        in_code_tool_id="CreateDocumentTool",
+        user_id=None,
+    ),
+    "CreateSpreadsheetTool": ToolSeedingExpectedResult(
+        name="create_spreadsheet",
+        display_name="Excel Spreadsheet",
+        in_code_tool_id="CreateSpreadsheetTool",
+        user_id=None,
+    ),
+    "CreatePresentationTool": ToolSeedingExpectedResult(
+        name="create_presentation",
+        display_name="PowerPoint Presentation",
+        in_code_tool_id="CreatePresentationTool",
+        user_id=None,
+    ),
 }
 
 
@@ -109,8 +127,8 @@ def test_tool_seeding_migration() -> None:
         )
         tools = result.fetchall()
 
-        assert len(tools) == 11, (
-            f"Should have created exactly 11 builtin tools, got {len(tools)}"
+        assert len(tools) == 14, (
+            f"Should have created exactly 14 builtin tools, got {len(tools)}"
         )
 
         def validate_tool(expected: ToolSeedingExpectedResult) -> None:
@@ -154,3 +172,7 @@ def test_tool_seeding_migration() -> None:
         validate_tool(EXPECTED_TOOLS["MemoryTool"])
 
         validate_tool(EXPECTED_TOOLS["CodingAgentTool"])
+
+        validate_tool(EXPECTED_TOOLS["CreateDocumentTool"])
+        validate_tool(EXPECTED_TOOLS["CreateSpreadsheetTool"])
+        validate_tool(EXPECTED_TOOLS["CreatePresentationTool"])

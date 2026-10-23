@@ -59,6 +59,7 @@ import {
   PYTHON_TOOL_ID,
   OPEN_URL_TOOL_ID,
   CODING_AGENT_TOOL_ID,
+  OFFICE_FILE_TOOL_IDS,
 } from "@/lib/tools/constants";
 import {
   EmptyMessageCard,
@@ -675,6 +676,9 @@ export default function ChatPreferencesPage() {
   const codingAgentTool = availableTools.find(
     (t) => t.in_code_tool_id === CODING_AGENT_TOOL_ID
   );
+  const officeFileToolIds = availableTools
+    .filter((t) => OFFICE_FILE_TOOL_IDS.includes(t.in_code_tool_id ?? ""))
+    .map((t) => t.id);
 
   // Connectors
   const { ccPairs } = useCCPairs();
@@ -1119,6 +1123,25 @@ export default function ChatPreferencesPage() {
                                 void toggleTool(codingAgentTool.id, checked)
                               }
                               disabled={!codingAgentTool}
+                            />
+                          </InputHorizontal>
+                        </Card>
+                      </Disabled>
+
+                      <Disabled disabled={officeFileToolIds.length === 0}>
+                        <Card border="solid" rounding={4}>
+                          <InputHorizontal
+                            title={t("tools.officeFiles.title")}
+                            description={t("tools.officeFiles.description")}
+                            disabled={officeFileToolIds.length === 0}
+                            withLabel
+                          >
+                            <InputSwitch
+                              checked={officeFileToolIds.some(isToolEnabled)}
+                              onCheckedChange={(checked) =>
+                                void toggleTools(officeFileToolIds, checked)
+                              }
+                              disabled={officeFileToolIds.length === 0}
                             />
                           </InputHorizontal>
                         </Card>

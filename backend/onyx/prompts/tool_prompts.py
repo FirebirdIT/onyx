@@ -66,6 +66,16 @@ and files written by a previous call will NOT be available in later calls. \
 Therefore batch multi-step work into a single script per call: e.g. load a workbook once, read all needed sheets, apply all edits, and save the result in one execution — not one small step per call.
 """.lstrip()
 
+OFFICE_FILES_GUIDANCE = """
+## create_document, create_spreadsheet, create_presentation
+Use these tools when the user asks for a downloadable Word document, Excel spreadsheet or PowerPoint presentation. \
+Use `create_document` for reports, letters, memos and other text documents, `create_spreadsheet` for tabular data, formulas and charts, \
+and `create_presentation` for slide decks. Do not use them when a chat answer is enough, and do not create a file the user did not ask for.
+Write the complete content in one call. Gather any facts you need with other tools first. \
+The tool returns a `file_link`; share it as [file_name](file_link) and briefly describe what the file contains. Do not paste the full file content into the reply.
+If the tool reports invalid arguments, fix them and call it again.
+""".lstrip()
+
 GENERATE_IMAGE_GUIDANCE = """
 ## generate_image
 NEVER use generate_image unless the user specifically requests an image.

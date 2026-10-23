@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "وكيل البرمجة"
+      },
+      "wordDocument": {
+        "label": "مستند Word"
+      },
+      "excelSpreadsheet": {
+        "label": "جدول بيانات Excel"
+      },
+      "powerpointPresentation": {
+        "label": "عرض PowerPoint تقديمي"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "البحث في الويب عن معلومات آنية ونتائج محدّثة.",
           "title": "البحث في الويب"
+        },
+        "officeFiles": {
+          "title": "ملفات Office",
+          "description": "أنشئ مستندات Word وجداول بيانات Excel وعروض PowerPoint التقديمية لتنزيلها."
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "ابحث في الويب عن معلومات فورية ونتائج محدثة.",
           "title": "البحث على الويب"
+        },
+        "officeFiles": {
+          "title": "ملفات Office",
+          "description": "أنشئ مستندات Word وجداول بيانات Excel وعروض PowerPoint التقديمية لتنزيلها."
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "في انتظار الاستجابة..."
+        },
+        "createdFileStatus": {
+          "text": "تم إنشاء {toolName}"
         }
       },
       "customToolAuth": {

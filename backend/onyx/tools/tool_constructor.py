@@ -51,6 +51,7 @@ from onyx.tools.tool_implementations.images.image_generation_tool import (
 )
 from onyx.tools.tool_implementations.mcp.mcp_tool import MCPTool
 from onyx.tools.tool_implementations.memory.memory_tool import MemoryTool
+from onyx.tools.tool_implementations.office.office_tools import OFFICE_TOOL_CLASSES
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
@@ -382,6 +383,21 @@ def _construct_tools_impl(
                         emitter=emitter,
                         chat_session_id=_require_chat_session_id(
                             custom_tool_config, PythonTool.__name__
+                        ),
+                    )
+                ]
+
+            # Handle Word / Excel / PowerPoint file tools
+            elif office_tool_cls := next(
+                (c for c in OFFICE_TOOL_CLASSES if c.__name__ == tool_cls.__name__),
+                None,
+            ):
+                tool_dict[db_tool_model.id] = [
+                    office_tool_cls(
+                        tool_id=db_tool_model.id,
+                        emitter=emitter,
+                        chat_session_id=_require_chat_session_id(
+                            custom_tool_config, office_tool_cls.__name__
                         ),
                     )
                 ]

@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "Agente de código"
+      },
+      "wordDocument": {
+        "label": "Documento do Word"
+      },
+      "excelSpreadsheet": {
+        "label": "Planilha do Excel"
+      },
+      "powerpointPresentation": {
+        "label": "Apresentação do PowerPoint"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "Pesquisa na web para obter informações em tempo real e resultados atualizados.",
           "title": "Pesquisa na web"
+        },
+        "officeFiles": {
+          "title": "Arquivos do Office",
+          "description": "Crie documentos do Word, planilhas do Excel e apresentações do PowerPoint para baixar."
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "Pesquise na web informações em tempo real e resultados atualizados.",
           "title": "Pesquisa na web"
+        },
+        "officeFiles": {
+          "title": "Arquivos do Office",
+          "description": "Crie documentos do Word, planilhas do Excel e apresentações do PowerPoint para baixar."
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "Aguardando resposta..."
+        },
+        "createdFileStatus": {
+          "text": "Arquivo criado: {toolName}"
         }
       },
       "customToolAuth": {

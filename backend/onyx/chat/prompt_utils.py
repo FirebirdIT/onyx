@@ -21,6 +21,7 @@ from onyx.prompts.tool_prompts import (
     GENERATE_IMAGE_GUIDANCE,
     INTERNAL_SEARCH_GUIDANCE,
     MEMORY_GUIDANCE,
+    OFFICE_FILES_GUIDANCE,
     OPEN_URLS_GUIDANCE,
     PYTHON_TOOL_GUIDANCE,
     TOOL_DESCRIPTION_SEARCH_GUIDANCE,
@@ -45,6 +46,7 @@ from onyx.tools.tool_implementations.images.image_generation_tool import (
     ImageGenerationTool,
 )
 from onyx.tools.tool_implementations.memory.memory_tool import MemoryTool
+from onyx.tools.tool_implementations.office.office_tools import OfficeFileTool
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
@@ -317,6 +319,7 @@ def build_system_prompt(
             ),
             OPEN_URLS_GUIDANCE,
             PYTHON_TOOL_GUIDANCE,
+            OFFICE_FILES_GUIDANCE,
             GENERATE_IMAGE_GUIDANCE,
             MEMORY_GUIDANCE,
         ]
@@ -328,6 +331,7 @@ def build_system_prompt(
         has_internal_search = any(isinstance(tool, SearchTool) for tool in tools)
         has_open_urls = any(isinstance(tool, OpenURLTool) for tool in tools)
         has_python = any(isinstance(tool, PythonTool) for tool in tools)
+        has_office_files = any(isinstance(tool, OfficeFileTool) for tool in tools)
         has_generate_image = any(
             isinstance(tool, ImageGenerationTool) for tool in tools
         )
@@ -359,6 +363,9 @@ def build_system_prompt(
 
         if has_python or include_all_guidance:
             tool_guidance_sections.append(PYTHON_TOOL_GUIDANCE)
+
+        if has_office_files or include_all_guidance:
+            tool_guidance_sections.append(OFFICE_FILES_GUIDANCE)
 
         if has_generate_image or include_all_guidance:
             tool_guidance_sections.append(GENERATE_IMAGE_GUIDANCE)

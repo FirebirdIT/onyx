@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "Agente de código"
+      },
+      "wordDocument": {
+        "label": "Documento de Word"
+      },
+      "excelSpreadsheet": {
+        "label": "Hoja de cálculo de Excel"
+      },
+      "powerpointPresentation": {
+        "label": "Presentación de PowerPoint"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "Busca en la web información en tiempo real y resultados actualizados.",
           "title": "Búsqueda web"
+        },
+        "officeFiles": {
+          "title": "Archivos de Office",
+          "description": "Crea documentos de Word, hojas de cálculo de Excel y presentaciones de PowerPoint para descargar."
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "Busca en la web información en tiempo real y resultados actualizados.",
           "title": "Búsqueda web"
+        },
+        "officeFiles": {
+          "title": "Archivos de Office",
+          "description": "Crea documentos de Word, hojas de cálculo de Excel y presentaciones de PowerPoint para descargar."
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "Esperando respuesta..."
+        },
+        "createdFileStatus": {
+          "text": "Se creó {toolName}"
         }
       },
       "customToolAuth": {

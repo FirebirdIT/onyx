@@ -2,13 +2,21 @@ import { JSX } from "react";
 import type { IconProps } from "@opal/types";
 import { ToolSnapshot } from "@/lib/tools/types";
 import {
+  CREATE_DOCUMENT_TOOL_ID,
+  CREATE_PRESENTATION_TOOL_ID,
+  CREATE_SPREADSHEET_TOOL_ID,
+} from "@/lib/tools/constants";
+import {
   SvgCpu,
+  SvgExcelFile,
   SvgGlobe,
   SvgImage,
   SvgLink,
+  SvgPowerpointFile,
   SvgSearch,
   SvgServer,
   SvgTerminal,
+  SvgWordFile,
 } from "@opal/icons";
 
 // Helper functions to identify specific tools
@@ -69,6 +77,11 @@ const isCodingAgentTool = (tool: ToolSnapshot): boolean => {
 export function getIconForAction(
   action: ToolSnapshot
 ): (props: IconProps) => JSX.Element {
+  if (action.in_code_tool_id === CREATE_DOCUMENT_TOOL_ID) return SvgWordFile;
+  if (action.in_code_tool_id === CREATE_SPREADSHEET_TOOL_ID)
+    return SvgExcelFile;
+  if (action.in_code_tool_id === CREATE_PRESENTATION_TOOL_ID)
+    return SvgPowerpointFile;
   if (isSearchTool(action)) return SvgSearch;
   if (isWebSearchTool(action)) return SvgGlobe;
   if (isImageGenerationTool(action)) return SvgImage;

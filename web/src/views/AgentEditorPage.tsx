@@ -47,6 +47,7 @@ import {
   SEARCH_TOOL_ID,
   OPEN_URL_TOOL_ID,
   CODING_AGENT_TOOL_ID,
+  OFFICE_FILE_TOOL_IDS,
 } from "@/lib/tools/constants";
 import Text from "@/refresh-components/texts/Text";
 import { Collapsible } from "@opal/components";
@@ -562,6 +563,9 @@ export default function AgentEditorPage({
   const codingAgentTool = availableTools?.find(
     (t) => t.in_code_tool_id === CODING_AGENT_TOOL_ID
   );
+  const officeFileTools = (availableTools ?? []).filter((t) =>
+    OFFICE_FILE_TOOL_IDS.includes(t.in_code_tool_id ?? "")
+  );
   const isImageGenerationAvailable = !!imageGenTool;
   const imageGenerationDisabledTooltip = isImageGenerationAvailable
     ? undefined
@@ -668,6 +672,12 @@ export default function AgentEditorPage({
       !!codingAgentTool &&
       (existingAgent?.tools?.some(
         (tool) => tool.in_code_tool_id === CODING_AGENT_TOOL_ID
+      ) ??
+        false),
+    office_files:
+      officeFileTools.length > 0 &&
+      (existingAgent?.tools?.some((tool) =>
+        OFFICE_FILE_TOOL_IDS.includes(tool.in_code_tool_id ?? "")
       ) ??
         false),
     // MCP servers - dynamically add fields for each server with nested tool fields
@@ -817,6 +827,9 @@ export default function AgentEditorPage({
       }
       if (values.coding_agent && codingAgentTool) {
         toolIds.push(codingAgentTool.id);
+      }
+      if (values.office_files) {
+        toolIds.push(...officeFileTools.map((tool) => tool.id));
       }
 
       // Collect enabled MCP tool IDs
@@ -1624,6 +1637,24 @@ export default function AgentEditorPage({
                                 <InputSwitchField
                                   name="coding_agent"
                                   disabled={!codingAgentTool}
+                                />
+                              </InputHorizontal>
+                            </Card>
+                          </Disabled>
+
+                          <Disabled disabled={officeFileTools.length === 0}>
+                            <Card border="solid" rounding={4}>
+                              <InputHorizontal
+                                withLabel="office_files"
+                                title={t("editor.actions.officeFiles.title")}
+                                description={t(
+                                  "editor.actions.officeFiles.description"
+                                )}
+                                disabled={officeFileTools.length === 0}
+                              >
+                                <InputSwitchField
+                                  name="office_files"
+                                  disabled={officeFileTools.length === 0}
                                 />
                               </InputHorizontal>
                             </Card>

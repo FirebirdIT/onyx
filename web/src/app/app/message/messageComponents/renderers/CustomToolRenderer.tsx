@@ -141,6 +141,9 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
         return t("customTool.imagesStatus.text", { toolName });
       if (responseType === "csv")
         return t("customTool.fileStatus.text", { toolName });
+      // Built-in Office tools stream a created file this way.
+      if (responseType === "file")
+        return t("customTool.createdFileStatus.text", { toolName });
       return t("customTool.completedStatus.text", { toolName });
     }
     if (isRunning) return t("customTool.runningStatus.text", { toolName });

@@ -114,7 +114,7 @@ string values.
 | Open URL tool | `OpenUrlStart`, `OpenUrlUrls`, `OpenUrlDocuments` | Three-stage sequence: start, the URLs to crawl, the crawled documents. |
 | Image tool | `ImageGenerationToolStart`, `ImageGenerationToolHeartbeat`, `ImageGenerationFinal` | Placeholder, keepalive during generation, then all images at once (`GeneratedImage` list). |
 | Python tool | `PythonToolStart`, `PythonToolDelta` | Code block, then `stdout`/`stderr`/`file_ids` as they arrive. |
-| Custom tool | `CustomToolStart`, `CustomToolArgs`, `CustomToolDelta` | Placeholder, args, then a typed response (`data` or `file_ids`, optionally `CustomToolErrorInfo`). |
+| Custom tool | `CustomToolStart`, `CustomToolArgs`, `CustomToolDelta` | Placeholder, args, then a typed response (`data` or `file_ids`, optionally `CustomToolErrorInfo`). MCP tools and the built-in Office file tools also use this family. The Office tools send `response_type="file"`. |
 | File reader tool | `FileReaderStart`, `FileReaderResult` | Placeholder, then the retrieved excerpt (`file_id`, char range, text previews). |
 | Memory tool | `MemoryToolStart`, `MemoryToolDelta`, `MemoryToolNoAccess` | Placeholder, an add/update memory op, or a no-access notice. |
 | Deep research | `DeepResearchPlanStart/Delta`, `ResearchAgentStart`, `IntermediateReportStart/Delta`, `IntermediateReportCitedDocs` | Plan text, sub-agent kickoff, intermediate report text and its cited docs. |

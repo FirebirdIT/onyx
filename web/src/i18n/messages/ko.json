@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "코딩 에이전트"
+      },
+      "wordDocument": {
+        "label": "Word 문서"
+      },
+      "excelSpreadsheet": {
+        "label": "Excel 스프레드시트"
+      },
+      "powerpointPresentation": {
+        "label": "PowerPoint 프레젠테이션"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "웹에서 실시간 정보와 최신 결과를 검색합니다.",
           "title": "웹 검색"
+        },
+        "officeFiles": {
+          "title": "Office 파일",
+          "description": "다운로드할 수 있는 Word 문서, Excel 스프레드시트, PowerPoint 프레젠테이션을 만듭니다."
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "웹에서 실시간 정보와 최신 결과를 검색합니다.",
           "title": "웹 검색"
+        },
+        "officeFiles": {
+          "title": "Office 파일",
+          "description": "다운로드할 수 있는 Word 문서, Excel 스프레드시트, PowerPoint 프레젠테이션을 만듭니다."
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "응답 대기 중..."
+        },
+        "createdFileStatus": {
+          "text": "{toolName} 생성됨"
         }
       },
       "customToolAuth": {

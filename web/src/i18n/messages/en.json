@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "Coding Agent"
+      },
+      "wordDocument": {
+        "label": "Word Document"
+      },
+      "excelSpreadsheet": {
+        "label": "Excel Spreadsheet"
+      },
+      "powerpointPresentation": {
+        "label": "PowerPoint Presentation"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "Search the web for real-time information and up-to-date results.",
           "title": "Web Search"
+        },
+        "officeFiles": {
+          "title": "Office Files",
+          "description": "Create Word documents, Excel spreadsheets and PowerPoint presentations to download."
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "Search the web for real-time information and up-to-date results.",
           "title": "Web Search"
+        },
+        "officeFiles": {
+          "title": "Office Files",
+          "description": "Create Word documents, Excel spreadsheets and PowerPoint presentations to download."
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "Waiting for response..."
+        },
+        "createdFileStatus": {
+          "text": "Created {toolName}"
         }
       },
       "customToolAuth": {

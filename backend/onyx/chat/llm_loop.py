@@ -1206,17 +1206,12 @@ def run_llm_loop(
                 if tool_call.tool_name == SearchTool.NAME:
                     has_called_search_tool = True
 
-                # Track if code interpreter generated files with download links
-                if (
-                    tool_call.tool_name == PythonTool.NAME
-                    and not code_interpreter_file_generated
-                ):
-                    try:
-                        parsed = json.loads(tool_response.llm_facing_response)
-                        if parsed.get("generated_files"):
-                            code_interpreter_file_generated = True
-                    except (json.JSONDecodeError, AttributeError):
-                        pass
+                # Track if a tool (code interpreter or an Office file tool)
+                # generated files with download links
+                if isinstance(
+                    tool_response.rich_response, PythonToolRichResponse
+                ) and bool(tool_response.rich_response.generated_files):
+                    code_interpreter_file_generated = True
 
                 tools_by_name = {tool.name: tool for tool in final_tools}
 

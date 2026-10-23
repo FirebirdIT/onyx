@@ -66,6 +66,11 @@ from onyx.tools.tool_implementations.images.image_generation_tool import (
     ImageGenerationTool,
 )
 from onyx.tools.tool_implementations.memory.memory_tool import MemoryTool
+from onyx.tools.tool_implementations.office.models import OfficeFileResult
+from onyx.tools.tool_implementations.office.office_tools import (
+    OFFICE_FILE_RESPONSE_TYPE,
+    OFFICE_TOOL_CLASSES,
+)
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
@@ -184,6 +189,40 @@ def create_image_generation_packets(
     )
 
     return packets
+
+
+_OFFICE_TOOL_IDS = {tool_cls.__name__ for tool_cls in OFFICE_TOOL_CLASSES}
+
+
+def create_office_file_packets(
+    tool_name: str,
+    tool_id: int,
+    saved_response: str,
+    turn_index: int,
+    tab_index: int = 0,
+) -> list[Packet]:
+    """Replay an Office file tool call through the custom-tool packets it
+    streamed live. A failed call saved a plain-text error instead of a result."""
+    try:
+        result = OfficeFileResult.model_validate_json(saved_response)
+    except ValidationError:
+        return create_custom_tool_packets(
+            tool_name=tool_name,
+            response_type="text",
+            turn_index=turn_index,
+            tab_index=tab_index,
+            data=saved_response,
+            tool_id=tool_id,
+        )
+    return create_custom_tool_packets(
+        tool_name=tool_name,
+        response_type=OFFICE_FILE_RESPONSE_TYPE,
+        turn_index=turn_index,
+        tab_index=tab_index,
+        data=f"{result.file_name}: {result.summary}",
+        file_ids=[result.file_id],
+        tool_id=tool_id,
+    )
 
 
 def create_custom_tool_packets(
@@ -728,6 +767,17 @@ def translate_assistant_message_to_packets(
                                 stdout=stdout,
                                 stderr=stderr,
                                 file_ids=file_ids,
+                                turn_index=turn_num,
+                                tab_index=tool_call.tab_index,
+                            )
+                        )
+
+                    elif tool.in_code_tool_id in _OFFICE_TOOL_IDS:
+                        packet_list.extend(
+                            create_office_file_packets(
+                                tool_name=tool.display_name or tool.name,
+                                tool_id=tool_call.tool_id,
+                                saved_response=tool_call.tool_call_response or "",
                                 turn_index=turn_num,
                                 tab_index=tool_call.tab_index,
                             )

@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "コーディングエージェント"
+      },
+      "wordDocument": {
+        "label": "Word 文書"
+      },
+      "excelSpreadsheet": {
+        "label": "Excel スプレッドシート"
+      },
+      "powerpointPresentation": {
+        "label": "PowerPoint プレゼンテーション"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "ウェブを検索して、リアルタイムの情報と最新の結果を取得します。",
           "title": "ウェブ検索"
+        },
+        "officeFiles": {
+          "title": "Office ファイル",
+          "description": "ダウンロードできる Word 文書、Excel スプレッドシート、PowerPoint プレゼンテーションを作成します。"
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "リアルタイムの情報と最新の結果をウェブで検索します。",
           "title": "ウェブ検索"
+        },
+        "officeFiles": {
+          "title": "Office ファイル",
+          "description": "ダウンロードできる Word 文書、Excel スプレッドシート、PowerPoint プレゼンテーションを作成します。"
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "レスポンスを待っています..."
+        },
+        "createdFileStatus": {
+          "text": "{toolName} を作成しました"
         }
       },
       "customToolAuth": {

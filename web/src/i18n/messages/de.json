@@ -753,6 +753,15 @@
       },
       "codingAgent": {
         "label": "Coding-Agent"
+      },
+      "wordDocument": {
+        "label": "Word-Dokument"
+      },
+      "excelSpreadsheet": {
+        "label": "Excel-Tabelle"
+      },
+      "powerpointPresentation": {
+        "label": "PowerPoint-Präsentation"
       }
     },
     "toolsPopover": {
@@ -2440,6 +2449,10 @@
         "webSearch": {
           "description": "Das Web nach Echtzeitinformationen und aktuellen Ergebnissen durchsuchen.",
           "title": "Websuche"
+        },
+        "officeFiles": {
+          "title": "Office-Dateien",
+          "description": "Word-Dokumente, Excel-Tabellen und PowerPoint-Präsentationen zum Herunterladen erstellen."
         }
       }
     },
@@ -11171,6 +11184,10 @@
         "webSearch": {
           "description": "Durchsuchen Sie das Web nach Echtzeitinformationen und aktuellen Ergebnissen.",
           "title": "Websuche"
+        },
+        "officeFiles": {
+          "title": "Office-Dateien",
+          "description": "Word-Dokumente, Excel-Tabellen und PowerPoint-Präsentationen zum Herunterladen erstellen."
         }
       },
       "advanced": {
@@ -12617,6 +12634,9 @@
         },
         "waitingIndicator": {
           "text": "Warten auf Antwort..."
+        },
+        "createdFileStatus": {
+          "text": "{toolName} erstellt"
         }
       },
       "customToolAuth": {
