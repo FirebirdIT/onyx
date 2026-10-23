@@ -9,14 +9,17 @@ import useChatSessions from "@/hooks/useChatSessions";
 import { useCurrentSessionPersonaId } from "@/app/app/stores/useChatSessionStore";
 import { useActiveAgent, useAgents } from "@/lib/agents/hooks";
 import { SEARCH_TOOL_ID, WEB_SEARCH_TOOL_ID } from "@/lib/tools/constants";
+import { BRAND } from "@/lib/brand";
 
 export function useCustomFooterContent(): string {
   const settings = useSettings();
   const t = useTranslations("common.appFooter");
-  return (
-    settings.enterprise?.custom_lower_disclaimer_content ||
-    `[Onyx ${settings.version ?? "dev"}](https://www.onyx.app/) - ${t("slogan")}`
-  );
+  const version = settings.version ?? "dev";
+  const brandFooter =
+    BRAND.id === "onyx"
+      ? `[Onyx ${version}](https://www.onyx.app/) - ${t("slogan")}`
+      : `${BRAND.name} ${version}`;
+  return settings.enterprise?.custom_lower_disclaimer_content || brandFooter;
 }
 
 export function useAppDocumentTitle(): void {
