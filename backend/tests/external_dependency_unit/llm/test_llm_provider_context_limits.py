@@ -234,6 +234,7 @@ def test_ui_echo_of_a_stored_override_preserves_it(
     "provider",
     [
         LlmProviderNames.NEBIUS_TOKENFACTORY,
+        LlmProviderNames.DEEPX_ROUTE,
         LlmProviderNames.PORTKEY,
         LlmProviderNames.VERCEL_AI_GATEWAY,
     ],

@@ -76,6 +76,7 @@ export enum LLMProviderName {
   BIFROST = "bifrost",
   OPENAI_COMPATIBLE = "openai_compatible",
   NEBIUS_TOKENFACTORY = "nebius_tokenfactory",
+  DEEPX_ROUTE = "deepx_route",
   PORTKEY = "portkey",
   VERCEL_AI_GATEWAY = "vercel_ai_gateway",
   CUSTOM = "custom",
@@ -310,6 +311,21 @@ export interface NebiusTokenfactoryModelResponse {
   country_code: string | null;
   requests_per_minute: number | null;
   supported_features: string[];
+}
+
+/** The Deep X Route endpoint is fixed server-side, so no api_base is sent. */
+export interface DeepXRouteFetchParams {
+  api_key?: string;
+  provider_id?: number;
+  signal?: AbortSignal;
+}
+
+export interface DeepXRouteModelResponse {
+  name: string;
+  display_name: string;
+  max_input_tokens: number | null;
+  supports_image_input: boolean;
+  supports_reasoning: boolean;
 }
 
 export interface PortkeyFetchParams {

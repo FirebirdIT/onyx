@@ -41,6 +41,10 @@ TypeSafe System One, Zoom AI Services, OpenAI Decisions, and OpenRouter Decision
 client in `backend/onyx/llm/decisions/`.
 Vercel AI Gateway discovers `evaluation` catalog entries through the dedicated
 decision provider request. Its `language` entries remain chat models.
+Deep X Route is an OpenAI-compatible gateway with a fixed endpoint
+(`DEEPX_ROUTE_API_BASE`). The admin enters only the API key. The request
+validators reject any other `api_base` or a `custom_config`, and `get_llm`
+pins the base, so the key reaches only Deep X Route.
 Zoom decision requests carry a shared Zoom Scribe connection ID. Only full admins
 can validate or save this link. Each request signs with the current connection credentials.
 
@@ -88,7 +92,7 @@ Admin router, prefix `/admin/llm`:
 | GET | `/admin/llm/router-models` | `list_router_model_providers` | Providers that own `is_router` model configurations. Options for the admin "Router Model" selector; hidden and persona-restricted routers included. |
 | GET | `/admin/llm/vision-providers` | `get_vision_capable_providers` | |
 | GET | `/admin/llm/provider-contextual-cost` | `get_provider_contextual_cost` | |
-| POST | `/admin/llm/{bedrock,ollama,openrouter,lm-studio,litellm,bifrost,nebius-tokenfactory,openai-compatible,vercel-ai-gateway,portkey}/available-models` | per-vendor model discovery | Each calls the vendor's model-list API live. Several also sync the discovered models into the DB when the request carries a `provider_id` (`sync_model_configurations`). |
+| POST | `/admin/llm/{bedrock,ollama,openrouter,lm-studio,litellm,bifrost,nebius-tokenfactory,deepx-route,openai-compatible,vercel-ai-gateway,portkey}/available-models` | per-vendor model discovery | Each calls the vendor's model-list API live. Several also sync the discovered models into the DB when the request carries a `provider_id` (`sync_model_configurations`). |
 
 Non-admin router, prefix `/llm`:
 

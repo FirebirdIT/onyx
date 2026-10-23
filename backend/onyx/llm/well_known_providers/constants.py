@@ -23,6 +23,11 @@ OPENAI_COMPATIBLE_PROVIDER_NAME = "openai_compatible"
 
 NEBIUS_TOKENFACTORY_PROVIDER_NAME = "nebius_tokenfactory"
 
+DEEPX_ROUTE_PROVIDER_NAME = "deepx_route"
+# Fixed server-side: the admin supplies only the key, so the key never leaves
+# for another host.
+DEEPX_ROUTE_API_BASE = "https://api.deepxroute.com/v1"
+
 VERCEL_AI_GATEWAY_PROVIDER_NAME = "vercel_ai_gateway"
 # Public, unauthenticated catalog; also litellm's default base for this provider.
 VERCEL_AI_GATEWAY_DEFAULT_API_BASE = "https://ai-gateway.vercel.sh/v1"

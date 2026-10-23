@@ -7802,6 +7802,11 @@
             "label": "全选"
           }
         },
+        "deepxRoute": {
+          "apiKeyField": {
+            "description": "粘贴您的 Deep X Route API 密钥以加载可用模型。请求始终发送到 `https://api.deepxroute.com/v1`。"
+          }
+        },
         "nebius": {
           "apiBaseField": {
             "description": "Nebius TokenFactory 端点 URL（包括 API 版本）。"

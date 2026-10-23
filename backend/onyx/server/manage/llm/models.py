@@ -25,6 +25,7 @@ from onyx.llm.models import (
     parse_user_selectable_reasoning_effort,
     reasoning_effort_exceeds,
 )
+from onyx.llm.well_known_providers.constants import DEEPX_ROUTE_API_BASE
 from onyx.server.manage.llm.utils import (
     extract_vendor_from_model_name,
     filter_model_configurations,
@@ -54,6 +55,21 @@ def ensure_default_within_max(
             OnyxErrorCode.BAD_REQUEST,
             "reasoning_effort_default cannot exceed reasoning_effort_max",
         )
+
+
+def pin_deepx_route_api_base(
+    api_base: str | None, custom_config: dict[str, str] | None
+) -> str:
+    """Return the fixed Deep X Route base, rejecting any other endpoint.
+
+    The admin supplies only the API key. A different base or a custom_config
+    (which can carry endpoint env vars) could send the key to another host.
+    """
+    if custom_config:
+        raise ValueError("Deep X Route does not accept a custom configuration")
+    if api_base and api_base.strip().rstrip("/") != DEEPX_ROUTE_API_BASE:
+        raise ValueError(f"Deep X Route always uses {DEEPX_ROUTE_API_BASE}")
+    return DEEPX_ROUTE_API_BASE
 
 
 class CustomProviderOption(BaseModel):
@@ -86,6 +102,13 @@ class TestLLMRequest(BaseModel):
     def normalize_provider(cls, value: str) -> str:
         """Normalize provider name by stripping whitespace and lowercasing."""
         return value.strip().lower()
+
+    @model_validator(mode="after")
+    def validate_deepx_route_configuration(self) -> TestLLMRequest:
+        if self.provider == LlmProviderNames.DEEPX_ROUTE:
+            self.api_base = pin_deepx_route_api_base(self.api_base, self.custom_config)
+            self.custom_config = None
+        return self
 
 
 def build_model_configuration_views(
@@ -212,6 +235,13 @@ class LLMProviderUpsertRequest(LLMProvider):
             if self.api_base or self.custom_config:
                 raise ValueError("TypeSafe AI uses its hosted System One API")
             self.is_auto_mode = False
+        return self
+
+    @model_validator(mode="after")
+    def validate_deepx_route_configuration(self) -> LLMProviderUpsertRequest:
+        if self.provider == LlmProviderNames.DEEPX_ROUTE:
+            self.api_base = pin_deepx_route_api_base(self.api_base, self.custom_config)
+            self.custom_config = None
         return self
 
     @field_validator("provider", mode="before")
@@ -946,6 +976,23 @@ class NebiusTokenfactoryFinalModelResponse(BaseModel):
     country_code: str | None = None
     requests_per_minute: float | None = None
     supported_features: list[str] = []
+
+
+# Deep X Route dynamic models fetch. No api_base field: the endpoint is fixed
+# server-side, so a caller cannot send the key to another host.
+class DeepXRouteModelsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    api_key: str | None = None
+    # Existing provider id; resolves the stored key and syncs fetched models on edit
+    provider_id: int | None = None
+
+
+class DeepXRouteFinalModelResponse(BaseModel):
+    name: str
+    display_name: str
+    max_input_tokens: int | None
+    supports_image_input: bool
+    supports_reasoning: bool
 
 
 # OpenAI Compatible dynamic models fetch

@@ -7802,6 +7802,11 @@
             "label": "تحديد الكل"
           }
         },
+        "deepxRoute": {
+          "apiKeyField": {
+            "description": "الصق مفتاح API الخاص بـ Deep X Route لتحميل النماذج المتاحة. تُرسل الطلبات دائمًا إلى `https://api.deepxroute.com/v1`."
+          }
+        },
         "nebius": {
           "apiBaseField": {
             "description": "عنوان URL لنقطة نهاية Nebius TokenFactory (بما في ذلك إصدار API)."

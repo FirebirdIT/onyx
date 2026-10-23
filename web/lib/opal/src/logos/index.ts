@@ -19,6 +19,7 @@ export { default as SvgCohere } from "@opal/logos/cohere";
 export { default as SvgConfluence } from "@opal/logos/confluence";
 export { default as SvgDatabricks } from "@opal/logos/databricks";
 export { default as SvgDeepSeek } from "@opal/logos/deepseek";
+export { default as SvgDeepXRoute } from "@opal/logos/deepx-route";
 export { default as SvgDiscord } from "@opal/logos/discord";
 export { default as SvgDiscourse } from "@opal/logos/discourse";
 export { default as SvgDocument360 } from "@opal/logos/document360";

@@ -7802,6 +7802,11 @@
             "label": "すべて選択"
           }
         },
+        "deepxRoute": {
+          "apiKeyField": {
+            "description": "Deep X Route の API キーを貼り付けて、利用可能なモデルを読み込みます。リクエストは常に `https://api.deepxroute.com/v1` に送信されます。"
+          }
+        },
         "nebius": {
           "apiBaseField": {
             "description": "Nebius TokenFactory のエンドポイント URL です（API バージョンを含む）。"

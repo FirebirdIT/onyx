@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from sqlalchemy.orm import Session
 
+from onyx.llm.well_known_providers.constants import DEEPX_ROUTE_API_BASE
 from onyx.server.manage.llm.api import _resolve_api_key
 
 _STORED = "v1.Crealsecretkeyda0A"
@@ -67,4 +68,21 @@ def test_mismatched_api_base_returns_input() -> None:
                 db_session=cast(Session, None),
             )
             == _MASKED
+        )
+
+
+def test_deepx_route_masked_key_resolves_at_fixed_base() -> None:
+    provider = SimpleNamespace(
+        api_base=DEEPX_ROUTE_API_BASE,
+        api_key=SimpleNamespace(get_value=lambda **_: _STORED),
+    )
+    with patch(
+        "onyx.server.manage.llm.api.fetch_existing_llm_provider_by_id",
+        return_value=provider,
+    ):
+        assert (
+            _resolve_api_key(
+                _MASKED, 7, DEEPX_ROUTE_API_BASE, db_session=cast(Session, None)
+            )
+            == _STORED
         )

@@ -88,6 +88,7 @@ from onyx.llm.well_known_providers.constants import (
     AWS_EXTERNAL_ID_KWARG_ENV_VAR_FORMAT,
     AWS_ROLE_NAME_KWARG,
     AWS_ROLE_NAME_KWARG_ENV_VAR_FORMAT,
+    DEEPX_ROUTE_API_BASE,
     LM_STUDIO_API_KEY_CONFIG_KEY,
     VERCEL_AI_GATEWAY_DEFAULT_API_BASE,
     VERTEX_AUTH_METHOD_KWARG,
@@ -112,6 +113,8 @@ from onyx.server.manage.llm.models import (
     DecisionModelResponse,
     DecisionProviderConnection,
     DecisionProviderUpsertRequest,
+    DeepXRouteFinalModelResponse,
+    DeepXRouteModelsRequest,
     DefaultModel,
     LitellmFinalModelResponse,
     LitellmModelDetails,
@@ -2978,6 +2981,151 @@ def get_nebius_tokenfactory_available_models(
                 for r in sorted_results
             ],
             source_label="Nebius TokenFactory",
+        )
+
+    return sorted_results
+
+
+def _get_deepx_route_models_response(api_key: str | None) -> dict:
+    """GET the Deep X Route catalog. The URL is fixed server-side."""
+    return _get_openai_compatible_models_response(
+        url=f"{DEEPX_ROUTE_API_BASE}/models",
+        source_name="Deep X Route",
+        api_key=api_key,
+    )
+
+
+def _resolve_deepx_route_api_key(
+    request: DeepXRouteModelsRequest, db_session: Session
+) -> str:
+    """Return the key to send to Deep X Route.
+
+    A provider_id must name a Deep X Route provider, so a masked key cannot
+    unlock (or sync models into) another provider's row.
+    """
+    if request.provider_id is not None:
+        provider = fetch_existing_llm_provider_by_id(request.provider_id, db_session)
+        if provider is None or provider.provider != LlmProviderNames.DEEPX_ROUTE:
+            raise OnyxError(
+                OnyxErrorCode.VALIDATION_ERROR,
+                "Model discovery requires a Deep X Route provider",
+            )
+    api_key = _resolve_api_key(
+        request.api_key, request.provider_id, DEEPX_ROUTE_API_BASE, db_session
+    )
+    if not api_key or not api_key.strip():
+        raise OnyxError(
+            OnyxErrorCode.VALIDATION_ERROR, "Deep X Route requires an API key"
+        )
+    return api_key
+
+
+def _deepx_route_serves_chat(model: dict) -> bool:
+    """False when the entry lists routes and none serves chat completions."""
+    routes = model.get("providers")
+    if not isinstance(routes, list):
+        return True
+    return any(
+        isinstance(route, dict)
+        and route.get("enabled") is True
+        and isinstance(route.get("endpoints"), list)
+        and "/v1/chat/completions" in route["endpoints"]
+        for route in routes
+    )
+
+
+def _deepx_route_supports_reasoning(model: dict, model_id: str) -> bool:
+    """Read the catalog's `reasoning` block, else fall back to the heuristics."""
+    reasoning = model.get("reasoning")
+    if isinstance(reasoning, dict):
+        efforts = reasoning.get("supported_efforts", [])
+        # An explicit null means every effort level is offered.
+        return (
+            reasoning.get("mandatory") is True
+            or efforts is None
+            or (isinstance(efforts, list) and len(efforts) > 0)
+        )
+    return model_is_reasoning_model(
+        model_id, LlmProviderNames.DEEPX_ROUTE
+    ) or is_reasoning_model(model_id, model_id)
+
+
+def _parse_deepx_route_model(model: dict) -> DeepXRouteFinalModelResponse | None:
+    model_id = model.get("id")
+    if not isinstance(model_id, str) or not model_id:
+        return None
+    if is_non_chat_model(model_id) or not _deepx_route_serves_chat(model):
+        return None
+    context_length = model.get("context_length")
+    return DeepXRouteFinalModelResponse(
+        name=model_id,
+        display_name=model.get("name") or model_id,
+        max_input_tokens=(
+            context_length
+            if isinstance(context_length, int) and context_length > 0
+            else None
+        ),
+        # Deep X Route chat accepts text and tool calls only.
+        supports_image_input=False,
+        supports_reasoning=_deepx_route_supports_reasoning(model, model_id),
+    )
+
+
+@admin_router.post("/deepx-route/available-models")
+def get_deepx_route_available_models(
+    request: DeepXRouteModelsRequest,
+    _: User = Depends(require_permission(Permission.MANAGE_LLMS)),
+    db_session: Session = Depends(get_session),
+) -> list[DeepXRouteFinalModelResponse]:
+    """Fetch chat models from the Deep X Route catalog at its fixed endpoint."""
+    api_key = _resolve_deepx_route_api_key(request, db_session)
+    response_json = _get_deepx_route_models_response(api_key)
+
+    models = response_json.get("data", [])
+    if not isinstance(models, list) or len(models) == 0:
+        raise OnyxError(
+            OnyxErrorCode.VALIDATION_ERROR,
+            "No models found in your Deep X Route catalog",
+        )
+
+    results: list[DeepXRouteFinalModelResponse] = []
+    for model in models:
+        if not isinstance(model, dict):
+            continue
+        try:
+            parsed = _parse_deepx_route_model(model)
+        except ValidationError as e:
+            logger.warning(
+                "Failed to parse Deep X Route model entry",
+                extra={"error": str(e), "item": str(model)[:1000]},
+            )
+            continue
+        if parsed is not None:
+            results.append(parsed)
+
+    if not results:
+        raise OnyxError(
+            OnyxErrorCode.VALIDATION_ERROR,
+            "No chat models found in your Deep X Route catalog",
+        )
+
+    sorted_results = sorted(results, key=lambda m: m.name.lower())
+
+    if request.provider_id is not None:
+        _sync_fetched_models(
+            db_session=db_session,
+            provider_id=request.provider_id,
+            models=[
+                SyncModelEntry(
+                    name=r.name,
+                    display_name=r.display_name,
+                    max_input_tokens=r.max_input_tokens,
+                    supports_image_input=r.supports_image_input,
+                    supports_reasoning=r.supports_reasoning,
+                )
+                for r in sorted_results
+            ],
+            source_label="Deep X Route",
         )
 
     return sorted_results

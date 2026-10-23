@@ -28,6 +28,7 @@ from onyx.llm.utils import (
     model_supports_image_input,
 )
 from onyx.llm.well_known_providers.constants import (
+    DEEPX_ROUTE_API_BASE,
     PROVIDERS_WITH_SPECIAL_API_KEY_HANDLING,
 )
 from onyx.natural_language_processing.utils import get_tokenizer
@@ -503,6 +504,11 @@ def get_llm(
 ) -> LitellmLLM:
     if provider == LlmProviderNames.TYPESAFE:
         raise ValueError("TypeSafe AI does not support chat generation")
+    if provider == LlmProviderNames.DEEPX_ROUTE:
+        # Pin the endpoint for every call, whatever the stored row says, so the
+        # key only ever reaches Deep X Route.
+        api_base = DEEPX_ROUTE_API_BASE
+        custom_config = None
     if temperature is None:
         temperature = GEN_AI_TEMPERATURE
 

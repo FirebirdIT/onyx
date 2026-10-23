@@ -7802,6 +7802,11 @@
             "label": "Seleccionar todo"
           }
         },
+        "deepxRoute": {
+          "apiKeyField": {
+            "description": "Pegue su clave de API de Deep X Route para cargar los modelos disponibles. Las solicitudes siempre van a `https://api.deepxroute.com/v1`."
+          }
+        },
         "nebius": {
           "apiBaseField": {
             "description": "URL del endpoint de Nebius TokenFactory (incluida la versión de la API)."

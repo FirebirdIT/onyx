@@ -474,6 +474,7 @@
   "POST /admin/llm/bifrost/available-models": "manage:llms",
   "POST /admin/llm/decision-model": "manage:llms",
   "POST /admin/llm/decision-provider/test": "manage:llms",
+  "POST /admin/llm/deepx-route/available-models": "manage:llms",
   "POST /admin/llm/default": "manage:llms",
   "POST /admin/llm/default-chat-naming": "manage:llms",
   "POST /admin/llm/default-craft": "manage:llms",

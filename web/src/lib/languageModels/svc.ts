@@ -33,6 +33,8 @@ import {
   type OpenAICompatibleModelResponse,
   type NebiusTokenfactoryFetchParams,
   type NebiusTokenfactoryModelResponse,
+  type DeepXRouteFetchParams,
+  type DeepXRouteModelResponse,
   type PortkeyFetchParams,
   type PortkeyModelResponse,
   type VercelAIGatewayFetchParams,
@@ -761,6 +763,12 @@ export const fetchModels = async (
         provider_id: formValues.id,
         signal,
       });
+    case LLMProviderName.DEEPX_ROUTE:
+      return fetchDeepXRouteModels({
+        api_key: formValues.api_key,
+        provider_id: formValues.id,
+        signal,
+      });
     case LLMProviderName.PORTKEY:
       return fetchPortkeyModels({
         api_base: formValues.api_base,
@@ -836,6 +844,62 @@ export const fetchNebiusTokenfactoryModels = async (
       country_code: modelData.country_code,
       requests_per_minute: modelData.requests_per_minute,
       supported_features: modelData.supported_features,
+      effectiveDisplayName: modelData.display_name || modelData.name,
+    }));
+
+    return { models };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return { models: [], error: errorMessage };
+  }
+};
+
+/**
+ * Fetches chat models from the Deep X Route catalog. The backend owns the
+ * endpoint URL, so only the API key and provider id are sent.
+ */
+export const fetchDeepXRouteModels = async (
+  params: DeepXRouteFetchParams
+): Promise<{ models: ModelConfiguration[]; error?: string }> => {
+  try {
+    const response = await fetch(
+      "/api/admin/llm/deepx-route/available-models",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          api_key: params.api_key,
+          provider_id: params.provider_id,
+        }),
+        signal: params.signal,
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch models";
+      try {
+        const errorData: ErrorResponseBody = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch (jsonError) {
+        console.warn(
+          "Failed to parse Deep X Route model fetch error response",
+          jsonError
+        );
+      }
+      return { models: [], error: errorMessage };
+    }
+
+    const data: DeepXRouteModelResponse[] = await response.json();
+    const models: ModelConfiguration[] = data.map((modelData) => ({
+      name: modelData.name,
+      display_name: modelData.display_name,
+      is_visible: true,
+      max_input_tokens: modelData.max_input_tokens,
+      supports_image_input: modelData.supports_image_input,
+      supports_reasoning: modelData.supports_reasoning,
       effectiveDisplayName: modelData.display_name || modelData.name,
     }));
 

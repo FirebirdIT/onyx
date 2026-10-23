@@ -31,6 +31,7 @@ class LlmProviderNames(str, Enum):
     BIFROST = "bifrost"
     OPENAI_COMPATIBLE = "openai_compatible"
     NEBIUS_TOKENFACTORY = "nebius_tokenfactory"
+    DEEPX_ROUTE = "deepx_route"
     PORTKEY = "portkey"
     VERCEL_AI_GATEWAY = "vercel_ai_gateway"
 
@@ -62,6 +63,7 @@ WELL_KNOWN_PROVIDER_NAMES = [
     LlmProviderNames.BIFROST,
     LlmProviderNames.OPENAI_COMPATIBLE,
     LlmProviderNames.NEBIUS_TOKENFACTORY,
+    LlmProviderNames.DEEPX_ROUTE,
     LlmProviderNames.PORTKEY,
     LlmProviderNames.VERCEL_AI_GATEWAY,
 ]
@@ -86,6 +88,7 @@ PROVIDER_DISPLAY_NAMES: dict[str, str] = {
     LlmProviderNames.BIFROST: "Bifrost",
     LlmProviderNames.OPENAI_COMPATIBLE: "OpenAI-Compatible",
     LlmProviderNames.NEBIUS_TOKENFACTORY: "Nebius TokenFactory",
+    LlmProviderNames.DEEPX_ROUTE: "Deep X Route",
     LlmProviderNames.PORTKEY: "Portkey",
     LlmProviderNames.VERCEL_AI_GATEWAY: "Vercel AI Gateway",
     "groq": "Groq",
@@ -180,6 +183,7 @@ AGGREGATOR_PROVIDERS: set[str] = {
     LlmProviderNames.BIFROST,
     LlmProviderNames.OPENAI_COMPATIBLE,
     LlmProviderNames.NEBIUS_TOKENFACTORY,
+    LlmProviderNames.DEEPX_ROUTE,
     LlmProviderNames.PORTKEY,
     LlmProviderNames.VERCEL_AI_GATEWAY,
 }
@@ -200,12 +204,13 @@ DYNAMIC_LLM_PROVIDERS: frozenset[str] = frozenset(
 # Providers whose `available-models` endpoint reads a context limit from the
 # source API and persists it as `max_input_tokens`. Those values are
 # authoritative and must never be second-guessed against LiteLLM's model map.
-# Nebius TokenFactory, Portkey, and Vercel AI Gateway do this without being
-# dynamic providers, so this is deliberately a superset of
+# Nebius TokenFactory, Deep X Route, Portkey, and Vercel AI Gateway do this
+# without being dynamic providers, so this is deliberately a superset of
 # DYNAMIC_LLM_PROVIDERS rather than a reuse.
 SOURCE_API_CONTEXT_LIMIT_PROVIDERS: frozenset[str] = DYNAMIC_LLM_PROVIDERS | frozenset(
     {
         LlmProviderNames.NEBIUS_TOKENFACTORY,
+        LlmProviderNames.DEEPX_ROUTE,
         LlmProviderNames.PORTKEY,
         LlmProviderNames.VERCEL_AI_GATEWAY,
     }
