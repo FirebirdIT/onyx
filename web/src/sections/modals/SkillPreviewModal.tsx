@@ -1,5 +1,6 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import type { RichStr } from "@opal/types";
 import { IconLoader } from "@opal/loaders";
 import { useEffect, useState } from "react";
@@ -38,7 +39,10 @@ interface MetadataRow {
 function metadataRows(preview: SkillPreview): MetadataRow[] {
   const rows: MetadataRow[] = [];
   if (preview.source === "builtin") {
-    rows.push({ labelKey: "preview.metadata.createdBy.label", value: "Onyx" });
+    rows.push({
+      labelKey: "preview.metadata.createdBy.label",
+      value: BRAND.name,
+    });
   } else if (preview.author_email) {
     rows.push({
       labelKey: "preview.metadata.createdBy.label",

@@ -1,5 +1,6 @@
 "use client";
 
+import { SvgBrandMark } from "@/lib/app/brandLogos";
 import { IconLoader } from "@opal/loaders";
 import { escapeMarkdown, markdown } from "@opal/utils";
 import { useEffect, useState } from "react";
@@ -10,7 +11,7 @@ import { SWR_KEYS } from "@/lib/swr-keys";
 import { useSettings } from "@/lib/settings/hooks";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { SvgOnyxLogo } from "@opal/logos";
+
 import { Modal } from "@opal/components";
 import { ConfirmationModalLayout } from "@opal/layouts";
 import { InputSingleComboBoxField, InputSingleSelectField } from "@opal/form";
@@ -327,7 +328,7 @@ export function VoiceProviderSetupModal({
               <Modal.Header
                 icon={detail.icon}
                 moreIcon1={SvgArrowExchange}
-                moreIcon2={SvgOnyxLogo}
+                moreIcon2={SvgBrandMark}
                 title={
                   providerType === "zoom"
                     ? tDecision("zoom.title")

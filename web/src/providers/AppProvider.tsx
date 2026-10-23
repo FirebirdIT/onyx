@@ -24,6 +24,7 @@
 
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import { useState } from "react";
 import Cookies from "js-cookie";
 import { UserProvider } from "@/providers/UserProvider";
@@ -89,7 +90,8 @@ export default function AppProvider({ children }: AppProviderProps) {
                         <UnsavedChangesNavigationProvider>
                           <ToastProvider
                             errorAppendix={
-                              NEXT_PUBLIC_INCLUDE_ERROR_POPUP_SUPPORT_LINK
+                              NEXT_PUBLIC_INCLUDE_ERROR_POPUP_SUPPORT_LINK &&
+                              BRAND.communityUrl
                                 ? "Need help? Join our community at https://discord.gg/4NA5SbzrWb for support!"
                                 : undefined
                             }

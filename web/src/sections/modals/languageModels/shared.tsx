@@ -1,5 +1,6 @@
 "use client";
 
+import { SvgBrandMark } from "@/lib/app/brandLogos";
 import { IconLoader } from "@opal/loaders";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -58,7 +59,7 @@ import {
   SvgUsers,
   SvgX,
 } from "@opal/icons";
-import SvgOnyxLogo from "@opal/logos/onyx-logo";
+
 import { Card, EmptyMessageCard, Tag } from "@opal/components";
 import { ContentAction } from "@opal/layouts";
 import type { ContentMdEditHandle } from "@opal/layouts/content/ContentMd";
@@ -1144,7 +1145,7 @@ function ModalWrapperInner({
           <Modal.Header
             icon={providerIcon}
             moreIcon1={SvgArrowExchange}
-            moreIcon2={SvgOnyxLogo}
+            moreIcon2={SvgBrandMark}
             title={title}
             description={description}
             onClose={onClose}

@@ -1,5 +1,6 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -16,6 +17,8 @@ import { useSettings } from "@/lib/settings/hooks";
 import { ApplicationStatus } from "@/lib/settings/types";
 import Text from "@/refresh-components/texts/Text";
 import { SvgLock } from "@opal/icons";
+
+const COMMUNITY_URL = BRAND.communityUrl;
 
 const linkClassName =
   "text-action-selection-05 hover:text-action-selection-06 underline";
@@ -198,18 +201,20 @@ export default function AccessRestricted() {
         </>
       )}
 
-      <Text text03>
-        {t.rich("needHelp.text", {
-          discordLink: (chunks) => (
-            <InlineExternalLink
-              className={linkClassName}
-              href="https://discord.gg/4NA5SbzrWb"
-            >
-              {chunks}
-            </InlineExternalLink>
-          ),
-        })}
-      </Text>
+      {COMMUNITY_URL && (
+        <Text text03>
+          {t.rich("needHelp.text", {
+            discordLink: (chunks) => (
+              <InlineExternalLink
+                className={linkClassName}
+                href={COMMUNITY_URL}
+              >
+                {chunks}
+              </InlineExternalLink>
+            ),
+          })}
+        </Text>
+      )}
     </ErrorPageLayout>
   );
 }

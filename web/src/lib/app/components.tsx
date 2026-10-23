@@ -1,12 +1,13 @@
 "use client";
 
+import { SvgBrandLogoTyped, SvgBrandMark } from "@/lib/app/brandLogos";
 import { InputSingleSelect, OverflowText } from "@opal/components";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/lib/settings/hooks";
 import { DEFAULT_LOGO_SIZE_PX } from "@/lib/constants";
 import { cn } from "@opal/utils";
 import Text from "@/refresh-components/texts/Text";
-import { SvgOnyxLogo, SvgOnyxLogoTyped } from "@opal/logos";
+import { BRAND } from "@/lib/brand";
 import { IconProps } from "@opal/types";
 import {
   DEFAULT_LOCALE,
@@ -17,13 +18,13 @@ import {
 } from "@/i18n/config";
 
 export interface LogoProps extends IconProps {
-  // Always render the real Onyx mark, ignoring the enterprise custom logo.
-  // Used by Onyx-branded surfaces like Craft.
+  // Always render the product mark, ignoring the enterprise custom logo.
+  // Used by product-branded surfaces like Craft.
   onyxBranded?: boolean;
 }
 
 /**
- * The app mark alone: the uploaded custom logo when one is set, the Onyx
+ * The app mark alone: the uploaded custom logo when one is set, the brand
  * mark otherwise. Shaped like an Opal icon, so it fits any `icon` slot and
  * honours the size or style the slot passes.
  */
@@ -34,7 +35,7 @@ export function Logo({ size, className, style, onyxBranded }: LogoProps) {
 
   if (onyxBranded || !logoUrl) {
     return (
-      <SvgOnyxLogo
+      <SvgBrandMark
         size={resolvedSize}
         className={cn("shrink-0", className)}
         style={style}
@@ -83,7 +84,7 @@ export function FoldableLogo({
     return folded ? (
       <Logo onyxBranded size={resolvedSize} className={className} />
     ) : (
-      <SvgOnyxLogoTyped size={resolvedSize} className={className} />
+      <SvgBrandLogoTyped size={resolvedSize} className={className} />
     );
   }
 
@@ -110,7 +111,7 @@ export function FoldableLogo({
               </OverflowText>
             )}
             {/* Wait for settings so a hidden tagline never flashes. */}
-            {!isLoading && !hide_onyx_branding && (
+            {!isLoading && BRAND.showPoweredBy && !hide_onyx_branding && (
               <Text
                 secondaryBody
                 text03
@@ -142,7 +143,7 @@ export function FoldableLogo({
   ) : folded ? (
     <Logo size={resolvedSize} className={className} />
   ) : (
-    <SvgOnyxLogoTyped size={resolvedSize} className={className} />
+    <SvgBrandLogoTyped size={resolvedSize} className={className} />
   );
 }
 

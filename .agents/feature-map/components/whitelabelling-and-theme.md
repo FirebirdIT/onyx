@@ -13,7 +13,8 @@
 `backend/ee/onyx/server/enterprise_settings/` (`api.py`, `models.py`,
 `store.py`), `web/src/app/ee/admin/theme/` (`page.tsx`,
 `AppearanceThemeSettings.tsx`, `Preview.tsx`), `web/src/lib/app/components.tsx:Logo`,
-`web/src/lib/settings/hooks.ts`
+`web/src/lib/settings/hooks.ts`, `web/src/lib/brand.ts`,
+`web/src/lib/app/brandLogos.tsx`, `web/src/app/css/brand.css`
 
 ---
 
@@ -148,13 +149,13 @@ useSettings() (web/src/lib/settings/hooks.ts)
                                                              browser cache on every
                                                              SWR data change)
       : null
-  appName = enterprise?.application_name?.trim() || "Onyx"
+  appName = enterprise?.application_name?.trim() || BRAND.name
 ```
 
 `Logo` (`web/src/lib/app/components.tsx:Logo`) is the single component that
 actually renders the branding: it reads `logoUrl` and `enterprise` from
-`useSettings()`, falls back to `SvgOnyxLogo`/`SvgOnyxLogoTyped` (the stock
-Onyx marks) whenever `logoUrl` is null, and switches on
+`useSettings()`, falls back to `SvgBrandMark`/`SvgBrandLogoTyped` (the
+build-time brand marks, see 4.5) whenever `logoUrl` is null, and switches on
 `logo_display_style` to decide whether to render the logo, the name, or both.
 An `onyxBranded` prop lets a caller force the stock Onyx mark regardless of
 white-label settings, for Onyx-owned surfaces like Craft
@@ -168,6 +169,26 @@ the point of use: `web/src/layouts/chromes/AppChrome.tsx` reads
 (`web/src/lib/settings/svcSS.ts:fetchEnterpriseSettingsSS`,
 `fetchSettingsSS`) for layouts that need branding in the initial server-rendered
 HTML rather than waiting on a client SWR round trip.
+
+### 4.5 Build-time brand (CE code, no EE settings needed)
+
+`NEXT_PUBLIC_BRAND` picks the product brand at web build time
+(`web/src/lib/brand.ts:BRAND`): `onyx` (default) or `deepx` (Deep X). It is a
+Docker build arg in `web/Dockerfile` and the compose files. Enterprise
+settings still win where set. The brand supplies:
+
+- the fallback app name, page title and favicon (`lib/app/svcSS.ts`);
+- the product mark (`web/src/lib/app/brandLogos.tsx`), used everywhere the
+  Onyx mark was;
+- primary colours, through `<html data-brand>` and `web/src/app/css/brand.css`;
+- UI copy: `web/src/i18n/request.ts` passes the catalog through
+  `brandMessages`, which rewrites "Onyx", "OnyxBot" and the support email in
+  message values (never keys);
+- whether the "Powered by" line and the community (Discord) link show.
+
+Internal identifiers (`Onyx*` types, the `onyx` package, env names) do not
+change. `web/src/lib/brand.test.ts` fails if any "Onyx" remains in the
+rewritten English catalog.
 
 ### 4.3 Logo upload and validation
 

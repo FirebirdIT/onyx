@@ -1,5 +1,6 @@
 "use client";
 
+import { SvgBrandMark } from "@/lib/app/brandLogos";
 import { useRef, useState } from "react";
 import { LOGOUT_DISABLED } from "@/lib/constants";
 import { preload } from "swr";
@@ -39,7 +40,7 @@ import { useSettings } from "@/lib/settings/hooks";
 import UserAvatar from "@/refresh-components/avatars/UserAvatar";
 import SidebarTabSkeleton from "@/refresh-components/skeletons/SidebarTabSkeleton";
 import { useNotificationSummary } from "@/hooks/useNotifications";
-import { SvgOnyxLogo } from "@opal/logos";
+
 import { markdown } from "@opal/utils";
 import { useTranslations } from "next-intl";
 
@@ -203,7 +204,7 @@ function useSettingsItems({
                 variant="body"
                 color="muted"
                 orientation="reverse"
-                icon={SvgOnyxLogo}
+                icon={SvgBrandMark}
                 title={markdown(
                   `[Onyx ${
                     settings.version ?? "dev"

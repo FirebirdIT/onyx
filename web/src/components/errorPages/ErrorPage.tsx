@@ -1,9 +1,12 @@
+import { BRAND } from "@/lib/brand";
 import { useTranslations } from "next-intl";
 import ErrorPageLayout from "@/components/errorPages/ErrorPageLayout";
 import Text from "@/refresh-components/texts/Text";
 import { DOCS_BASE_URL } from "@/lib/constants";
 import { SvgAlertCircle } from "@opal/icons";
 import { useSettings } from "@/lib/settings/hooks";
+
+const COMMUNITY_URL = BRAND.communityUrl;
 
 export default function Error() {
   const t = useTranslations("common.errorPages");
@@ -36,20 +39,22 @@ export default function Error() {
         })}
       </Text>
 
-      <Text as="p" text03>
-        {t.rich("needHelp.text", {
-          discordLink: (chunks) => (
-            <a
-              className="text-action-selection-05"
-              href="https://discord.gg/4NA5SbzrWb"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {chunks}
-            </a>
-          ),
-        })}
-      </Text>
+      {COMMUNITY_URL && (
+        <Text as="p" text03>
+          {t.rich("needHelp.text", {
+            discordLink: (chunks) => (
+              <a
+                className="text-action-selection-05"
+                href={COMMUNITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
+        </Text>
+      )}
     </ErrorPageLayout>
   );
 }

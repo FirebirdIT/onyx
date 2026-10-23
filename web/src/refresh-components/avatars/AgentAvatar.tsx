@@ -1,8 +1,9 @@
 "use client";
 
+import { SvgBrandMark } from "@/lib/app/brandLogos";
 import { MinimalAgent } from "@/lib/agents/types";
 import { buildAgentAvatarUrl } from "@/lib/agents/utils";
-import { SvgOnyxLogo } from "@opal/logos";
+
 import { useSettings } from "@/lib/settings/hooks";
 import { DEFAULT_AVATAR_SIZE_PX, DEFAULT_AGENT_ID } from "@/lib/constants";
 import CustomAgentAvatar from "@/refresh-components/avatars/CustomAgentAvatar";
@@ -37,7 +38,7 @@ export default function AgentAvatar({
         />
       </div>
     ) : (
-      <SvgOnyxLogo size={size} className="shrink-0" />
+      <SvgBrandMark size={size} className="shrink-0" />
     );
   }
 

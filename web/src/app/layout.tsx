@@ -2,7 +2,8 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 import { GTM_ENABLED, MODAL_ROOT_ID } from "@/lib/constants";
-import { generateFaviconMetadata } from "@/lib/app/svcSS";
+import { fetchAppName, generateFaviconMetadata } from "@/lib/app/svcSS";
+import { BRAND } from "@/lib/brand";
 import AppProvider from "@/providers/AppProvider";
 import { PHProvider } from "./providers";
 import {
@@ -58,7 +59,10 @@ const dmMono = DM_Mono({
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { icons: await generateFaviconMetadata() };
+  return {
+    title: await fetchAppName(),
+    icons: await generateFaviconMetadata(),
+  };
 }
 
 interface LayoutProps {
@@ -90,6 +94,7 @@ export default async function Layout({ children }: LayoutProps) {
     <html
       lang={language}
       dir={dir}
+      data-brand={BRAND.id}
       // The app-wide font variables are composed here instead of with
       // next/font's `variable` option: the CJK tail (--font-cjk-sans,
       // globals.css) must vary with the locale, so the loaded-webfont chain

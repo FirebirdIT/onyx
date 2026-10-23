@@ -1,5 +1,6 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import { useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { MinimalAgent } from "@/lib/agents/types";
@@ -141,7 +142,7 @@ export default function AgentCard({ agent, onView }: AgentCardProps) {
               <div className="flex flex-col gap-1 py-1 px-2">
                 <Content
                   icon={SvgUser}
-                  title={agent.owner?.email || "Onyx"}
+                  title={agent.owner?.email || BRAND.name}
                   sizePreset="secondary"
                   variant="body"
                   color="muted"

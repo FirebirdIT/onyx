@@ -1,8 +1,9 @@
 "use client";
 
+import { SvgBrandMark } from "@/lib/app/brandLogos";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { SvgOnyxLogo } from "@opal/logos";
+
 import { useSettings } from "@/lib/settings/hooks";
 import { Text } from "@opal/components";
 
@@ -34,7 +35,7 @@ export default function AuthFlowContainer({
             />
           </div>
         ) : (
-          <SvgOnyxLogo size={44} className="text-theme-primary-05" />
+          <SvgBrandMark size={44} className="text-theme-primary-05" />
         )}
         <div className="w-full mt-3">{children}</div>
       </div>

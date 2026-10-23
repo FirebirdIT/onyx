@@ -11,8 +11,7 @@ import {
 import englishMessages from "@/i18n/messages/en.json";
 import { getAuthTypeMetadataSS } from "@/lib/auth/svcSS";
 import { fetchStandardSettingsSS } from "@/lib/settings/svcSS";
-
-type MessageTree = { [key: string]: string | MessageTree };
+import { brandMessages, type MessageTree } from "@/lib/brand";
 
 // Overlay a target-locale catalog on top of the English one. Keys the target
 // catalog does not have yet (the lag window before the translation pipeline
@@ -62,5 +61,5 @@ export default getRequestConfig(async () => {
           (await import(`@/i18n/messages/${locale}.json`))
             .default as MessageTree
         );
-  return { locale: runtimeLocale(locale), messages };
+  return { locale: runtimeLocale(locale), messages: brandMessages(messages) };
 });

@@ -9,6 +9,7 @@ import { CUSTOM_ANALYTICS_ENABLED, HOST_URL } from "@/lib/constants";
 import { fetchSS } from "@/lib/utilsSS";
 import { DEFAULT_LOCALE } from "@/i18n/config";
 import { getWebVersion } from "@/lib/version";
+import { BRAND } from "@/lib/brand";
 
 export async function fetchStandardSettingsSS(): Promise<Settings | null> {
   try {
@@ -129,7 +130,7 @@ export async function fetchSettingsSS(): Promise<CombinedSettings | null> {
       customAnalyticsScript,
       webVersion: settings.version ?? getWebVersion(),
       webDomain: HOST_URL,
-      appName: enterpriseSettings?.application_name?.trim() || "Onyx",
+      appName: enterpriseSettings?.application_name?.trim() || BRAND.name,
     };
   } catch (error) {
     console.error("fetchSettingsSS exception: ", error);

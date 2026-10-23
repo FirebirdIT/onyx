@@ -1,5 +1,6 @@
 "use client";
 
+import { SvgBrandMark } from "@/lib/app/brandLogos";
 import { Modal } from "@opal/components";
 import { useSettings } from "@/lib/settings/hooks";
 import { Button } from "@opal/components";
@@ -11,7 +12,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { transformLinkUri } from "@/lib/utils";
 import { SvgAlertCircle } from "@opal/icons";
-import { SvgOnyxLogo } from "@opal/logos";
+
 import type { IconProps } from "@opal/types";
 import { useTranslations } from "next-intl";
 
@@ -70,12 +71,12 @@ export function AppPopup() {
   // - Otherwise -> show uploaded custom logo (fallback to Onyx icon)
   const headerIcon =
     !hasApplicationName && !hasCustomLogo
-      ? (props: IconProps) => <SvgOnyxLogo size={24} {...props} />
+      ? (props: IconProps) => <SvgBrandMark size={24} {...props} />
       : logoDisplayStyle === "name_only"
         ? SvgAlertCircle
         : hasCustomLogo
           ? CustomLogoHeaderIcon
-          : (props: IconProps) => <SvgOnyxLogo size={24} {...props} />;
+          : (props: IconProps) => <SvgBrandMark size={24} {...props} />;
 
   return (
     <Modal open onOpenChange={() => {}}>
