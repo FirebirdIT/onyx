@@ -101,7 +101,9 @@ Here is some additional context which may be relevant to the user query:
 
 
 TOOL_CALL_RESPONSE_CROSS_MESSAGE = """
-This tool call completed but the results are no longer accessible.
+This tool call completed in an earlier turn. You saw its full result then and \
+used it in your answer. The result is left out here to save space. Trust your \
+earlier answer about it. Call the tool again only if you need the details now.
 """.strip()
 
 # Replayed in place of an image when the current model does not accept image

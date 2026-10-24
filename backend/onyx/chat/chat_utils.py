@@ -515,12 +515,22 @@ def convert_chat_history_basic(
     return list(reversed(trimmed_reversed))
 
 
+# A short earlier tool result (a file link, a short program output) costs few
+# tokens and lets the model refer to it again, so history keeps it.
+MAX_REPLAYED_TOOL_RESPONSE_CHARS = 1500
+
+
 def _build_tool_call_response_history_message(
     tool_name: str,
     generated_images: list[dict] | None,
     tool_call_response: str | None,
 ) -> str:
     if tool_name != IMAGE_GENERATION_TOOL_NAME:
+        if (
+            tool_call_response
+            and len(tool_call_response) <= MAX_REPLAYED_TOOL_RESPONSE_CHARS
+        ):
+            return tool_call_response
         return TOOL_CALL_RESPONSE_CROSS_MESSAGE
 
     if generated_images:
