@@ -7797,3 +7797,35 @@ class SSOProvider(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+class PublishedArtifact(Base):
+    """A chat HTML file published to the Deep X hub as a public link."""
+
+    __tablename__ = "published_artifact"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default=uuid4
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # A FileRecord.file_id, not a UserFile.id. No foreign key: the published
+    # copy lives on the hub and stays valid when the local file is deleted.
+    file_id: Mapped[str] = mapped_column(String, nullable=False)
+    hub_artifact_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    # The hub keeps only a hash of this token. Never log it.
+    delete_token: Mapped[SensitiveValue[str]] = mapped_column(
+        EncryptedString(), nullable=False
+    )
+    expires_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
