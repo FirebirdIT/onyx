@@ -218,7 +218,9 @@ support and the provider image cap once. It uses `LLMConfig.supports_images`
 when set, otherwise the existing DB/catalog lookup. Text-only history skips this check.
 Translation and cache telemetry reuse
 the same `HistoryImageReplay`. Non-vision models receive text markers. Capped
-images contribute no tokens to the estimated cacheable prefix.
+images contribute no tokens to the estimated cacheable prefix. Deep X Route is always
+capped at 4 images. Azure providers are capped at 50 only when
+`ENABLE_AZURE_IMAGE_CAP` is set.
 
 ### 4.5 Persistence
 

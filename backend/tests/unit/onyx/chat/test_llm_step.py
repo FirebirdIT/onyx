@@ -813,6 +813,30 @@ class TestImageCap:
         assert isinstance(translated[0], UserMessage)
         assert len(_attached_image_file_ids(translated[0])) == 5
 
+    def test_deepx_route_is_always_capped_at_its_gateway_limit(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Deep X Route rejects a request with more than four images, so its
+        cap applies even with the Azure switch off. Newest turns win."""
+        monkeypatch.setattr(llm_step_module, "ENABLE_AZURE_IMAGE_CAP", False)
+        history = [
+            _make_user_msg("old", images=[_make_image(f"old{i}") for i in range(3)]),
+            _make_user_msg("new", images=[_make_image(f"new{i}") for i in range(3)]),
+        ]
+        translated = translate_history_to_llm_format(
+            history=history,
+            llm_config=_make_llm_config(LlmProviderNames.DEEPX_ROUTE),
+        )
+        assert isinstance(translated, list)
+        assert len(translated) == 3
+        old_msg, new_msg, reminder = translated
+        assert isinstance(old_msg, UserMessage)
+        assert isinstance(new_msg, UserMessage)
+        assert _attached_image_file_ids(old_msg) == ["old0"]
+        assert _attached_image_file_ids(new_msg) == ["new0", "new1", "new2"]
+        assert isinstance(reminder, UserMessage)
+        assert reminder.content == _expected_image_drop_reminder(dropped_count=2)
+
 
 class TestNonVisionImageStripping:
     """History can contain images the currently selected model cannot accept

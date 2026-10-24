@@ -3050,6 +3050,12 @@ def _deepx_route_supports_reasoning(model: dict, model_id: str) -> bool:
     ) or is_reasoning_model(model_id, model_id)
 
 
+def _deepx_route_accepts_images(model: dict) -> bool:
+    """True when the catalog lists image input; the gateway rejects images otherwise."""
+    modalities = model.get("input_modalities")
+    return isinstance(modalities, list) and "image" in modalities
+
+
 def _parse_deepx_route_model(model: dict) -> DeepXRouteFinalModelResponse | None:
     model_id = model.get("id")
     if not isinstance(model_id, str) or not model_id:
@@ -3065,8 +3071,7 @@ def _parse_deepx_route_model(model: dict) -> DeepXRouteFinalModelResponse | None
             if isinstance(context_length, int) and context_length > 0
             else None
         ),
-        # Deep X Route chat accepts text and tool calls only.
-        supports_image_input=False,
+        supports_image_input=_deepx_route_accepts_images(model),
         supports_reasoning=_deepx_route_supports_reasoning(model, model_id),
     )
 
