@@ -186,9 +186,9 @@ summary). `session_loading.py:create_office_file_packets` replays it. Migration
 `924ba501b4d9_seed_pdf_file_tool.py` seeds `create_pdf`. Both attach the tools to the
 default persona. The agent editor and the admin Chat Preferences page switch the four
 tools with one "Office Files" toggle. There is no approval step.
-`office/branding.py:OFFICE_BRAND` holds the brand colours. It is `None` for the stock
-brand, so the files keep the library defaults. A Deep X build (`PRODUCT_BRAND=deepx`)
-colours titles, headings, table headers and charts, adds a top band to slides and PDF
+`office/branding.py:OFFICE_BRAND` holds the brand colours. It is `None` by default, so
+the files are neutral and keep the library defaults. A Deep X build
+(`PRODUCT_BRAND=deepx`) with `OFFICE_FILES_BRANDED=true` colours titles, headings, table headers and charts, adds a top band to slides and PDF
 pages, and sets the file author. The PDF builder uses Helvetica when the text fits
 cp1252, and a built-in CID font (Chinese, Japanese or Korean) otherwise. It cannot
 shape Arabic or other complex scripts.
