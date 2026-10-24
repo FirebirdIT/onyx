@@ -25,8 +25,10 @@ This document maps all three to code and adds verification guidance.
 **Desktop.** The Deep X desktop app (`desktop/README.md`). On first launch a
 setup page checks Docker, asks for the engine mode (Lite or Full), connects
 Deep X Route (PKCE sign-in or a pasted API key), and starts the local engine
-with `docker compose -p deepx` (`desktop/src-tauri/src/engine/`). Then the
-window opens `http://localhost:3000`. A remote server is a Settings option.
+with `docker compose -p deepx` (`desktop/src-tauri/src/engine/`). After a
+successful start it removes `ghcr.io/firebirdit/deepx-*` images that the current
+engine does not use (`engine/images.rs:remove_old_engine_images`). It never
+removes other Docker images. Then the window opens `http://localhost:3000`. A remote server is a Settings option.
 The app also checks for updates from the hub and makes encrypted backups of
 the engine database (`desktop/src-tauri/src/backup/`). Around the web app it
 is a small native shell: a custom
