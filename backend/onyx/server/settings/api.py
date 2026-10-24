@@ -8,6 +8,7 @@ from onyx import __version__ as onyx_version
 from onyx.auth.permissions import require_permission
 from onyx.auth.users import is_user_admin
 from onyx.configs.app_configs import (
+    DEEPX_LOCAL_ENGINE,
     DEFAULT_USER_FILE_MAX_UPLOAD_SIZE_MB,
     DISABLE_VECTOR_DB,
     HIDE_ONYX_BRANDING,
@@ -261,6 +262,7 @@ def fetch_settings(
         hide_onyx_branding=HIDE_ONYX_BRANDING
         and tier_at_least(resolved_tier, Tier.ENTERPRISE),
         hooks_enabled=not MULTI_TENANT,
+        deepx_local_engine=DEEPX_LOCAL_ENGINE,
         version=onyx_version,
         max_allowed_upload_size_mb=MAX_ALLOWED_UPLOAD_SIZE_MB,
         default_user_file_max_upload_size_mb=min(

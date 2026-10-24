@@ -51,11 +51,16 @@ FinalStepItem.displayName = "FinalStepItem";
 
 export default function FinalStep() {
   const t = useTranslations("onboarding");
-  const { appName } = useSettings();
+  const { appName, deepx_local_engine } = useSettings();
+  // One person runs the Deep X desktop engine, so there is no team to invite.
+  const items = FINAL_SETUP_CONFIG.filter(
+    (item) =>
+      !(deepx_local_engine && item.titleKey === "finalStep.inviteTeam.title")
+  );
 
   return (
     <Section gap={2}>
-      {FINAL_SETUP_CONFIG.map((item) => (
+      {items.map((item) => (
         <FinalStepItem
           key={item.titleKey}
           icon={item.icon}

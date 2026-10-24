@@ -2277,6 +2277,9 @@ DEEPX_ROUTE_API_KEY = (os.environ.get("DEEPX_ROUTE_API_KEY") or "").strip() or N
 # URL of the Deep X presets JSON. Startup creates the assistants it lists that do
 # not exist yet (match by name). It never changes an existing assistant.
 DEEPX_PRESETS_URL = (os.environ.get("DEEPX_PRESETS_URL") or "").strip() or None
+# True when the Deep X desktop app runs this engine for one person on one
+# computer. The web app then hides team pages such as user management.
+DEEPX_LOCAL_ENGINE = os.environ.get("DEEPX_LOCAL_ENGINE", "").lower() == "true"
 # Base URL of the Deep X hub. Chat HTML files are published to it as public links.
 DEEPX_HUB_URL = (os.environ.get("DEEPX_HUB_URL") or "").strip().rstrip(
     "/"

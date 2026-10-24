@@ -51,6 +51,8 @@ export interface FeatureFlags {
   queryHistoryEnabled: boolean;
   craftAvailable: boolean;
   llmGatewayAvailable: boolean;
+  /** One person runs the engine in the Deep X desktop app: no team pages. */
+  localEngine: boolean;
 }
 
 /**
@@ -400,7 +402,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Permissions",
     requiredTier: null,
-    visibleWhen: null,
+    visibleWhen: (f: FeatureFlags) => !f.localEngine,
   },
   GROUPS: {
     path: "/admin/groups",
