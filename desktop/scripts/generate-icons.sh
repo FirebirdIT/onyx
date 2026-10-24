@@ -1,5 +1,7 @@
 #!/bin/bash
-# Icon generation script for Onyx Desktop
+# Icon generation script for Deep X Desktop.
+# Source: src-tauri/icons/icon.svg, a copy of web/public/deepx.svg.
+# Without ImageMagick, use: bunx tauri icon src-tauri/icons/icon.svg
 # Requires: ImageMagick (brew install imagemagick)
 
 set -e

@@ -1,7 +1,7 @@
 {
-  "name": "onyx-desktop",
+  "name": "deepx-desktop",
   "version": "0.0.0-dev",
-  "description": "Lightweight desktop app for Onyx Cloud",
+  "description": "Deep X desktop app: runs the local Deep X engine",
   "scripts": {
     "dev": "tauri dev",
     "debug": "tauri dev -- -- --debug",

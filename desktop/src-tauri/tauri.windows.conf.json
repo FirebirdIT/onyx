@@ -3,7 +3,7 @@
   "app": {
     "windows": [
       {
-        "title": "Onyx",
+        "title": "Deep X",
         "label": "main",
         "url": "index.html",
         "create": false,
