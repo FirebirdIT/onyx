@@ -85,7 +85,7 @@ pub struct DockerCheck {
     pub install_url: &'static str,
 }
 
-async fn output_text(mut command: Command) -> Result<String, String> {
+pub async fn output_text(mut command: Command) -> Result<String, String> {
     let output = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
