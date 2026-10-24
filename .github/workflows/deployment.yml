@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "*"
+      # Deep X engine tags build in deepx-images.yml.
+      - "!deepx-v*"
   workflow_dispatch:
 
 # Set restrictive default permissions for all jobs. Jobs that need more permissions
