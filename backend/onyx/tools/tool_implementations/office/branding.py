@@ -1,10 +1,11 @@
 """Brand colours for the files the office tools create.
 
-The stock product keeps the library defaults (`OFFICE_BRAND` is None). A
-white-label build sets its colours once here, and every builder reads them."""
+Files are neutral by default (`OFFICE_BRAND` is None), so anyone can use them
+for their own company. `OFFICE_FILES_BRANDED=true` puts the product brand on them."""
 
 from dataclasses import dataclass
 
+from onyx.configs.app_configs import OFFICE_FILES_BRANDED
 from onyx.configs.constants import PRODUCT_BRAND
 
 
@@ -38,5 +39,5 @@ DEEPX_OFFICE_BRAND = OfficeBrand(
 )
 
 OFFICE_BRAND: OfficeBrand | None = (
-    DEEPX_OFFICE_BRAND if PRODUCT_BRAND == "deepx" else None
+    DEEPX_OFFICE_BRAND if OFFICE_FILES_BRANDED and PRODUCT_BRAND == "deepx" else None
 )
