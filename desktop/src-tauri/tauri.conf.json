@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "Onyx",
+  "productName": "Deep X",
   "version": "0.0.0-dev",
-  "identifier": "app.onyx.desktop",
+  "identifier": "com.deepx.desktop",
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
@@ -12,7 +12,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Onyx",
+        "title": "Deep X",
         "label": "main",
         "url": "index.html",
         "create": false,
@@ -28,7 +28,7 @@
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "acceptFirstMouse": true,
-        "tabbingIdentifier": "onyx"
+        "tabbingIdentifier": "deepx"
       }
     ],
     "security": {
@@ -47,11 +47,10 @@
       "icons/icon.ico"
     ],
     "category": "Productivity",
-    "shortDescription": "Onyx Cloud Desktop App",
-    "longDescription": "A lightweight desktop wrapper for Onyx Cloud - your AI-powered knowledge assistant.",
+    "shortDescription": "Deep X desktop app",
+    "longDescription": "Deep X runs its engine on this computer with Docker and opens it in a native window.",
     "macOS": {
       "entitlements": null,
-      "exceptionDomain": "cloud.onyx.app",
       "minimumSystemVersion": "10.15",
       "signingIdentity": null,
       "dmg": {
@@ -60,11 +59,23 @@
           "height": 400
         }
       }
-    }
+    },
+    "publisher": "Deep X",
+    "copyright": "Copyright Deep X. MIT licence.",
+    "createUpdaterArtifacts": false
   },
   "plugins": {
     "shell": {
       "open": true
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRFNDA4NzUwNUZCMDYwQTIKUldTaVlMQmZVSWRBVHZBdC9Nb0R1TVZMK2x4QVR5aUJ1OTRHM3hVbk5jRjgvcnBLMjlFQTdaVHQK",
+      "endpoints": [
+        "https://deepx-hub.vercel.app/api/desktop/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

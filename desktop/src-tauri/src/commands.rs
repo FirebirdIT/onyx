@@ -3,7 +3,10 @@
 // the framework's calling convention, not an oversight.
 #![allow(clippy::needless_pass_by_value)]
 
-use crate::config::{get_config_dir, get_config_path, save_config, AppConfig, ConfigState};
+use crate::config::{
+    get_config_dir, get_config_path, save_config, AppConfig, ConfigState, EngineMode,
+    DEFAULT_SERVER_URL,
+};
 use crate::window::{build_and_setup_window, is_externally_openable, open_in_default_browser};
 use serde::Serialize;
 use std::fs;
@@ -54,22 +57,39 @@ pub fn get_server_url(state: tauri::State<ConfigState>) -> String {
     state.config().server_url
 }
 
+// A flat view of boolean settings for the setup page, not a state machine.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Serialize)]
 pub struct BootstrapState {
     server_url: String,
     config_exists: bool,
+    setup_complete: bool,
+    local_engine: bool,
+    engine_mode: EngineMode,
+    stop_engine_on_quit: bool,
+    hub_url: String,
+    app_version: String,
 }
 
-/// Get the server URL plus whether a config file exists
+/// Get the config values that the setup and settings pages show.
 #[tauri::command]
-pub fn get_bootstrap_state(state: tauri::State<ConfigState>) -> BootstrapState {
-    let server_url = state.config().server_url;
+pub fn get_bootstrap_state(
+    app: tauri::AppHandle,
+    state: tauri::State<ConfigState>,
+) -> BootstrapState {
+    let config = state.config();
     let config_exists =
         state.is_config_initialized() && get_config_path().is_some_and(|path| path.exists());
 
     BootstrapState {
-        server_url,
+        server_url: config.server_url,
         config_exists,
+        setup_complete: config.setup_complete,
+        local_engine: config.local_engine,
+        engine_mode: config.engine_mode,
+        stop_engine_on_quit: config.stop_engine_on_quit,
+        hub_url: config.hub_url,
+        app_version: app.package_info().version.to_string(),
     }
 }
 
@@ -81,8 +101,17 @@ pub fn set_server_url(state: tauri::State<ConfigState>, url: String) -> Result<S
         return Err("URL must start with http:// or https://".to_string());
     }
 
-    let config =
-        state.update_and_persist(|c| c.server_url = url.trim_end_matches('/').to_string())?;
+    let url = url.trim_end_matches('/').to_string();
+    // The default address is the local engine. Any other address is a remote
+    // server, and then the app does not start the engine.
+    let local_engine = url == DEFAULT_SERVER_URL;
+    let config = state.update_and_persist(|c| {
+        c.server_url = url;
+        c.local_engine = local_engine;
+        if !local_engine {
+            c.setup_complete = true;
+        }
+    })?;
     state.set_config_initialized(true);
 
     Ok(config.server_url)

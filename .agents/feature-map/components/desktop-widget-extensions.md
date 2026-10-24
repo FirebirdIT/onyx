@@ -9,7 +9,8 @@
 **Domain:** client-surfaces
 **Edition:** CE
 **Owns:**
-`desktop/` (`package.json`, `src/index.html`, `src/titlebar.js`, `src-tauri/`),
+`desktop/` (`package.json`, `src/index.html`, `src/setup.js`, `src/backup.html`,
+`src/backup.js`, `src/style.css`, `src/titlebar.js`, `src-tauri/`),
 `widget/` (`package.json`, `vite.config.ts`, `index.html`, `src/`),
 `extensions/chrome/` (`manifest.json`, `service_worker.js`, `src/`, `public/`)
 
@@ -21,9 +22,15 @@ This document maps all three to code and adds verification guidance.
 
 ## 1. What the user experiences
 
-**Desktop.** A native macOS/Windows/Linux app window (`desktop/README.md`)
-that looks and feels like a small native shell around Onyx: a custom
-traffic-light titlebar, a settings panel for the server URL on first launch,
+**Desktop.** The Deep X desktop app (`desktop/README.md`). On first launch a
+setup page checks Docker, asks for the engine mode (Lite or Full), connects
+Deep X Route (PKCE sign-in or a pasted API key), and starts the local engine
+with `docker compose -p deepx` (`desktop/src-tauri/src/engine/`). Then the
+window opens `http://localhost:3000`. A remote server is a Settings option.
+The app also checks for updates from the hub and makes encrypted backups of
+the engine database (`desktop/src-tauri/src/backup/`). Around the web app it
+is a small native shell: a custom
+traffic-light titlebar, a settings page (engine, key, server),
 global keyboard shortcuts (new chat, new window, reload, back/forward, open
 config), and a system tray/menu-bar summon shortcut. Once configured, the
 window shows the exact same web app a browser would (`web/`), plus platform
@@ -56,7 +63,7 @@ in a browser tab; the extension carries no credentials of its own.
 
 | Surface | Entry point | Build command | Output artifact | Onyx endpoints called |
 |---|---|---|---|---|
-| Desktop | `desktop/src-tauri/src/main.rs:main`, webview loads the configured `server_url` (`desktop/src-tauri/src/config.rs:DEFAULT_SERVER_URL`) | `bun run build` (`desktop/package.json`, wraps `tauri build`) | Platform bundle: `.dmg`/`.app` (macOS), `.msi`/`.exe` (Windows, via `bun run build:windows`), `.deb`/`.rpm` (Linux) in `src-tauri/target/release/bundle/` | None directly. The webview loads the full web app, which calls the normal `/api/*` surface; the Rust side only calls `GET {server_url}/api/version` (`desktop/src-tauri/src/main.rs:fetch_server_version`) and does an unauthenticated `HEAD` reachability check (`desktop/src-tauri/src/commands.rs:check_server_reachable`) |
+| Desktop | `desktop/src-tauri/src/main.rs:main`, webview loads the configured `server_url` (`desktop/src-tauri/src/config.rs:DEFAULT_SERVER_URL`, `http://localhost:3000`, the local engine) | `bun run build` (`desktop/package.json`, wraps `tauri build`) | Platform bundle: `.dmg`/`.app` (macOS), `.msi`/`.exe` (Windows, via `bun run build:windows`), `.deb`/`.rpm` (Linux) in `src-tauri/target/release/bundle/` | None directly. The webview loads the full web app, which calls the normal `/api/*` surface; the Rust side only calls `GET {server_url}/api/version` (`desktop/src-tauri/src/main.rs:fetch_server_version`) and does an unauthenticated `HEAD` reachability check (`desktop/src-tauri/src/commands.rs:check_server_reachable`). Outside Onyx it calls the hub (`/api/engine`, `/api/desktop/latest.json`, `/api/backup/*`) and Deep X Route (`GET /v1/key`, `POST /v1/auth/keys`) |
 | Widget | `widget/src/index.ts` (registers the `<onyx-chat-widget>` custom element from `widget/src/widget.ts`) | `bun run build:cloud` or `bun run build:self-hosted` (`widget/package.json`, Vite library mode, `widget/vite.config.ts`) | `dist/onyx-widget.js`, a single ES module (~100-150kb gzipped per `widget/README.md`) | `POST {backend-url}/chat/create-chat-session` and `POST {backend-url}/chat/send-chat-message` (`widget/src/services/api-service.ts:createChatSession`, `streamMessage`) |
 | Chrome extension | `extensions/chrome/manifest.json` (`background.service_worker`, `action.default_popup`, `side_panel.default_path`); no bundler, files are loaded unpacked | None. `extensions/chrome/README.md` says "load unpacked ... refresh extension in Chrome" | The `extensions/chrome/` directory itself, zipped for the Chrome Web Store | None directly from extension JS. `extensions/chrome/src/pages/panel.js` points an `<iframe>` at `{onyx-domain}/nrf/side-panel` (`extensions/chrome/src/utils/constants.js:SIDE_PANEL_PATH`); every backend call happens inside that iframe, through the normal web app, under the user's cookie session |
 
@@ -64,7 +71,8 @@ in a browser tab; the extension carries no credentials of its own.
 
 | Surface | Setting | Where | Effect |
 |---|---|---|---|
-| Desktop | `server_url` | `~/Library/Application Support/app.onyx.onyx-desktop/config.json` (macOS path; see `desktop/README.md` for Linux/Windows), read by `desktop/src-tauri/src/config.rs:load_config` | The only server this instance talks to. Defaults to `https://cloud.onyx.app` (`config.rs:DEFAULT_SERVER_URL`). Self-hosted use is a config edit, not a rebuild. |
+| Desktop | `server_url`, `local_engine` | `~/Library/Application Support/com.deepx.deepx-desktop/config.json` (macOS path; see `desktop/README.md` for Linux/Windows), read by `desktop/src-tauri/src/config.rs:load_config` | The server the window opens. Defaults to the local engine at `http://localhost:3000` (`config.rs:DEFAULT_SERVER_URL`). Any other address sets `local_engine` to false, and then the app does not start the engine. |
+| Desktop | `engine_mode`, `stop_engine_on_quit`, `hub_url`, `deepx_route_client_id` | Same config file, `config.rs:AppConfig` | Lite or Full engine; stop the engine on quit; the hub address; the Deep X Route sign-in client ID (empty shows only "paste API key") |
 | Desktop | `summon_shortcut` | Same config file, `config.rs:default_summon_shortcut` | Global OS shortcut (`Super+Shift+Space` macOS / `Ctrl+Alt+Space` elsewhere) that raises the app from anywhere; can be set to `null` |
 | Widget | `backend-url`, `api-key` | HTML attributes on `<onyx-chat-widget>`, or `VITE_WIDGET_BACKEND_URL`/`VITE_WIDGET_API_KEY` baked in at build time for self-hosted builds (`widget/vite.config.ts`, `widget/src/config/config.ts:resolveConfig`) | Which backend the widget calls and the credential it authenticates with. Attributes always win over the baked-in env values. |
 | Widget | `tokenProvider` | JavaScript property on the element, not an attribute (`widget/src/widget.ts`) | An async function that returns a bearer token. It wins over `api-key`. The widget calls it before every request attempt (`config.ts:resolveAuthToken`). |
@@ -84,9 +92,13 @@ state. The window state (size, position) comes from
 `tauri_plugin_window_state` (`desktop/src-tauri/src/main.rs`). The config file
 (`desktop/src-tauri/src/config.rs:AppConfig`) holds `server_url`, `window_title`,
 `show_menu_bar`, `hide_window_decorations`, `summon_shortcut`,
-`summon_opens_new_chat`. No credential is stored here; the app holds no
-session of its own; whatever cookie the webview accumulates is the webview's
-own storage, managed by the OS webview engine, not by Tauri code.
+`summon_opens_new_chat` and the Deep X engine settings. No credential is
+stored in it. The Deep X Route key is in the OS keychain, or in a 0600 file
+in the config folder (`desktop/src-tauri/src/route/keystore.rs`). The engine
+folder in the app data folder holds a secrets file (0600, made once), the
+compose files and a 0600 `.env` (`desktop/src-tauri/src/engine/files.rs`,
+`env.rs`). Whatever cookie the webview accumulates is the webview's own
+storage, managed by the OS webview engine, not by Tauri code.
 
 **Widget.** `sessionStorage`, one JSON blob per browser tab
 (`widget/src/utils/storage.ts:SESSION_KEY`, TTL 24h), holding
@@ -134,13 +146,12 @@ main()                                          src-tauri/src/main.rs
   └─ on_page_load: eval_titlebar_script + inject_console_capture (debug mode)
 ```
 
-`src/index.html` is the **fallback page** (`desktop/README.md`'s "Project
-Structure"), shown only when no `server_url` is configured yet or the
-configured server is unreachable
-(`commands.rs:check_server_reachable`). It calls
-`invoke("get_bootstrap_state")` and `invoke("set_server_url")`
-(`commands.rs:get_bootstrap_state`, `set_server_url`) then redirects
-`window.location.href` to the real server. Once redirected, the webview is
+`src/index.html` with `src/setup.js` is the **local page**. It shows the
+first-run setup (`setup_complete` false), the engine start progress
+(`engine::start`, events `engine-progress`), or Settings (`#settings`). For a
+remote server it does the reachability check
+(`commands.rs:check_server_reachable`). Then it redirects
+`window.location.href` to `server_url`. Once redirected, the webview is
 just the web app; `titlebar.js` is re-injected on every page load
 (`window.rs:eval_titlebar_script`) to draw the draggable native-feeling
 titlebar over it, and CSS custom properties reserve space at the top of
@@ -214,11 +225,16 @@ frame.
 ## 5. Contracts and invariants
 
 1. **The desktop shell must not grant the webview more native capability than
-   it uses.** `desktop/src-tauri/capabilities/main.json` currently grants
-   exactly three permissions: `core:window:allow-start-dragging`,
-   `core:window:allow-internal-toggle-maximize`, and `shell:default` (for
-   `target="_blank"` links), scoped `"remote": {"urls": ["http://*:*",
-   "https://*:*"]}` because the server is user-configurable. Any addition
+   it uses.** `desktop/src-tauri/build.rs` lists every app command, so each
+   command needs a permission. `desktop/src-tauri/capabilities/main.json`
+   (every page, scoped `"remote": {"urls": ["http://*:*", "https://*:*"]}`
+   because the server is user-configurable) grants only
+   `core:window:allow-start-dragging`,
+   `core:window:allow-internal-toggle-maximize`, `shell:default` (for
+   `target="_blank"` links), and the `start_drag_window`, `toggle_menu_bar`
+   and `log_from_frontend` commands that the injected scripts call. The engine,
+   key and backup commands are in `capabilities/local.json`, which has no
+   remote scope. Any addition
    here (filesystem, clipboard, process spawn, etc.) widens what a
    compromised or malicious remote page can do, since the same grant applies
    to every origin the webview loads.
@@ -327,12 +343,17 @@ cd desktop/src-tauri && cargo test
 ```
 Covers: URL/origin logic in `window.rs` (`same_origin`, `is_chat_session_url`,
 `should_open_in_external_browser`, `is_externally_openable`, `redact_url`),
-config serde defaults in `config.rs`, and alt-menu/shortcut logic in
+config serde defaults in `config.rs`, the engine files and `.env`
+(`engine/`), PKCE and the loopback callback (`route/`), backup crypto and the
+hub client with a mock HTTP server (`backup/`, `test_http.rs`), and
+alt-menu/shortcut logic in
 `alt_menu.rs`/`shortcuts.rs`/`debug_log.rs` (see each file's
 `#[cfg(test)] mod tests`). Run `cargo clippy` too; `Cargo.toml`'s
 `[lints.clippy]` block enables `pedantic`/`nursery`/`unwrap_used`/
 `expect_used`/`panic`, so most failure paths are required to return
-`Result` rather than panic.
+`Result` rather than panic. `cargo test -- --ignored compose_config` checks
+the written compose files with the real `docker compose config` (no
+containers start).
 
 **Widget** has no test files under `widget/` (`find
 widget/src -iname '*.test.*' -o -iname '*spec*'` returns nothing). The

@@ -9,12 +9,50 @@ use std::path::PathBuf;
 use std::sync::{Mutex, RwLock};
 use url::Url;
 
-pub const DEFAULT_SERVER_URL: &str = "https://cloud.onyx.app";
+/// The local engine serves the app on this address.
+pub const DEFAULT_SERVER_URL: &str = "http://localhost:3000";
+pub const DEFAULT_HUB_URL: &str = "https://deepx-hub.vercel.app";
 const CONFIG_FILE_NAME: &str = "config.json";
 
+/// Which set of engine services runs. Lite is Postgres + API + web only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EngineMode {
+    #[default]
+    Lite,
+    Full,
+}
+
+// Independent on/off settings read from config.json, not a state machine.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
+    #[serde(default = "default_server_url")]
     pub server_url: String,
+
+    /// When true, the app starts and stops the local Docker engine and opens
+    /// `server_url` after the engine is ready. When false, `server_url` is a
+    /// remote server and the app only opens it.
+    #[serde(default = "default_true")]
+    pub local_engine: bool,
+
+    #[serde(default)]
+    pub engine_mode: EngineMode,
+
+    #[serde(default = "default_true")]
+    pub stop_engine_on_quit: bool,
+
+    /// True after the first-run setup finishes once.
+    #[serde(default)]
+    pub setup_complete: bool,
+
+    #[serde(default = "default_hub_url")]
+    pub hub_url: String,
+
+    /// Public client ID for the Deep X Route sign-in. Empty means the setup
+    /// page shows only "paste API key".
+    #[serde(default)]
+    pub deepx_route_client_id: String,
 
     #[serde(default = "default_window_title")]
     pub window_title: String,
@@ -25,7 +63,7 @@ pub struct AppConfig {
     #[serde(default)]
     pub hide_window_decorations: bool,
 
-    /// Global shortcut that summons Onyx from any app, in Tauri accelerator
+    /// Global shortcut that summons Deep X from any app, in Tauri accelerator
     /// syntax. Explicit `null` in config.json disables it.
     #[serde(default = "default_summon_shortcut")]
     pub summon_shortcut: Option<String>,
@@ -35,7 +73,19 @@ pub struct AppConfig {
 }
 
 fn default_window_title() -> String {
-    "Onyx".to_string()
+    "Deep X".to_string()
+}
+
+fn default_server_url() -> String {
+    DEFAULT_SERVER_URL.to_string()
+}
+
+fn default_hub_url() -> String {
+    DEFAULT_HUB_URL.to_string()
+}
+
+const fn default_true() -> bool {
+    true
 }
 
 const fn default_show_menu_bar() -> bool {
@@ -63,7 +113,13 @@ const fn default_summon_opens_new_chat() -> bool {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            server_url: DEFAULT_SERVER_URL.to_string(),
+            server_url: default_server_url(),
+            local_engine: true,
+            engine_mode: EngineMode::default(),
+            stop_engine_on_quit: true,
+            setup_complete: false,
+            hub_url: default_hub_url(),
+            deepx_route_client_id: String::new(),
             window_title: default_window_title(),
             show_menu_bar: true,
             hide_window_decorations: false,
@@ -73,9 +129,18 @@ impl Default for AppConfig {
     }
 }
 
+fn project_dirs() -> Option<ProjectDirs> {
+    ProjectDirs::from("com", "deepx", "deepx-desktop")
+}
+
 /// Get the config directory path
 pub fn get_config_dir() -> Option<PathBuf> {
-    ProjectDirs::from("app", "onyx", "onyx-desktop").map(|dirs| dirs.config_dir().to_path_buf())
+    project_dirs().map(|dirs| dirs.config_dir().to_path_buf())
+}
+
+/// The folder for engine files, secrets and backup work files.
+pub fn get_data_dir() -> Option<PathBuf> {
+    project_dirs().map(|dirs| dirs.data_dir().to_path_buf())
 }
 
 /// Get the full config file path
@@ -98,7 +163,7 @@ pub fn load_config() -> (AppConfig, bool) {
             Ok(config) => (config, true),
             Err(e) => {
                 eprintln!(
-                    "[ONYX ERROR] Failed to parse config file {}: {e}",
+                    "[DEEPX ERROR] Failed to parse config file {}: {e}",
                     config_path.display()
                 );
                 (AppConfig::default(), false)
@@ -106,7 +171,7 @@ pub fn load_config() -> (AppConfig, bool) {
         },
         Err(e) => {
             eprintln!(
-                "[ONYX ERROR] Failed to read config file {}: {e}",
+                "[DEEPX ERROR] Failed to read config file {}: {e}",
                 config_path.display()
             );
             (AppConfig::default(), false)
@@ -241,6 +306,23 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn parse(json: &str) -> AppConfig {
         serde_json::from_str(json).unwrap()
+    }
+
+    #[test]
+    fn empty_config_gets_local_engine_defaults() {
+        let config = parse("{}");
+        assert_eq!(config.server_url, DEFAULT_SERVER_URL);
+        assert!(config.local_engine);
+        assert_eq!(config.engine_mode, EngineMode::Lite);
+        assert!(!config.setup_complete);
+        assert_eq!(config.hub_url, DEFAULT_HUB_URL);
+        assert_eq!(config.deepx_route_client_id, "");
+    }
+
+    #[test]
+    fn engine_mode_uses_lowercase_names() {
+        let config = parse(r#"{"engine_mode": "full"}"#);
+        assert_eq!(config.engine_mode, EngineMode::Full);
     }
 
     #[test]

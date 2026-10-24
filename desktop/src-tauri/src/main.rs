@@ -5,17 +5,26 @@
 #![allow(clippy::multiple_crate_versions)]
 
 mod alt_menu;
+mod backup;
 mod commands;
 mod config;
 mod debug_log;
+mod engine;
+mod fsutil;
 mod menu;
+mod route;
+mod secure_random;
 mod shortcuts;
+#[cfg(test)]
+mod test_http;
+mod updater;
 mod window;
 
 use clap::Parser;
 use config::ConfigState;
 use serde::Deserialize;
-use tauri::{webview::PageLoadPayload, Manager, Webview, Wry};
+use std::time::Duration;
+use tauri::{webview::PageLoadPayload, Manager, RunEvent, Webview, Wry};
 #[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 
@@ -23,9 +32,9 @@ use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 // CLI flags
 // ============================================================================
 
-/// Onyx desktop client. Launching with no flags opens the app normally.
+/// Deep X desktop client. Launching with no flags opens the app normally.
 #[derive(Parser)]
-#[command(name = "onyx", long_about = None, disable_version_flag = true)]
+#[command(name = "deepx", long_about = None, disable_version_flag = true)]
 struct Cli {
     // Handled manually rather than via `#[command(version)]` so it can also
     // report the connected server's version, not just the client build.
@@ -96,12 +105,12 @@ fn print_version_info() {
 // so this can't go through the usual logging path.
 #[allow(clippy::print_stderr)]
 fn print_debug_startup_banner() {
-    eprintln!("[ONYX DEBUG] Debug mode enabled");
+    eprintln!("[DEEPX DEBUG] Debug mode enabled");
     if let Some(path) = debug_log::get_debug_log_path() {
-        eprintln!("[ONYX DEBUG] Frontend logs: {}", path.display());
+        eprintln!("[DEEPX DEBUG] Frontend logs: {}", path.display());
     }
-    eprintln!("[ONYX DEBUG] DevTools will open automatically");
-    eprintln!("[ONYX DEBUG] Capturing console.log/warn/error/info/debug from webview");
+    eprintln!("[DEEPX DEBUG] DevTools will open automatically");
+    eprintln!("[DEEPX DEBUG] Capturing console.log/warn/error/info/debug from webview");
 }
 
 /// Everything that runs once the Tauri app is up: menu/tray, the main
@@ -155,6 +164,71 @@ fn setup_app(app: &tauri::AppHandle) {
     if let Err(e) = window.set_focus() {
         debug_log::log_backend_error(app, &format!("Failed to focus main window: {e}"));
     }
+
+    updater::check_for_updates(app, false);
+}
+
+/// Sends links from a chat session that leave the server origin to the
+/// default browser.
+fn external_navigation_plugin() -> tauri::plugin::TauriPlugin<Wry> {
+    tauri::plugin::Builder::<Wry>::new("chat-external-navigation-handler")
+        .on_navigation(|webview, destination_url| {
+            let Ok(current_url) = webview.url() else {
+                return true;
+            };
+
+            if window::should_open_in_external_browser(&current_url, destination_url) {
+                if !window::open_in_default_browser(destination_url.as_str()) {
+                    debug_log::log_backend_error(
+                        webview.app_handle(),
+                        &format!(
+                            "Failed to open external URL in default browser: {}",
+                            window::redact_url(destination_url)
+                        ),
+                    );
+                }
+                return false;
+            }
+
+            true
+        })
+        .build()
+}
+
+fn handle_menu_event(app: &tauri::AppHandle, id: &str) {
+    match id {
+        menu::MENU_OPEN_DOCS_ID => window::open_docs(app),
+        menu::MENU_NEW_CHAT_ID => window::trigger_new_chat(app),
+        menu::MENU_NEW_WINDOW_ID => window::trigger_new_window(app),
+        menu::MENU_OPEN_SETTINGS_ID => window::open_settings(app),
+        menu::MENU_RELOAD_ID => menu::handle_reload(app),
+        menu::MENU_GO_BACK_ID => menu::handle_go_back(app),
+        menu::MENU_GO_FORWARD_ID => menu::handle_go_forward(app),
+        menu::MENU_BACKUP_ID => {
+            backup::window::open_backup_window(app, backup::window::BackupAction::Backup);
+        }
+        menu::MENU_RESTORE_ID => {
+            backup::window::open_backup_window(app, backup::window::BackupAction::Restore);
+        }
+        updater::MENU_CHECK_UPDATES_ID => updater::check_for_updates(app, true),
+        menu::MENU_SHOW_MENU_BAR_ID => menu::handle_menu_bar_toggle(app),
+        #[cfg(target_os = "linux")]
+        menu::MENU_HIDE_DECORATIONS_ID => menu::handle_decorations_toggle(app),
+        debug_log::MENU_TOGGLE_DEVTOOLS_ID => debug_log::handle_toggle_devtools(app),
+        debug_log::MENU_OPEN_DEBUG_LOG_ID => debug_log::handle_open_debug_log(),
+        _ => {}
+    }
+}
+
+/// Stop the local engine when the app quits, if the user wants that.
+fn handle_run_event(app: &tauri::AppHandle, event: &RunEvent) {
+    if !matches!(event, RunEvent::Exit) {
+        return;
+    }
+    let config = app.state::<ConfigState>().config();
+    if config.local_engine && config.setup_complete && config.stop_engine_on_quit {
+        engine::stop_blocking(Duration::from_secs(60));
+    }
 }
 
 fn main() {
@@ -182,30 +256,9 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
-        .plugin(
-            tauri::plugin::Builder::<Wry>::new("chat-external-navigation-handler")
-                .on_navigation(|webview, destination_url| {
-                    let Ok(current_url) = webview.url() else {
-                        return true;
-                    };
-
-                    if window::should_open_in_external_browser(&current_url, destination_url) {
-                        if !window::open_in_default_browser(destination_url.as_str()) {
-                            debug_log::log_backend_error(
-                                webview.app_handle(),
-                                &format!(
-                                    "Failed to open external URL in default browser: {}",
-                                    window::redact_url(destination_url)
-                                ),
-                            );
-                        }
-                        return false;
-                    }
-
-                    true
-                })
-                .build(),
-        )
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(external_navigation_plugin())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(ConfigState::new(
             app_config,
@@ -213,6 +266,8 @@ fn main() {
             debug_mode,
             debug_log_file,
         ))
+        .manage(engine::EngineLock::default())
+        .manage(route::SignInState::default())
         .invoke_handler(tauri::generate_handler![
             commands::get_server_url,
             commands::get_bootstrap_state,
@@ -230,23 +285,26 @@ fn main() {
             commands::reset_config,
             commands::start_drag_window,
             commands::toggle_menu_bar,
-            debug_log::log_from_frontend
+            debug_log::log_from_frontend,
+            engine::commands::engine_check_docker,
+            engine::commands::engine_open_docker,
+            engine::commands::engine_status,
+            engine::commands::engine_start,
+            engine::commands::engine_stop,
+            engine::commands::engine_restart,
+            engine::commands::engine_set_mode,
+            engine::commands::engine_set_stop_on_quit,
+            engine::commands::use_local_engine,
+            engine::commands::complete_setup,
+            route::route_key_status,
+            route::route_save_key,
+            route::route_forget_key,
+            route::route_sign_in,
+            route::route_sign_in_cancel,
+            backup::backup_now,
+            backup::backup_restore
         ])
-        .on_menu_event(|app, event| match event.id().as_ref() {
-            menu::MENU_OPEN_DOCS_ID => window::open_docs(app),
-            menu::MENU_NEW_CHAT_ID => window::trigger_new_chat(app),
-            menu::MENU_NEW_WINDOW_ID => window::trigger_new_window(app),
-            menu::MENU_OPEN_SETTINGS_ID => window::open_settings(app),
-            menu::MENU_RELOAD_ID => menu::handle_reload(app),
-            menu::MENU_GO_BACK_ID => menu::handle_go_back(app),
-            menu::MENU_GO_FORWARD_ID => menu::handle_go_forward(app),
-            menu::MENU_SHOW_MENU_BAR_ID => menu::handle_menu_bar_toggle(app),
-            #[cfg(target_os = "linux")]
-            menu::MENU_HIDE_DECORATIONS_ID => menu::handle_decorations_toggle(app),
-            debug_log::MENU_TOGGLE_DEVTOOLS_ID => debug_log::handle_toggle_devtools(app),
-            debug_log::MENU_OPEN_DEBUG_LOG_ID => debug_log::handle_open_debug_log(),
-            _ => {}
-        })
+        .on_menu_event(|app, event| handle_menu_event(app, event.id().as_ref()))
         .setup(|app| {
             setup_app(&app.handle().clone());
             Ok(())
@@ -262,6 +320,7 @@ fn main() {
             #[cfg(target_os = "windows")]
             alt_menu::inject_alt_menu_script(webview);
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| handle_run_event(app, &event));
 }
