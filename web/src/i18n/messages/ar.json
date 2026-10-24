@@ -13212,6 +13212,9 @@
           "level": "{zoom}%",
           "zoomInTooltip": "تكبير",
           "zoomOutTooltip": "تصغير"
+        },
+        "publishButton": {
+          "tooltip": "نشر كرابط عام"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {# ملف محدد} other {# ملفات محددة}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "نشر كرابط",
+          "description": "أنشئ رابطًا عامًا لملف HTML هذا.",
+          "publishedTitle": "رابطك جاهز"
+        },
+        "publicWarning": {
+          "message": "الرابط عام. يمكن لأي شخص لديه الرابط فتح هذا الملف. لا تنشر بيانات خاصة."
+        },
+        "titleField": {
+          "label": "العنوان",
+          "placeholder": "اكتب عنوانًا للرابط"
+        },
+        "expiryField": {
+          "label": "انتهاء صلاحية الرابط",
+          "placeholder": "اختر متى تنتهي صلاحية الرابط",
+          "option": "{days, plural, one {# يوم} other {# أيام}}"
+        },
+        "published": {
+          "description": "يمكن لأي شخص لديه هذا الرابط فتح الملف. تنتهي صلاحية الرابط في {date}."
+        },
+        "linkInput": {
+          "copyTooltip": "نسخ الرابط"
+        },
+        "openButton": {
+          "tooltip": "فتح الرابط"
+        },
+        "publishButton": {
+          "label": "نشر",
+          "pendingLabel": "جارٍ النشر"
+        },
+        "cancelButton": {
+          "label": "إلغاء"
+        },
+        "doneButton": {
+          "label": "تم"
+        },
+        "unpublishButton": {
+          "label": "إلغاء النشر",
+          "pendingLabel": "جارٍ الإزالة"
+        },
+        "publishError": {
+          "message": "تعذّر نشر الملف."
+        },
+        "unpublishedToast": {
+          "message": "تمت إزالة الرابط."
+        },
+        "unpublishError": {
+          "message": "تعذّرت إزالة الرابط."
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "الاستخدام"
+        },
+        "publishedLinks": {
+          "label": "الروابط المنشورة"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "سرعة التشغيل"
       },
       "title": "الصوت"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "الروابط المنشورة",
+        "description": "روابط لملفات HTML التي نشرتها من المحادثات. يمكن لأي شخص لديه رابط فتح ملفه."
+      },
+      "empty": {
+        "title": "لا توجد روابط منشورة",
+        "description": "لنشر ملف HTML، افتح الملف في محادثة واختر نشر."
+      },
+      "loadError": {
+        "title": "تعذّر تحميل روابطك المنشورة"
+      },
+      "expires": {
+        "label": "تنتهي في {date}"
+      },
+      "copyButton": {
+        "tooltip": "نسخ الرابط"
+      },
+      "openButton": {
+        "tooltip": "فتح الرابط"
+      },
+      "unpublishButton": {
+        "label": "إلغاء النشر"
+      },
+      "unpublishedToast": {
+        "message": "تمت إزالة الرابط."
+      },
+      "unpublishError": {
+        "message": "تعذّرت إزالة الرابط."
+      }
     }
   },
   "sidebar": {

@@ -13212,6 +13212,9 @@
           "level": "{zoom}%",
           "zoomInTooltip": "Zoom In",
           "zoomOutTooltip": "Zoom Out"
+        },
+        "publishButton": {
+          "tooltip": "Publish as a public link"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {# file selected} other {# files selected}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "Publish as a Link",
+          "description": "Make a public link to this HTML file.",
+          "publishedTitle": "Your Link Is Ready"
+        },
+        "publicWarning": {
+          "message": "The link is public. Anyone who has the link can open this file. Do not publish private data."
+        },
+        "titleField": {
+          "label": "Title",
+          "placeholder": "Type a title for the link"
+        },
+        "expiryField": {
+          "label": "Link Expiry",
+          "placeholder": "Select when the link expires",
+          "option": "{days, plural, one {# day} other {# days}}"
+        },
+        "published": {
+          "description": "Anyone who has this link can open the file. The link expires on {date}."
+        },
+        "linkInput": {
+          "copyTooltip": "Copy the link"
+        },
+        "openButton": {
+          "tooltip": "Open the link"
+        },
+        "publishButton": {
+          "label": "Publish",
+          "pendingLabel": "Publishing"
+        },
+        "cancelButton": {
+          "label": "Cancel"
+        },
+        "doneButton": {
+          "label": "Done"
+        },
+        "unpublishButton": {
+          "label": "Unpublish",
+          "pendingLabel": "Removing"
+        },
+        "publishError": {
+          "message": "Could not publish the file."
+        },
+        "unpublishedToast": {
+          "message": "The link is removed."
+        },
+        "unpublishError": {
+          "message": "Could not remove the link."
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "Usage"
+        },
+        "publishedLinks": {
+          "label": "Published Links"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "Playback Speed"
       },
       "title": "Voice"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "Published Links",
+        "description": "Links to HTML files that you published from chats. Anyone who has a link can open its file."
+      },
+      "empty": {
+        "title": "No published links",
+        "description": "To publish an HTML file, open the file in a chat and select Publish."
+      },
+      "loadError": {
+        "title": "Could not load your published links"
+      },
+      "expires": {
+        "label": "Expires on {date}"
+      },
+      "copyButton": {
+        "tooltip": "Copy the link"
+      },
+      "openButton": {
+        "tooltip": "Open the link"
+      },
+      "unpublishButton": {
+        "label": "Unpublish"
+      },
+      "unpublishedToast": {
+        "message": "The link is removed."
+      },
+      "unpublishError": {
+        "message": "Could not remove the link."
+      }
     }
   },
   "sidebar": {

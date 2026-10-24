@@ -13212,6 +13212,9 @@
           "level": "{zoom} %",
           "zoomInTooltip": "Zoom avant",
           "zoomOutTooltip": "Zoom arrière"
+        },
+        "publishButton": {
+          "tooltip": "Publier en lien public"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {# fichier sélectionné} other {# fichiers sélectionnés}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "Publier en lien",
+          "description": "Créer un lien public vers ce fichier HTML.",
+          "publishedTitle": "Votre lien est prêt"
+        },
+        "publicWarning": {
+          "message": "Le lien est public. Toute personne qui a le lien peut ouvrir ce fichier. Ne publiez pas de données privées."
+        },
+        "titleField": {
+          "label": "Titre",
+          "placeholder": "Saisissez un titre pour le lien"
+        },
+        "expiryField": {
+          "label": "Expiration du lien",
+          "placeholder": "Sélectionnez quand le lien expire",
+          "option": "{days, plural, one {# jour} other {# jours}}"
+        },
+        "published": {
+          "description": "Toute personne qui a ce lien peut ouvrir le fichier. Le lien expire le {date}."
+        },
+        "linkInput": {
+          "copyTooltip": "Copier le lien"
+        },
+        "openButton": {
+          "tooltip": "Ouvrir le lien"
+        },
+        "publishButton": {
+          "label": "Publier",
+          "pendingLabel": "Publication"
+        },
+        "cancelButton": {
+          "label": "Annuler"
+        },
+        "doneButton": {
+          "label": "Terminé"
+        },
+        "unpublishButton": {
+          "label": "Retirer",
+          "pendingLabel": "Retrait"
+        },
+        "publishError": {
+          "message": "Impossible de publier le fichier."
+        },
+        "unpublishedToast": {
+          "message": "Le lien est retiré."
+        },
+        "unpublishError": {
+          "message": "Impossible de retirer le lien."
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "Utilisation"
+        },
+        "publishedLinks": {
+          "label": "Liens publiés"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "Vitesse de lecture"
       },
       "title": "Voix"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "Liens publiés",
+        "description": "Liens vers les fichiers HTML que vous avez publiés depuis des chats. Toute personne qui a un lien peut ouvrir son fichier."
+      },
+      "empty": {
+        "title": "Aucun lien publié",
+        "description": "Pour publier un fichier HTML, ouvrez le fichier dans un chat et sélectionnez Publier."
+      },
+      "loadError": {
+        "title": "Impossible de charger vos liens publiés"
+      },
+      "expires": {
+        "label": "Expire le {date}"
+      },
+      "copyButton": {
+        "tooltip": "Copier le lien"
+      },
+      "openButton": {
+        "tooltip": "Ouvrir le lien"
+      },
+      "unpublishButton": {
+        "label": "Retirer"
+      },
+      "unpublishedToast": {
+        "message": "Le lien est retiré."
+      },
+      "unpublishError": {
+        "message": "Impossible de retirer le lien."
+      }
     }
   },
   "sidebar": {

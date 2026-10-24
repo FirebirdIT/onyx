@@ -13212,6 +13212,9 @@
           "level": "{zoom}%",
           "zoomInTooltip": "Acercar",
           "zoomOutTooltip": "Alejar"
+        },
+        "publishButton": {
+          "tooltip": "Publicar como enlace público"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {# archivo seleccionado} other {# archivos seleccionados}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "Publicar como enlace",
+          "description": "Crea un enlace público a este archivo HTML.",
+          "publishedTitle": "Tu enlace está listo"
+        },
+        "publicWarning": {
+          "message": "El enlace es público. Cualquier persona que tenga el enlace puede abrir este archivo. No publiques datos privados."
+        },
+        "titleField": {
+          "label": "Título",
+          "placeholder": "Escribe un título para el enlace"
+        },
+        "expiryField": {
+          "label": "Caducidad del enlace",
+          "placeholder": "Selecciona cuándo caduca el enlace",
+          "option": "{days, plural, one {# día} other {# días}}"
+        },
+        "published": {
+          "description": "Cualquier persona que tenga este enlace puede abrir el archivo. El enlace caduca el {date}."
+        },
+        "linkInput": {
+          "copyTooltip": "Copiar el enlace"
+        },
+        "openButton": {
+          "tooltip": "Abrir el enlace"
+        },
+        "publishButton": {
+          "label": "Publicar",
+          "pendingLabel": "Publicando"
+        },
+        "cancelButton": {
+          "label": "Cancelar"
+        },
+        "doneButton": {
+          "label": "Listo"
+        },
+        "unpublishButton": {
+          "label": "Dejar de publicar",
+          "pendingLabel": "Quitando"
+        },
+        "publishError": {
+          "message": "No se pudo publicar el archivo."
+        },
+        "unpublishedToast": {
+          "message": "Se quitó el enlace."
+        },
+        "unpublishError": {
+          "message": "No se pudo quitar el enlace."
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "Uso"
+        },
+        "publishedLinks": {
+          "label": "Enlaces publicados"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "Velocidad de reproducción"
       },
       "title": "Voz"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "Enlaces publicados",
+        "description": "Enlaces a archivos HTML que publicaste desde chats. Cualquier persona que tenga un enlace puede abrir su archivo."
+      },
+      "empty": {
+        "title": "No hay enlaces publicados",
+        "description": "Para publicar un archivo HTML, abre el archivo en un chat y selecciona Publicar."
+      },
+      "loadError": {
+        "title": "No se pudieron cargar tus enlaces publicados"
+      },
+      "expires": {
+        "label": "Caduca el {date}"
+      },
+      "copyButton": {
+        "tooltip": "Copiar el enlace"
+      },
+      "openButton": {
+        "tooltip": "Abrir el enlace"
+      },
+      "unpublishButton": {
+        "label": "Dejar de publicar"
+      },
+      "unpublishedToast": {
+        "message": "Se quitó el enlace."
+      },
+      "unpublishError": {
+        "message": "No se pudo quitar el enlace."
+      }
     }
   },
   "sidebar": {

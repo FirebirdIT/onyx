@@ -60,6 +60,10 @@ export default function Layout({ children }: LayoutProps) {
       : []),
     { href: "/app/settings/connectors", label: t("tabs.connectors.label") },
     { href: "/app/settings/usage", label: t("tabs.usage.label") },
+    {
+      href: "/app/settings/published-links",
+      label: t("tabs.publishedLinks.label"),
+    },
   ];
 
   // A route outside `tabs` selects nothing, so the select shows its

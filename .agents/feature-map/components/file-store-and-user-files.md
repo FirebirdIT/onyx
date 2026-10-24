@@ -15,7 +15,11 @@
 `backend/onyx/background/celery/tasks/user_file_processing/`,
 `backend/onyx/server/features/projects/`,
 `backend/onyx/tools/tool_implementations/file_reader/file_reader_tool.py`,
-`web/src/lib/projects/`, `web/src/app/app/components/files/`
+`web/src/lib/projects/`, `web/src/app/app/components/files/`,
+`backend/onyx/server/features/published_artifacts/`, `backend/onyx/db/published_artifact.py`,
+`backend/onyx/deepx/hub_artifacts.py`, `web/src/lib/publishedArtifacts/`,
+`web/src/sections/modals/PublishArtifactModal.tsx`,
+`web/src/app/app/settings/published-links/`
 
 **Read first:** `backend/onyx/file_store/README.md` for the storage-backend
 configuration matrix. `[[context-assembly]]` describes what happens to a file's
@@ -59,6 +63,9 @@ that a background sweep deletes the file's blob and its row after the session en
 | DELETE/POST | `/user/projects/{project_id}/files/{file_id}` | `unlink_user_file_from_project`, `link_user_file_to_project` | |
 | GET | `/user/projects/{project_id}/token-count`, `/user/projects/session/{id}/token-count` | | Aggregate token counts for the file-budget UI. |
 | GET | `/chat/file/{file_id:path}` | `chat_backend.py:fetch_chat_file` | **The serving endpoint.** Accepts either a storage `file_id` or a `UserFile.id`; see §4.5. |
+| POST | `/user/published-artifacts` | `published_artifacts/api.py:publish_artifact` | Publishes an HTML chat file to the Deep X hub as a public link. See §4.10. |
+| GET | `/user/published-artifacts` | `published_artifacts/api.py:list_published_artifacts` | The user's links that did not expire, newest first. |
+| DELETE | `/user/published-artifacts/{artifact_id}` | `published_artifacts/api.py:unpublish_artifact` | Calls the hub DELETE, then deletes the row. |
 
 ### Environment configuration
 
@@ -69,6 +76,7 @@ that a background sweep deletes the file's blob and its row after the session en
 | `S3_LEGACY_ENDPOINT_URL`, `S3_LEGACY_AWS_ACCESS_KEY_ID`/`SECRET`, `LEGACY_COPY_SETTLE_SECONDS`, `LEGACY_COPY_WORKERS`, `LEGACY_COPY_ALL_OBJECTS` | `configs/app_configs.py` | The old MinIO store that earlier releases wrote to. See §4.1. |
 | `GCS_FILE_STORE_BUCKET_NAME`, `GCS_PROJECT_ID`, `GCS_SERVICE_ACCOUNT_KEY_PATH`/`JSON` | | GCS backend config. |
 | `AZURE_FILE_STORE_CONTAINER_NAME`, `AZURE_STORAGE_ACCOUNT_NAME`/`URL`, `AZURE_STORAGE_CONNECTION_STRING`/`ACCOUNT_KEY` | | Azure Blob backend config. |
+| `DEEPX_HUB_URL` | `configs/app_configs.py` | Base URL of the Deep X hub for published links (default `https://deepx-hub.vercel.app`). §4.10. |
 | `DISABLE_VECTOR_DB` | `configs/app_configs.py` | Skips the vector-DB indexing path entirely; project files fall back to `FileReaderTool` metadata instead of RAG (§4.4). Also switches upload/delete/project-sync from Celery tasks to in-request `BackgroundTasks`. |
 | `MAX_EMBEDDED_IMAGES_PER_FILE`, `MAX_EMBEDDED_IMAGES_PER_UPLOAD` | `configs/app_configs.py` | Caps on embedded images inside one PDF/DOCX and across one upload batch, checked in `projects_file_utils.py:categorize_uploaded_files`. |
 | `PDF_TEXT_EXTRACTION_TIMEOUT_SECONDS`, `MAX_XLSX_CELLS_PER_SHEET` | `configs/app_configs.py` | Extraction limits (`extract_file_text.py`). |
@@ -409,6 +417,39 @@ access-control consequence of this.
   unverified rather than confirmed-absent; it was not found in the searched
   paths.
 
+### 4.10 Publishing an HTML file to the Deep X hub
+
+`POST /user/published-artifacts` (`published_artifacts/api.py:publish_artifact`)
+takes `file_id` (a storage `file_id` or a `UserFile.id`), `title` (1-200
+characters) and `expires_in_days` (1-30, default 7):
+
+1. Resolves a `UserFile.id` to its `FileRecord.file_id` (only when the input is a
+   UUID), then authorizes with `access.py:user_can_access_chat_file`, the rule of
+   `fetch_chat_file`. A denial is a 404.
+2. Accepts only a record whose `file_type` is `text/html` or whose display name
+   ends in `.html`/`.htm`, with at most 4 MiB of UTF-8 bytes. In practice the HTML
+   comes from `run_python` output files ([[code-execution]]) or an uploaded HTML
+   attachment; the office, image and custom tools never write HTML.
+3. Reads the API key of the first Deep X Route LLM provider the user may use
+   (`db/llm.py:fetch_first_accessible_llm_provider_by_type`). With none, it
+   raises `FEATURE_DISABLED`.
+4. Calls `POST {DEEPX_HUB_URL}/api/artifacts` (`deepx/hub_artifacts.py`). Hub
+   401, 413, 429, 5xx and timeouts become `CREDENTIAL_INVALID`,
+   `PAYLOAD_TOO_LARGE`, `RATE_LIMITED`, `BAD_GATEWAY` and `GATEWAY_TIMEOUT`.
+5. Saves a `PublishedArtifact` row (`db/published_artifact.py`). The hub delete
+   token is in an `EncryptedString` column. If the save fails, it deletes the hub
+   artifact again.
+
+`DELETE` calls the hub with `X-Delete-Token`; hub 404/410 count as deleted, a
+403 keeps the row (the link stays public until it expires). An expired row is
+deleted without a hub call. The row has no foreign key to `file_record`: the
+hub copy stays valid when the local file is deleted.
+
+In the UI, `PreviewModal` shows a Publish button for HTML files
+(`isPublishableHtml`), except in the shared-chat view (`allowPublish={false}`).
+It opens `PublishArtifactModal`. `/app/settings/published-links` lists the
+links with copy, open and unpublish.
+
 ---
 
 ## 5. Contracts and invariants
@@ -473,6 +514,11 @@ access-control consequence of this.
    and a delete of the same file run one after the other. `delete_file` removes
    the object only after it deletes the row. `change_file_id` returns `False`
    when the record is already gone.
+
+8. **Publishing must use the download access rule and never leak secrets.**
+   `publish_artifact` calls `user_can_access_chat_file` before it reads bytes
+   or calls the hub. The Deep X Route key and the hub delete token are never
+   logged or returned to the browser.
 
 ---
 

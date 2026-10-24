@@ -96,6 +96,7 @@ export default function SharedChatDisplay({
         <PreviewModal
           presentingDocument={presentingDocument}
           onClose={() => setPresentingDocument(null)}
+          allowPublish={false}
         />
       )}
 

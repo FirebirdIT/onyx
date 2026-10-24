@@ -5,8 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { MinimalOnyxDocument } from "@/lib/search/types";
 import { Modal } from "@opal/components";
-import Text from "@/refresh-components/texts/Text";
-import { Button } from "@opal/components";
+import { Button, Text } from "@opal/components";
 
 import { Section } from "@/layouts/general-layouts";
 import FloatingFooter from "@/sections/modals/PreviewModal/FloatingFooter";
@@ -23,15 +22,35 @@ import {
   parseContentDispositionFileName,
   withMimeTypeExtension,
 } from "@/sections/modals/PreviewModal/downloadFileName";
+import PublishArtifactModal from "@/sections/modals/PublishArtifactModal";
+import { SvgGlobe } from "@opal/icons";
+
+const HTML_FILE_NAME = /\.html?$/i;
+
+/** True for a file the Deep X hub can publish: text/html or .html/.htm. */
+export function isPublishableHtml(fileName: string, mimeType: string): boolean {
+  return (
+    mimeType.split(";")[0]?.trim().toLowerCase() === "text/html" ||
+    HTML_FILE_NAME.test(fileName.trim())
+  );
+}
+
+/** The chat file id inside a presented document id (`<prefix>__<id>` or `<id>`). */
+function chatFileIdOf(document: MinimalOnyxDocument): string {
+  return document.document_id.split("__")[1] || document.document_id;
+}
 
 interface PreviewModalProps {
   presentingDocument: MinimalOnyxDocument;
   onClose: () => void;
+  /** Show "Publish" for HTML files. Off where the viewer is not the owner. */
+  allowPublish?: boolean;
 }
 
 export default function PreviewModal({
   presentingDocument,
   onClose,
+  allowPublish = true,
 }: PreviewModalProps) {
   const t = useTranslations("chat.modals.preview");
   const [fileContent, setFileContent] = useState("");
@@ -41,6 +60,7 @@ export default function PreviewModal({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState("application/octet-stream");
   const [zoom, setZoom] = useState(100);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const variantName = fileName || presentingDocument.semantic_identifier;
 
@@ -77,9 +97,7 @@ export default function PreviewModal({
     setIsLoading(true);
     setLoadError(null);
     setFileContent("");
-    const fileIdLocal =
-      presentingDocument.document_id.split("__")[1] ||
-      presentingDocument.document_id;
+    const fileIdLocal = chatFileIdOf(presentingDocument);
     const originalFileName =
       presentingDocument.semantic_identifier || "document";
     // Direct raw-file URL — usable for downloads without materializing a blob.
@@ -210,6 +228,8 @@ export default function PreviewModal({
     ]
   );
 
+  const canPublish = allowPublish && isPublishableHtml(fileName, mimeType);
+
   return (
     <Modal
       open
@@ -239,7 +259,7 @@ export default function PreviewModal({
             </Section>
           ) : loadError ? (
             <Section padding={4}>
-              <Text text03 mainUiBody>
+              <Text font="main-ui-body" color="text-03">
                 {loadError}
               </Text>
               {fileUrl && (
@@ -256,8 +276,32 @@ export default function PreviewModal({
         {!isLoading && !loadError && (
           <FloatingFooter
             left={variant.renderFooterLeft(ctx)}
-            right={variant.renderFooterRight(ctx)}
+            right={
+              canPublish ? (
+                <Section flexDirection="row" width="fit">
+                  {variant.renderFooterRight(ctx)}
+                  <Button
+                    prominence="tertiary"
+                    size="sm"
+                    icon={SvgGlobe}
+                    tooltip={t("publishButton.tooltip")}
+                    aria-label={t("publishButton.tooltip")}
+                    onClick={() => setIsPublishing(true)}
+                  />
+                </Section>
+              ) : (
+                variant.renderFooterRight(ctx)
+              )
+            }
             codeBackground={variant.codeBackground}
+          />
+        )}
+        {/* Inside Content so that the nested dialog layers above this one. */}
+        {isPublishing && (
+          <PublishArtifactModal
+            fileId={chatFileIdOf(presentingDocument)}
+            fileName={fileName}
+            onClose={() => setIsPublishing(false)}
           />
         )}
       </Modal.Content>
