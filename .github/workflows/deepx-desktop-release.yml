@@ -233,5 +233,27 @@ jobs:
           upload_url="https://uploads.github.com/${api}/${RELEASE_ID}/assets?name=latest.json"
           gh api --method POST -H "Content-Type: application/json" "${upload_url}" --input latest.json > /dev/null
 
+          # The hub download page reads downloads.json, not the GitHub API.
+          dmg=$(asset_name ".dmg")
+          msi=$(asset_name ".msi")
+          jq -n \
+            --arg version "${VERSION}" \
+            --arg dmg "${dmg}" --arg dmg_url "$( [ -n "${dmg}" ] && asset_url "${dmg}" )" \
+            --arg win "${win}" --arg win_url "${win_url}" \
+            --arg msi "${msi}" --arg msi_url "$( [ -n "${msi}" ] && asset_url "${msi}" )" \
+            '{version: $version, assets: ([
+              {platform: "macos", kind: "dmg", name: $dmg, url: $dmg_url},
+              {platform: "windows", kind: "nsis", name: $win, url: $win_url},
+              {platform: "windows", kind: "msi", name: $msi, url: $msi_url}
+            ] | map(select(.name != "")))}' > downloads.json
+          cat downloads.json
+          existing=$(jq -r '[.[] | select(.name == "downloads.json")][0].id // empty' assets.json)
+          if [ -n "${existing}" ]; then
+            gh api --method DELETE "${api}/assets/${existing}"
+          fi
+          gh api --method POST -H "Content-Type: application/json" \
+            "https://uploads.github.com/${api}/${RELEASE_ID}/assets?name=downloads.json" \
+            --input downloads.json > /dev/null
+
           gh api --method PATCH "${api}/${RELEASE_ID}" -F draft=false -f make_latest=false > /dev/null
           echo "Published ${TAG}"
