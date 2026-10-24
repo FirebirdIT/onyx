@@ -455,6 +455,9 @@ def _get_history_message_formatter(llm_config: LLMConfig) -> _HistoryMessageForm
 # default — no cap is applied to any provider.
 _AZURE_DEFAULT_IMAGE_CAP = 50
 
+# The Deep X Route gateway rejects a chat request with more than 4 images.
+_DEEPX_ROUTE_IMAGE_CAP = 4
+
 
 def _is_azure_provider(model_provider: str) -> bool:
     """True for any provider whose name starts with 'azure'."""
@@ -463,8 +466,10 @@ def _is_azure_provider(model_provider: str) -> bool:
 
 def resolve_image_cap(model_provider: str) -> int | None:
     """Return the per-request image-count cap, or None if no cap should be
-    enforced. Only Azure providers are capped, and only when
-    ENABLE_AZURE_IMAGE_CAP=true is set."""
+    enforced. Deep X Route is always capped at its gateway limit. Azure
+    providers are capped only when ENABLE_AZURE_IMAGE_CAP=true is set."""
+    if model_provider == LlmProviderNames.DEEPX_ROUTE:
+        return _DEEPX_ROUTE_IMAGE_CAP
     if ENABLE_AZURE_IMAGE_CAP and _is_azure_provider(model_provider):
         return _AZURE_DEFAULT_IMAGE_CAP
     return None

@@ -48,11 +48,13 @@ _SAMPLE = {
             # null efforts = every level offered
             "id": "deepx/thinker",
             "reasoning": {"supported_efforts": None},
+            "input_modalities": ["text", "image"],
         },
         {
             # empty reasoning block = no reasoning
             "id": "deepx/plain",
             "reasoning": {"supported_efforts": []},
+            "input_modalities": ["text"],
         },
         {
             # no enabled chat route -> dropped
@@ -109,6 +111,19 @@ def test_reasoning_from_catalog() -> None:
     assert by_name["deepx/chat-large"].supports_reasoning is True
     assert by_name["deepx/thinker"].supports_reasoning is True
     assert by_name["deepx/plain"].supports_reasoning is False
+
+
+def test_image_input_from_catalog_modalities() -> None:
+    by_name = _fetch()
+    assert by_name["deepx/thinker"].supports_image_input is True
+    assert by_name["deepx/plain"].supports_image_input is False
+    # No modalities listed means text only.
+    assert by_name["deepx/chat-large"].supports_image_input is False
+
+
+def test_malformed_modalities_mean_text_only() -> None:
+    by_name = _fetch({"data": [{"id": "deepx/odd", "input_modalities": "image"}]})
+    assert by_name["deepx/odd"].supports_image_input is False
 
 
 def test_empty_catalog_raises() -> None:

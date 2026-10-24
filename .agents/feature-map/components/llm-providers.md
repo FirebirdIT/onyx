@@ -45,6 +45,9 @@ Deep X Route is an OpenAI-compatible gateway with a fixed endpoint
 (`DEEPX_ROUTE_API_BASE`). The admin enters only the API key. The request
 validators reject any other `api_base` or a `custom_config`, and `get_llm`
 pins the base, so the key reaches only Deep X Route.
+A Deep X Route model accepts images only when its catalog entry lists `image`
+in `input_modalities`. The gateway takes at most 4 images in one request, so
+`llm_step.py:resolve_image_cap` always caps Deep X Route at 4.
 Zoom decision requests carry a shared Zoom Scribe connection ID. Only full admins
 can validate or save this link. Each request signs with the current connection credentials.
 
