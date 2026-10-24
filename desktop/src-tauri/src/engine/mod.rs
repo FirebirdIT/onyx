@@ -7,6 +7,7 @@ pub mod docker;
 pub mod env;
 pub mod files;
 pub mod hub;
+pub mod images;
 
 use crate::config::{get_data_dir, AppConfig, EngineMode};
 use crate::route::keystore;
@@ -57,7 +58,10 @@ pub fn compose_for(mode: EngineMode) -> Result<Compose, String> {
 
 /// Write the compose files, the secrets and the `.env` file, and return the
 /// compose command for the configured mode.
-pub async fn prepare(app: &AppHandle, config: &AppConfig) -> Result<Compose, String> {
+pub async fn prepare(
+    app: &AppHandle,
+    config: &AppConfig,
+) -> Result<(Compose, hub::EngineImages), String> {
     let layout = engine_layout()?;
     write_compose_files(&layout)?;
     let secrets = load_or_create_secrets(&layout.secrets_path())?;
@@ -81,7 +85,7 @@ pub async fn prepare(app: &AppHandle, config: &AppConfig) -> Result<Compose, Str
             hub_url: &config.hub_url,
         },
     )?;
-    compose_for(config.engine_mode)
+    Ok((compose_for(config.engine_mode)?, images))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -163,7 +167,7 @@ pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
         ));
     }
     emit_progress(app, "prepare", "Writing engine files");
-    let compose = prepare(app, config).await?;
+    let (compose, images) = prepare(app, config).await?;
     emit_progress(
         app,
         "start",
@@ -183,8 +187,27 @@ pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
             move |line| emit_progress(&handle, "start", line),
         )
         .await?;
+    remove_old_images(app, &images).await;
     emit_progress(app, "done", "The engine is ready");
     Ok(())
+}
+
+/// Remove engine images of earlier versions. A failure only shows a note,
+/// because the engine runs without this step.
+async fn remove_old_images(app: &AppHandle, current: &hub::EngineImages) {
+    match images::remove_old_engine_images(current).await {
+        Ok(0) => {}
+        Ok(count) => emit_progress(
+            app,
+            "cleanup",
+            &format!("Removed {count} old engine image(s) to free disk space"),
+        ),
+        Err(error) => emit_progress(
+            app,
+            "cleanup",
+            &format!("Could not remove old engine images: {error}"),
+        ),
+    }
 }
 
 /// Stop every engine service, in all modes. The data volumes stay.
