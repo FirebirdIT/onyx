@@ -113,11 +113,23 @@ def fetch_deepx_presets(url: str) -> DeepXPresets | None:
 
 
 def _default_assistant_tool_ids(db_session: Session) -> list[int]:
-    """Tool ids of the default assistant, so presets get the same tools."""
+    """Available tool ids of the default assistant, so presets get the same tools.
+
+    Built-in tools that are not available (for example search in Onyx Lite)
+    are left out, because persona validation refuses them.
+    """
+    # Local import: the tools layer imports the DB layer.
+    from onyx.tools.built_in_tools import get_built_in_tool_by_id
+
     default_assistant = get_default_assistant(db_session)
     if default_assistant is None:
         return []
-    return [tool.id for tool in default_assistant.tools]
+    return [
+        tool.id
+        for tool in default_assistant.tools
+        if tool.in_code_tool_id is None
+        or get_built_in_tool_by_id(tool.in_code_tool_id).is_available(db_session)
+    ]
 
 
 def create_missing_preset_assistants(

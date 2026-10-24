@@ -78,18 +78,21 @@ def _pick_default_model(models: list[ModelConfigurationUpsertRequest]) -> str:
 def ensure_deepx_route_llm_provider(
     db_session: Session, api_key: str
 ) -> LLMProviderView | None:
-    """Create the Deep X Route provider as the default when no provider exists.
+    """Create the Deep X Route provider when no Deep X Route provider exists.
 
-    Returns the new provider, or None when a provider already exists.
+    It becomes the default only when no other provider exists. Returns the new
+    provider, or None when a Deep X Route provider already exists.
     """
     existing = fetch_existing_llm_providers(
         db_session=db_session,
         flow_type_filter=[],
         include_model_configurations=False,
     )
-    if existing:
-        logger.info("An LLM provider exists. Deep X Route bootstrap skipped.")
+    if any(p.provider == LlmProviderNames.DEEPX_ROUTE for p in existing):
+        logger.info("A Deep X Route provider exists. Deep X Route bootstrap skipped.")
         return None
+    # Another provider (for example one set up in onboarding) keeps the default.
+    make_default = not existing
 
     model_configurations = _deepx_route_model_configurations(api_key)
     request = LLMProviderUpsertRequest(
@@ -105,16 +108,19 @@ def ensure_deepx_route_llm_provider(
         provider = upsert_llm_provider(
             llm_provider_upsert_request=request, db_session=db_session
         )
-        update_default_model(
-            db_session=db_session,
-            provider_id=provider.id,
-            model=_pick_default_model(model_configurations),
-            flow_type=LLMModelFlowType.CHAT,
-        )
+        if make_default:
+            update_default_model(
+                db_session=db_session,
+                provider_id=provider.id,
+                model=_pick_default_model(model_configurations),
+                flow_type=LLMModelFlowType.CHAT,
+            )
     finally:
         invalidate_provider_listing_cache()
     logger.notice(
-        "Created the Deep X Route LLM provider (id=%s) as the default.", provider.id
+        "Created the Deep X Route LLM provider (id=%s, default=%s).",
+        provider.id,
+        make_default,
     )
     return provider
 
