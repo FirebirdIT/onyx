@@ -443,17 +443,18 @@ repos:
 
       # Needs a Rust toolchain + GTK3/WebKitGTK headers, absent on the shared
       # Quality-Checks-PR runner -- that workflow SKIPs both hooks and relies on
-      # pr-desktop-build.yml as the actual CI gate instead.
+      # pr-desktop-build.yml as the actual CI gate instead. The PATH entry finds a
+      # rustup install that the hook's non-login shell does not load.
       - id: desktop-rust-fmt
         name: desktop cargo fmt
-        entry: bash -c 'cd desktop/src-tauri && cargo fmt --check'
+        entry: bash -c 'PATH="$HOME/.cargo/bin:$PATH" && cd desktop/src-tauri && cargo fmt --check'
         language: system
         pass_filenames: false
         files: ^desktop/src-tauri/src/.*\.rs$
 
       - id: desktop-rust-clippy
         name: desktop cargo clippy
-        entry: bash -c 'cd desktop/src-tauri && cargo clippy --all-targets --all-features -- -D warnings'
+        entry: bash -c 'PATH="$HOME/.cargo/bin:$PATH" && cd desktop/src-tauri && cargo clippy --all-targets --all-features -- -D warnings'
         language: system
         pass_filenames: false
         files: ^desktop/src-tauri/(src/.*\.rs|Cargo\.(toml|lock))$
