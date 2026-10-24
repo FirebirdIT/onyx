@@ -94,6 +94,7 @@ here. Read the component that documents the setting in its env table.
 | `backend/ee/onyx/db/credentials.py` | cc-pairs-and-credentials |
 | `backend/onyx/db/document.py`, `db/chunk.py`, `db/tag.py` | indexing-pipeline, document-index |
 | `backend/onyx/file_processing/`, `backend/onyx/file_store/`, `backend/onyx/db/file_record.py`, `db/file_content.py`, `db/user_file.py` | file-store-and-user-files |
+| `backend/onyx/server/features/published_artifacts/`, `backend/onyx/db/published_artifact.py`, `backend/onyx/deepx/hub_artifacts.py` | file-store-and-user-files |
 | `backend/onyx/server/documents/` | cc-pairs-and-credentials, indexing-pipeline |
 
 ## Backend: configuration surfaces
@@ -223,6 +224,7 @@ so verify the callers rather than a single component.
 | `web/src/views/admin/ChatPreferencesPage.tsx`, `web/src/views/admin/ChatTaskModelSettings.tsx` | chat-preferences, llm-providers |
 | `web/src/views/admin/DecisionModelSetting.tsx`, `backend/onyx/llm/decisions/` | llm-providers |
 | `web/src/sections/modals/languageModels/DecisionProviderModal.tsx` | llm-providers |
+| `web/src/lib/publishedArtifacts/`, `web/src/sections/modals/PublishArtifactModal.tsx`, `web/src/app/app/settings/published-links/` | file-store-and-user-files |
 | `web/src/app/admin/plugins/`, `web/src/app/admin/mcp-actions/`, `admin/openapi-actions/` | mcp-and-custom-tools |
 | `web/src/sections/plugins/`, `web/src/lib/plugins/`, `web/src/sections/actions/modals/MCPPluginSetupModal.tsx` | mcp-and-custom-tools |
 | `web/src/sections/actions/`, `web/src/lib/mcp/`, `web/src/app/mcp/oauth/` | mcp-and-custom-tools |

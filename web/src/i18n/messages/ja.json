@@ -13212,6 +13212,9 @@
           "level": "{zoom}%",
           "zoomInTooltip": "拡大",
           "zoomOutTooltip": "縮小"
+        },
+        "publishButton": {
+          "tooltip": "公開リンクとして公開"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {# 件のファイルを選択中} other {# 件のファイルを選択中}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "リンクとして公開",
+          "description": "この HTML ファイルの公開リンクを作成します。",
+          "publishedTitle": "リンクの準備ができました"
+        },
+        "publicWarning": {
+          "message": "このリンクは公開されます。リンクを知っている人は誰でもこのファイルを開けます。非公開のデータは公開しないでください。"
+        },
+        "titleField": {
+          "label": "タイトル",
+          "placeholder": "リンクのタイトルを入力"
+        },
+        "expiryField": {
+          "label": "リンクの有効期限",
+          "placeholder": "リンクの有効期限を選択",
+          "option": "{days, plural, one {#日} other {#日}}"
+        },
+        "published": {
+          "description": "このリンクを知っている人は誰でもファイルを開けます。リンクは {date} に期限切れになります。"
+        },
+        "linkInput": {
+          "copyTooltip": "リンクをコピー"
+        },
+        "openButton": {
+          "tooltip": "リンクを開く"
+        },
+        "publishButton": {
+          "label": "公開",
+          "pendingLabel": "公開中"
+        },
+        "cancelButton": {
+          "label": "キャンセル"
+        },
+        "doneButton": {
+          "label": "完了"
+        },
+        "unpublishButton": {
+          "label": "公開を取り消す",
+          "pendingLabel": "削除中"
+        },
+        "publishError": {
+          "message": "ファイルを公開できませんでした。"
+        },
+        "unpublishedToast": {
+          "message": "リンクを削除しました。"
+        },
+        "unpublishError": {
+          "message": "リンクを削除できませんでした。"
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "使用状況"
+        },
+        "publishedLinks": {
+          "label": "公開済みリンク"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "再生速度"
       },
       "title": "音声"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "公開済みリンク",
+        "description": "チャットから公開した HTML ファイルへのリンクです。リンクを知っている人は誰でもそのファイルを開けます。"
+      },
+      "empty": {
+        "title": "公開済みリンクはありません",
+        "description": "HTML ファイルを公開するには、チャットでファイルを開いて「公開」を選択します。"
+      },
+      "loadError": {
+        "title": "公開済みリンクを読み込めませんでした"
+      },
+      "expires": {
+        "label": "{date} に期限切れ"
+      },
+      "copyButton": {
+        "tooltip": "リンクをコピー"
+      },
+      "openButton": {
+        "tooltip": "リンクを開く"
+      },
+      "unpublishButton": {
+        "label": "公開を取り消す"
+      },
+      "unpublishedToast": {
+        "message": "リンクを削除しました。"
+      },
+      "unpublishError": {
+        "message": "リンクを削除できませんでした。"
+      }
     }
   },
   "sidebar": {

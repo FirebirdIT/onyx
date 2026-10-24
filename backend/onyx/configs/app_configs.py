@@ -2277,3 +2277,7 @@ DEEPX_ROUTE_API_KEY = (os.environ.get("DEEPX_ROUTE_API_KEY") or "").strip() or N
 # URL of the Deep X presets JSON. Startup creates the assistants it lists that do
 # not exist yet (match by name). It never changes an existing assistant.
 DEEPX_PRESETS_URL = (os.environ.get("DEEPX_PRESETS_URL") or "").strip() or None
+# Base URL of the Deep X hub. Chat HTML files are published to it as public links.
+DEEPX_HUB_URL = (os.environ.get("DEEPX_HUB_URL") or "").strip().rstrip(
+    "/"
+) or "https://deepx-hub.vercel.app"

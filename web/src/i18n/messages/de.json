@@ -13212,6 +13212,9 @@
           "level": "{zoom} %",
           "zoomInTooltip": "Vergrößern",
           "zoomOutTooltip": "Verkleinern"
+        },
+        "publishButton": {
+          "tooltip": "Als öffentlichen Link veröffentlichen"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {# Datei ausgewählt} other {# Dateien ausgewählt}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "Als Link veröffentlichen",
+          "description": "Einen öffentlichen Link zu dieser HTML-Datei erstellen.",
+          "publishedTitle": "Ihr Link ist bereit"
+        },
+        "publicWarning": {
+          "message": "Der Link ist öffentlich. Jeder, der den Link hat, kann diese Datei öffnen. Veröffentlichen Sie keine privaten Daten."
+        },
+        "titleField": {
+          "label": "Titel",
+          "placeholder": "Titel für den Link eingeben"
+        },
+        "expiryField": {
+          "label": "Ablauf des Links",
+          "placeholder": "Ablauf des Links auswählen",
+          "option": "{days, plural, one {# Tag} other {# Tage}}"
+        },
+        "published": {
+          "description": "Jeder, der diesen Link hat, kann die Datei öffnen. Der Link läuft am {date} ab."
+        },
+        "linkInput": {
+          "copyTooltip": "Link kopieren"
+        },
+        "openButton": {
+          "tooltip": "Link öffnen"
+        },
+        "publishButton": {
+          "label": "Veröffentlichen",
+          "pendingLabel": "Wird veröffentlicht"
+        },
+        "cancelButton": {
+          "label": "Abbrechen"
+        },
+        "doneButton": {
+          "label": "Fertig"
+        },
+        "unpublishButton": {
+          "label": "Veröffentlichung aufheben",
+          "pendingLabel": "Wird entfernt"
+        },
+        "publishError": {
+          "message": "Die Datei konnte nicht veröffentlicht werden."
+        },
+        "unpublishedToast": {
+          "message": "Der Link wurde entfernt."
+        },
+        "unpublishError": {
+          "message": "Der Link konnte nicht entfernt werden."
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "Nutzung"
+        },
+        "publishedLinks": {
+          "label": "Veröffentlichte Links"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "Wiedergabegeschwindigkeit"
       },
       "title": "Sprachfunktionen"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "Veröffentlichte Links",
+        "description": "Links zu HTML-Dateien, die Sie aus Chats veröffentlicht haben. Jeder, der einen Link hat, kann die Datei öffnen."
+      },
+      "empty": {
+        "title": "Keine veröffentlichten Links",
+        "description": "Um eine HTML-Datei zu veröffentlichen, öffnen Sie die Datei in einem Chat und wählen Sie Veröffentlichen."
+      },
+      "loadError": {
+        "title": "Ihre veröffentlichten Links konnten nicht geladen werden"
+      },
+      "expires": {
+        "label": "Läuft am {date} ab"
+      },
+      "copyButton": {
+        "tooltip": "Link kopieren"
+      },
+      "openButton": {
+        "tooltip": "Link öffnen"
+      },
+      "unpublishButton": {
+        "label": "Veröffentlichung aufheben"
+      },
+      "unpublishedToast": {
+        "message": "Der Link wurde entfernt."
+      },
+      "unpublishError": {
+        "message": "Der Link konnte nicht entfernt werden."
+      }
     }
   },
   "sidebar": {

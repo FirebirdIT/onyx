@@ -13212,6 +13212,9 @@
           "level": "{zoom}%",
           "zoomInTooltip": "확대",
           "zoomOutTooltip": "축소"
+        },
+        "publishButton": {
+          "tooltip": "공개 링크로 게시"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {파일 #개 선택됨} other {파일 #개 선택됨}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "링크로 게시",
+          "description": "이 HTML 파일의 공개 링크를 만듭니다.",
+          "publishedTitle": "링크가 준비되었습니다"
+        },
+        "publicWarning": {
+          "message": "링크는 공개됩니다. 링크가 있는 사람은 누구나 이 파일을 열 수 있습니다. 비공개 데이터는 게시하지 마세요."
+        },
+        "titleField": {
+          "label": "제목",
+          "placeholder": "링크 제목을 입력하세요"
+        },
+        "expiryField": {
+          "label": "링크 만료",
+          "placeholder": "링크 만료 시점을 선택하세요",
+          "option": "{days, plural, one {#일} other {#일}}"
+        },
+        "published": {
+          "description": "이 링크가 있는 사람은 누구나 파일을 열 수 있습니다. 링크는 {date}에 만료됩니다."
+        },
+        "linkInput": {
+          "copyTooltip": "링크 복사"
+        },
+        "openButton": {
+          "tooltip": "링크 열기"
+        },
+        "publishButton": {
+          "label": "게시",
+          "pendingLabel": "게시 중"
+        },
+        "cancelButton": {
+          "label": "취소"
+        },
+        "doneButton": {
+          "label": "완료"
+        },
+        "unpublishButton": {
+          "label": "게시 취소",
+          "pendingLabel": "제거 중"
+        },
+        "publishError": {
+          "message": "파일을 게시할 수 없습니다."
+        },
+        "unpublishedToast": {
+          "message": "링크가 제거되었습니다."
+        },
+        "unpublishError": {
+          "message": "링크를 제거할 수 없습니다."
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "사용량"
+        },
+        "publishedLinks": {
+          "label": "게시된 링크"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "재생 속도"
       },
       "title": "음성"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "게시된 링크",
+        "description": "채팅에서 게시한 HTML 파일의 링크입니다. 링크가 있는 사람은 누구나 해당 파일을 열 수 있습니다."
+      },
+      "empty": {
+        "title": "게시된 링크가 없습니다",
+        "description": "HTML 파일을 게시하려면 채팅에서 파일을 열고 게시를 선택하세요."
+      },
+      "loadError": {
+        "title": "게시된 링크를 불러올 수 없습니다"
+      },
+      "expires": {
+        "label": "{date}에 만료"
+      },
+      "copyButton": {
+        "tooltip": "링크 복사"
+      },
+      "openButton": {
+        "tooltip": "링크 열기"
+      },
+      "unpublishButton": {
+        "label": "게시 취소"
+      },
+      "unpublishedToast": {
+        "message": "링크가 제거되었습니다."
+      },
+      "unpublishError": {
+        "message": "링크를 제거할 수 없습니다."
+      }
     }
   },
   "sidebar": {

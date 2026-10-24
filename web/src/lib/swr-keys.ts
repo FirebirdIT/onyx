@@ -103,6 +103,7 @@ export const SWR_KEYS = {
     `/api/admin/llm/built-in/options/${providerEndpoint}`,
   llmContextualCost: "/api/admin/llm/provider-contextual-cost",
   userUsage: "/api/user/usage",
+  publishedArtifacts: "/api/user/published-artifacts",
   costOverrides: "/api/admin/cost-overrides",
   adminUsageExport: "/api/admin/usage/export",
   adminSystemUsage: "/api/admin/usage/system",

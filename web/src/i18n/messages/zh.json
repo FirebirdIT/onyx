@@ -13212,6 +13212,9 @@
           "level": "{zoom}%",
           "zoomInTooltip": "放大",
           "zoomOutTooltip": "缩小"
+        },
+        "publishButton": {
+          "tooltip": "发布为公开链接"
         }
       },
       "share": {
@@ -13358,6 +13361,57 @@
         },
         "selectedCount": {
           "label": "{count, plural, one {已选择 # 个文件} other {已选择 # 个文件}}"
+        }
+      },
+      "publishArtifact": {
+        "header": {
+          "title": "发布为链接",
+          "description": "为此 HTML 文件创建公开链接。",
+          "publishedTitle": "链接已就绪"
+        },
+        "publicWarning": {
+          "message": "此链接是公开的。任何拥有该链接的人都可以打开此文件。请勿发布私密数据。"
+        },
+        "titleField": {
+          "label": "标题",
+          "placeholder": "输入链接标题"
+        },
+        "expiryField": {
+          "label": "链接有效期",
+          "placeholder": "选择链接的过期时间",
+          "option": "{days, plural, one {# 天} other {# 天}}"
+        },
+        "published": {
+          "description": "任何拥有此链接的人都可以打开该文件。链接将于 {date} 过期。"
+        },
+        "linkInput": {
+          "copyTooltip": "复制链接"
+        },
+        "openButton": {
+          "tooltip": "打开链接"
+        },
+        "publishButton": {
+          "label": "发布",
+          "pendingLabel": "正在发布"
+        },
+        "cancelButton": {
+          "label": "取消"
+        },
+        "doneButton": {
+          "label": "完成"
+        },
+        "unpublishButton": {
+          "label": "取消发布",
+          "pendingLabel": "正在移除"
+        },
+        "publishError": {
+          "message": "无法发布该文件。"
+        },
+        "unpublishedToast": {
+          "message": "链接已移除。"
+        },
+        "unpublishError": {
+          "message": "无法移除该链接。"
         }
       }
     },
@@ -16398,6 +16452,9 @@
         },
         "usage": {
           "label": "使用情况"
+        },
+        "publishedLinks": {
+          "label": "已发布的链接"
         }
       }
     },
@@ -16562,6 +16619,37 @@
         "title": "播放速度"
       },
       "title": "语音"
+    },
+    "publishedLinks": {
+      "header": {
+        "title": "已发布的链接",
+        "description": "你从聊天中发布的 HTML 文件链接。任何拥有链接的人都可以打开对应文件。"
+      },
+      "empty": {
+        "title": "没有已发布的链接",
+        "description": "要发布 HTML 文件，请在聊天中打开该文件并选择发布。"
+      },
+      "loadError": {
+        "title": "无法加载你已发布的链接"
+      },
+      "expires": {
+        "label": "于 {date} 过期"
+      },
+      "copyButton": {
+        "tooltip": "复制链接"
+      },
+      "openButton": {
+        "tooltip": "打开链接"
+      },
+      "unpublishButton": {
+        "label": "取消发布"
+      },
+      "unpublishedToast": {
+        "message": "链接已移除。"
+      },
+      "unpublishError": {
+        "message": "无法移除该链接。"
+      }
     }
   },
   "sidebar": {
