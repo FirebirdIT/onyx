@@ -36,6 +36,8 @@ from onyx.configs.app_configs import (
     APP_PORT,
     AUTH_BACKEND,
     CACHE_BACKEND,
+    DEEPX_PRESETS_URL,
+    DEEPX_ROUTE_API_KEY,
     DISABLE_VECTOR_DB,
     ENABLE_PUBLIC_DOCS,
     GOOGLE_LOGIN_BASE_SCOPES,
@@ -60,6 +62,7 @@ from onyx.db.engine.async_sql_engine import (
 from onyx.db.engine.connection_warmup import warm_up_connections
 from onyx.db.engine.sql_engine import SqlEngine, get_session_with_current_tenant
 from onyx.db.sso_provider import seed_saml_provider_from_conf_dir
+from onyx.deepx.bootstrap import run_deepx_bootstrap
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import register_onyx_exception_handlers
 from onyx.file_store.file_store import get_default_file_store
@@ -426,6 +429,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
         # If we are multi-tenant, we need to only set up initial public tables
         with get_session_with_current_tenant() as db_session:
             setup_onyx(db_session, POSTGRES_DEFAULT_SCHEMA)
+            # No-op unless DEEPX_ROUTE_API_KEY or DEEPX_PRESETS_URL is set.
+            run_deepx_bootstrap(
+                db_session,
+                route_api_key=DEEPX_ROUTE_API_KEY,
+                presets_url=DEEPX_PRESETS_URL,
+            )
             # Import a legacy single-config SAML_CONF_DIR into a provider row. The
             # api_server has the mount the migration job lacks, so this is where it
             # runs. No-op unless AUTH_TYPE=saml with no SAML row yet.

@@ -3084,6 +3084,33 @@ def get_deepx_route_available_models(
 ) -> list[DeepXRouteFinalModelResponse]:
     """Fetch chat models from the Deep X Route catalog at its fixed endpoint."""
     api_key = _resolve_deepx_route_api_key(request, db_session)
+    sorted_results = fetch_deepx_route_chat_models(api_key)
+
+    if request.provider_id is not None:
+        _sync_fetched_models(
+            db_session=db_session,
+            provider_id=request.provider_id,
+            models=[
+                SyncModelEntry(
+                    name=r.name,
+                    display_name=r.display_name,
+                    max_input_tokens=r.max_input_tokens,
+                    supports_image_input=r.supports_image_input,
+                    supports_reasoning=r.supports_reasoning,
+                )
+                for r in sorted_results
+            ],
+            source_label="Deep X Route",
+        )
+
+    return sorted_results
+
+
+def fetch_deepx_route_chat_models(api_key: str) -> list[DeepXRouteFinalModelResponse]:
+    """Return the chat models in the Deep X Route catalog, sorted by name.
+
+    Raises OnyxError when the catalog cannot be fetched or has no chat models.
+    """
     response_json = _get_deepx_route_models_response(api_key)
 
     models = response_json.get("data", [])
@@ -3114,26 +3141,7 @@ def get_deepx_route_available_models(
             "No chat models found in your Deep X Route catalog",
         )
 
-    sorted_results = sorted(results, key=lambda m: m.name.lower())
-
-    if request.provider_id is not None:
-        _sync_fetched_models(
-            db_session=db_session,
-            provider_id=request.provider_id,
-            models=[
-                SyncModelEntry(
-                    name=r.name,
-                    display_name=r.display_name,
-                    max_input_tokens=r.max_input_tokens,
-                    supports_image_input=r.supports_image_input,
-                    supports_reasoning=r.supports_reasoning,
-                )
-                for r in sorted_results
-            ],
-            source_label="Deep X Route",
-        )
-
-    return sorted_results
+    return sorted(results, key=lambda m: m.name.lower())
 
 
 @admin_router.post("/openai-compatible/available-models")

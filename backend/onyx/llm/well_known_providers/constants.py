@@ -27,6 +27,18 @@ DEEPX_ROUTE_PROVIDER_NAME = "deepx_route"
 # Fixed server-side: the admin supplies only the key, so the key never leaves
 # for another host.
 DEEPX_ROUTE_API_BASE = "https://api.deepxroute.com/v1"
+# Recommended default chat model of the Deep X Route catalog.
+DEEPX_ROUTE_DEFAULT_CHAT_MODEL = "dxr-pro"
+# Chat models to configure when the catalog cannot be fetched (for example at
+# startup without network). A later model refresh replaces this list.
+DEEPX_ROUTE_FALLBACK_CHAT_MODELS: tuple[str, ...] = (
+    DEEPX_ROUTE_DEFAULT_CHAT_MODEL,
+    "dxr-lite",
+    "dxr-core-plus",
+    "dxr-ultra",
+    "dxr-reason",
+    "dxr-vision",
+)
 
 VERCEL_AI_GATEWAY_PROVIDER_NAME = "vercel_ai_gateway"
 # Public, unauthenticated catalog; also litellm's default base for this provider.

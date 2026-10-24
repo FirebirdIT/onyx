@@ -48,6 +48,14 @@ pins the base, so the key reaches only Deep X Route.
 A Deep X Route model accepts images only when its catalog entry lists `image`
 in `input_modalities`. The gateway takes at most 4 images in one request, so
 `llm_step.py:resolve_image_cap` always caps Deep X Route at 4.
+When `DEEPX_ROUTE_API_KEY` is set and no LLM provider exists, the single-tenant
+api_server startup creates the Deep X Route provider with that key and makes it
+the chat default (`backend/onyx/deepx/route_bootstrap.py:ensure_deepx_route_llm_provider`).
+It uses the admin path: `api.py:fetch_deepx_route_chat_models`, then
+`upsert_llm_provider` and `update_default_model`. When the catalog fetch fails,
+it uses `DEEPX_ROUTE_FALLBACK_CHAT_MODELS`. The default is
+`DEEPX_ROUTE_DEFAULT_CHAT_MODEL` when the catalog has it. A provider that
+exists stops the step, so a restart never changes it.
 Zoom decision requests carry a shared Zoom Scribe connection ID. Only full admins
 can validate or save this link. Each request signs with the current connection credentials.
 
@@ -134,6 +142,7 @@ see §9.
 | `USER_USAGE_TRACKING_ENABLED` | true | Gates the per-user usage recorder, independent of Braintrust/Langfuse. |
 | `TRACING_CONFIG_CACHE_TTL_SECONDS` | 30 | How often `DynamicTracingProcessor` re-reads the effective config. |
 | `MULTI_TENANT` | | Forces tracing config to env-only; blocks the tracing admin API. |
+| `DEEPX_ROUTE_API_KEY` | unset (`configs/app_configs.py`) | Single-tenant startup creates the default Deep X Route provider when no provider exists (§1). The key is never logged. |
 
 ### Admin UI
 

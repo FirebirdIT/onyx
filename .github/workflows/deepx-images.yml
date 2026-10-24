@@ -1,0 +1,272 @@
+name: Deep X engine images
+
+# Builds the Deep X engine images for linux/amd64 and linux/arm64 on native
+# runners, merges each pair into one multi-arch tag on GHCR, and creates the
+# GitHub release "Deep X engine <semver>".
+#
+# GHCR does not have an API to change package visibility. Make each package
+# public once in the package settings. The check-visibility job warns while a
+# package is not public.
+
+on:
+  push:
+    tags:
+      - "deepx-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver of the images, for example 1.2.3 (no deepx-v prefix)"
+        required: true
+        type: string
+      create-release:
+        description: "Create the deepx-v<version> tag and GitHub release at this commit"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deepx-images-${{ github.ref }}-${{ inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/firebirdit/deepx
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      create-release: ${{ steps.version.outputs.create-release }}
+    steps:
+      - name: Resolve and validate the version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_CREATE_RELEASE: ${{ inputs.create-release }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = "push" ]; then
+            version="${GITHUB_REF_NAME#deepx-v}"
+            create_release="true"
+          else
+            version="${INPUT_VERSION#deepx-v}"
+            create_release="${INPUT_CREATE_RELEASE}"
+          fi
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$'
+          if ! printf '%s' "${version}" | grep -Eq "${semver}"; then
+            echo "::error::'${version}' is not a semver version (for example 1.2.3)"
+            exit 1
+          fi
+          {
+            echo "version=${version}"
+            echo "tag=deepx-v${version}"
+            echo "create-release=${create_release}"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve-version
+    strategy:
+      fail-fast: true
+      matrix:
+        image: [backend, web-server, model-server]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+          - image: backend
+            context: ./backend
+            file: ./backend/Dockerfile
+            target: runtime
+          - image: web-server
+            context: ./web
+            file: ./web/Dockerfile
+            target: ""
+          - image: model-server
+            context: ./backend
+            file: ./backend/Dockerfile.model_server
+            target: ""
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ${{ format('{0}-{1}', 'ghcr.io/firebirdit/deepx', matrix.image) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # The model server image holds embedding models. Hosted runners need the
+      # space that the preinstalled SDKs take.
+      - name: Free disk space
+        if: matrix.image == 'model-server'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h /
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302
+        with:
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.title=deepx-${{ matrix.image }}
+            org.opencontainers.image.version=${{ needs.resolve-version.outputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # ratchet:docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@c99871dec2022cc055c062a10cc1a1310835ceb4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # NEXT_PUBLIC_BRAND is read at web build time, so the brand is baked into
+      # the web image. The other images ignore it.
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            ONYX_VERSION=${{ needs.resolve-version.outputs.version }}
+            NEXT_PUBLIC_BRAND=deepx
+            NODE_OPTIONS=--max-old-space-size=8192
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/digests"
+          touch "${RUNNER_TEMP}/digests/${DIGEST#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.image }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    needs: [resolve-version, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [backend, web-server, model-server]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ${{ format('{0}-{1}', 'ghcr.io/firebirdit/deepx', matrix.image) }}
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-${{ matrix.image }}-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # ratchet:docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@c99871dec2022cc055c062a10cc1a1310835ceb4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push the multi-arch manifest
+        env:
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          sources=()
+          for digest_file in "${RUNNER_TEMP}"/digests/*; do
+            sources+=("${IMAGE}@sha256:$(basename "${digest_file}")")
+          done
+          if [ "${#sources[@]}" -ne 2 ]; then
+            echo "::error::Expected 2 digests for ${IMAGE}, found ${#sources[@]}"
+            exit 1
+          fi
+          docker buildx imagetools create \
+            -t "${IMAGE}:${VERSION}" \
+            -t "${IMAGE}:latest" \
+            "${sources[@]}"
+          docker buildx imagetools inspect "${IMAGE}:${VERSION}"
+
+  check-visibility:
+    needs: merge
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      packages: read
+    steps:
+      - name: Warn about packages that are not public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER}"
+          for name in deepx-backend deepx-web-server deepx-model-server; do
+            visibility=$(gh api "orgs/${owner}/packages/container/${name}" --jq '.visibility' 2>/dev/null \
+              || gh api "users/${owner}/packages/container/${name}" --jq '.visibility' 2>/dev/null \
+              || echo "unknown")
+            if [ "${visibility}" = "public" ]; then
+              echo "${name} is public."
+            else
+              echo "::warning::ghcr.io/${owner,,}/${name} visibility is '${visibility}'. Make it public once in the package settings (Package settings > Change visibility)."
+            fi
+          done
+
+  release:
+    needs: [resolve-version, merge]
+    if: needs.resolve-version.outputs.create-release == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Create or update the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+          TAG: ${{ needs.resolve-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          title="Deep X engine ${VERSION}"
+          notes=$(printf '%s\n' \
+            "Multi-arch images (linux/amd64, linux/arm64):" \
+            "" \
+            "- \`${IMAGE_PREFIX}-backend:${VERSION}\`" \
+            "- \`${IMAGE_PREFIX}-web-server:${VERSION}\`" \
+            "- \`${IMAGE_PREFIX}-model-server:${VERSION}\`")
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+              --title "${title}" --notes "${notes}"
+          else
+            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+              --target "${GITHUB_SHA}" --title "${title}" --notes "${notes}" --latest=false
+          fi

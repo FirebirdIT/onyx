@@ -2268,3 +2268,12 @@ STRIPE_PUBLISHABLE_KEY_URL = (
 )
 # Override for local testing with Stripe test keys (pk_test_*)
 STRIPE_PUBLISHABLE_KEY_OVERRIDE = os.environ.get("STRIPE_PUBLISHABLE_KEY")
+
+
+## Deep X engine bootstrap (single-tenant api_server startup)
+# Deep X Route API key. When set and no LLM provider exists, startup creates the
+# Deep X Route provider with this key and makes it the default. Never log it.
+DEEPX_ROUTE_API_KEY = (os.environ.get("DEEPX_ROUTE_API_KEY") or "").strip() or None
+# URL of the Deep X presets JSON. Startup creates the assistants it lists that do
+# not exist yet (match by name). It never changes an existing assistant.
+DEEPX_PRESETS_URL = (os.environ.get("DEEPX_PRESETS_URL") or "").strip() or None

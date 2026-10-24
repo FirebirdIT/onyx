@@ -57,6 +57,7 @@ never sees an image generation tool it cannot use, and a user is never told
 
 | Name | Where | Effect |
 |---|---|---|
+| `DEEPX_ROUTE_API_KEY` (`configs/app_configs.py`) | `backend/onyx/deepx/route_bootstrap.py:ensure_deepx_route_image_generation` | When no `ImageGenerationConfig` exists, single-tenant startup creates the default `deepx_route_dxr_image` (`dxr-image`) config through `api.py:create_image_generation_config`, the function `create_config` calls. |
 | `IMAGE_MODEL_NAME`, `IMAGE_MODEL_PROVIDER` (`configs/app_configs.py`) | `ImageGenerationTool.__init__` defaults | Fallback model/provider if a call site does not pass its own; in practice the tool is always constructed from the DB default config (`tool_constructor.py:_get_image_generation_config`, `generation.py:_default_provider_and_model`). |
 
 There is no feature flag gating this component. The system-level availability check
