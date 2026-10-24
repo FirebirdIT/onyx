@@ -83,10 +83,6 @@ DISABLE_VECTOR_DB = os.environ.get("DISABLE_VECTOR_DB", "").lower() == "true"
 # without explicit permission from Onyx.
 HIDE_ONYX_BRANDING = os.environ.get("HIDE_ONYX_BRANDING", "").lower() == "true"
 
-# Puts the product brand on files the office tools create. Off by default, so
-# users get neutral files they can use for any company.
-OFFICE_FILES_BRANDED = os.environ.get("OFFICE_FILES_BRANDED", "").lower() == "true"
-
 # TEMPORARY (will be removed soon): operator-forced Search-UI scope (self-hosted only) —
 # comma-separated document set NAMES. When set, the Onyx Search UI is restricted to those sets
 # (AND'd on top of any persona/user scope; ACL still enforced) — chat/other flows are unaffected,

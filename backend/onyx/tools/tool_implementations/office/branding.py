@@ -1,12 +1,9 @@
 """Brand colours for the files the office tools create.
 
-Files are neutral by default (`OFFICE_BRAND` is None), so anyone can use them
-for their own company. `OFFICE_FILES_BRANDED=true` puts the product brand on them."""
+The tools make neutral files, so anyone can use them for their own company.
+A builder applies a brand only when a caller passes one."""
 
 from dataclasses import dataclass
-
-from onyx.configs.app_configs import OFFICE_FILES_BRANDED
-from onyx.configs.constants import PRODUCT_BRAND
 
 
 @dataclass(frozen=True)
@@ -36,8 +33,4 @@ DEEPX_OFFICE_BRAND = OfficeBrand(
         "8AB17D",
         "B56576",
     ),
-)
-
-OFFICE_BRAND: OfficeBrand | None = (
-    DEEPX_OFFICE_BRAND if OFFICE_FILES_BRANDED and PRODUCT_BRAND == "deepx" else None
 )

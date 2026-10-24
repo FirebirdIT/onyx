@@ -25,10 +25,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from onyx.tools.tool_implementations.office.branding import (
-    OFFICE_BRAND,
-    OfficeBrand,
-)
+from onyx.tools.tool_implementations.office.branding import OfficeBrand
 from onyx.tools.tool_implementations.office.docx_builder import (
     BulletListBlock,
     DocumentBlock,
@@ -275,7 +272,7 @@ def _footer(font: str, brand: OfficeBrand | None) -> _PageCallback:
     return draw
 
 
-def build_pdf(spec: DocumentSpec, brand: OfficeBrand | None = OFFICE_BRAND) -> bytes:
+def build_pdf(spec: DocumentSpec, brand: OfficeBrand | None = None) -> bytes:
     font, bold_font = _fonts_for(_spec_text(spec))
     styles = _Styles(font, bold_font, brand.primary if brand else _DEFAULT_ACCENT)
     buffer = BytesIO()
