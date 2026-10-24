@@ -13,10 +13,7 @@ from docx.table import _Cell
 from docx.text.paragraph import Paragraph
 from pydantic import BaseModel, Field, JsonValue, model_validator
 
-from onyx.tools.tool_implementations.office.branding import (
-    OFFICE_BRAND,
-    OfficeBrand,
-)
+from onyx.tools.tool_implementations.office.branding import OfficeBrand
 from onyx.tools.tool_implementations.office.models import (
     MAX_CELL_TEXT_LENGTH,
     MAX_TEXT_LENGTH,
@@ -187,7 +184,7 @@ def _add_block(
         document.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
 
 
-def build_docx(spec: DocumentSpec, brand: OfficeBrand | None = OFFICE_BRAND) -> bytes:
+def build_docx(spec: DocumentSpec, brand: OfficeBrand | None = None) -> bytes:
     document = Document()
     document.core_properties.title = clean_text(spec.title)
     if brand is not None:

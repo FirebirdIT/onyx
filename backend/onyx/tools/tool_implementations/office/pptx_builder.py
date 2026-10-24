@@ -15,10 +15,7 @@ from pptx.text.text import TextFrame
 from pptx.util import Emu, Inches, Pt
 from pydantic import BaseModel, Field, FiniteFloat, JsonValue, model_validator
 
-from onyx.tools.tool_implementations.office.branding import (
-    OFFICE_BRAND,
-    OfficeBrand,
-)
+from onyx.tools.tool_implementations.office.branding import OfficeBrand
 from onyx.tools.tool_implementations.office.models import (
     MAX_NOTES_LENGTH,
     MAX_TITLE_LENGTH,
@@ -328,9 +325,7 @@ def _add_slide(
     return slide
 
 
-def build_pptx(
-    spec: PresentationSpec, brand: OfficeBrand | None = OFFICE_BRAND
-) -> bytes:
+def build_pptx(spec: PresentationSpec, brand: OfficeBrand | None = None) -> bytes:
     prs = Presentation()
     prs.slide_width = _SLIDE_WIDTH
     prs.slide_height = _SLIDE_HEIGHT

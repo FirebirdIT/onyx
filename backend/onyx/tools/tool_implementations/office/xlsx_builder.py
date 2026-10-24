@@ -21,10 +21,7 @@ from pydantic import (
     model_validator,
 )
 
-from onyx.tools.tool_implementations.office.branding import (
-    OFFICE_BRAND,
-    OfficeBrand,
-)
+from onyx.tools.tool_implementations.office.branding import OfficeBrand
 from onyx.tools.tool_implementations.office.models import (
     MAX_CELL_TEXT_LENGTH,
     MAX_TITLE_LENGTH,
@@ -243,7 +240,7 @@ def _fill_sheet(sheet: Worksheet, spec: SheetSpec, brand: OfficeBrand | None) ->
         _add_chart(sheet, chart, anchor)
 
 
-def build_xlsx(spec: WorkbookSpec, brand: OfficeBrand | None = OFFICE_BRAND) -> bytes:
+def build_xlsx(spec: WorkbookSpec, brand: OfficeBrand | None = None) -> bytes:
     workbook = Workbook()
     if brand is not None:
         workbook.properties.creator = brand.name
