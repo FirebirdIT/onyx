@@ -6,6 +6,8 @@ on:
       - "*"
       # Deep X engine tags build in deepx-images.yml.
       - "!deepx-v*"
+      # Deep X desktop tags build in deepx-desktop-release.yml.
+      - "!desktop-v*"
   workflow_dispatch:
 
 # Set restrictive default permissions for all jobs. Jobs that need more permissions
