@@ -166,6 +166,8 @@ class UserSettings(Settings):
     hide_onyx_branding: bool = False
     # True when hooks are available: single-tenant EE deployments only.
     hooks_enabled: bool = False
+    # True when the Deep X desktop app runs this engine for one person.
+    deepx_local_engine: bool = False
     # Application version, read from the ONYX_VERSION env var at startup.
     version: str | None = None
     # Hard ceiling for user_file_max_upload_size_mb, derived from env var.

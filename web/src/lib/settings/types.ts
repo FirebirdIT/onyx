@@ -120,6 +120,9 @@ export interface Settings {
   // True when hooks are available: single-tenant deployments only.
   hooks_enabled?: boolean;
 
+  // True when the Deep X desktop app runs this engine for one person.
+  deepx_local_engine?: boolean;
+
   // Application version from the ONYX_VERSION env var on the server.
   version?: string | null;
   // Hard ceiling for user_file_max_upload_size_mb, derived from env var.

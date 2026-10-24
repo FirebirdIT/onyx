@@ -84,6 +84,7 @@ export default function AdminSidebar() {
       !settings?.hide_query_history_from_admin_panel,
     craftAvailable: settings?.onyx_craft_available ?? false,
     llmGatewayAvailable: settings?.llm_gateway_available ?? false,
+    localEngine: settings?.deepx_local_engine ?? false,
   };
 
   const allItems = buildItems(adminCapabilities, flags, settings);

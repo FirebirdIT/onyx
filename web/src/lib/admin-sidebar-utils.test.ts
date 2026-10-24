@@ -17,6 +17,7 @@ const flags: FeatureFlags = {
   queryHistoryEnabled: false,
   craftAvailable: false,
   llmGatewayAvailable: false,
+  localEngine: false,
 };
 
 test("shows one Plugins link for an action manager", () => {
@@ -115,4 +116,15 @@ test.each([
 
 test("matches canonical plugin details to the Plugins registry entry", () => {
   expect(matchAdminRoute("/admin/plugins/mcp/7")).toBe(ADMIN_ROUTES.PLUGINS);
+});
+
+test("hides Users when one person runs the Deep X desktop engine", () => {
+  const links = (localEngine: boolean) =>
+    buildItems(
+      [Permission.FULL_ADMIN_PANEL_ACCESS],
+      { ...flags, localEngine },
+      null
+    ).map((item) => item.link);
+  expect(links(false)).toContain(ADMIN_ROUTES.USERS.path);
+  expect(links(true)).not.toContain(ADMIN_ROUTES.USERS.path);
 });

@@ -99,7 +99,7 @@ pub fn render_env(input: &EnvInput<'_>) -> Result<String, String> {
     let mut out = String::from(
         "# Written by the Deep X app on each engine start. Do not edit: changes are lost.\n",
     );
-    let lines: [(&str, &str); 15] = [
+    let lines: [(&str, &str); 16] = [
         ("ONYX_BACKEND_IMAGE", &images.backend_image),
         ("ONYX_WEB_SERVER_IMAGE", &images.web_image),
         ("ONYX_MODEL_SERVER_IMAGE", &images.model_server_image),
@@ -120,6 +120,8 @@ pub fn render_env(input: &EnvInput<'_>) -> Result<String, String> {
         ("HOST_PORT", &port),
         ("WEB_DOMAIN", &format!("http://localhost:{port}")),
         ("DEEPX_PRESETS_URL", &format!("{hub}/api/presets")),
+        // One person on one computer: the web app hides team pages.
+        ("DEEPX_LOCAL_ENGINE", "true"),
     ];
     for (key, value) in lines {
         push_line(&mut out, key, value)?;
@@ -192,6 +194,7 @@ mod tests {
         assert_eq!(env["POSTGRES_PASSWORD"], "pgpass");
         assert_eq!(env["USER_AUTH_SECRET"], "authsecret");
         assert_eq!(env["DEEPX_ROUTE_API_KEY"], "sk-dxr-abc_DEF-123");
+        assert_eq!(env["DEEPX_LOCAL_ENGINE"], "true");
         assert_eq!(
             env["DEEPX_PRESETS_URL"],
             "https://deepx-hub.vercel.app/api/presets"
