@@ -1430,6 +1430,11 @@ def get_personas(db_session: Session) -> Sequence[Persona]:
     return db_session.execute(stmt).unique().scalars().all()
 
 
+def fetch_all_persona_names(db_session: Session) -> set[str]:
+    """Names of every persona of every user, deleted ones included."""
+    return set(db_session.scalars(select(Persona.name)).all())
+
+
 def mark_persona_as_deleted(
     persona_id: int,
     user: User | None,

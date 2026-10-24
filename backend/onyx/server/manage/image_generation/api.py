@@ -269,6 +269,17 @@ def create_config(
     Creates a new LLM provider + model config + image config with the given
     credentials.
     """
+    return create_image_generation_config(config_create, db_session)
+
+
+def create_image_generation_config(
+    config_create: ImageGenerationConfigCreate,
+    db_session: Session,
+) -> ImageGenerationConfigView:
+    """Create the LLM provider, model config and image config for one request.
+
+    Raises HTTPException or OnyxError when the request is not valid.
+    """
     # Check if image_provider_id already exists
     existing_config = get_image_generation_config(
         db_session, config_create.image_provider_id

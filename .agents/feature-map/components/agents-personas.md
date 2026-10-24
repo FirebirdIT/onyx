@@ -264,6 +264,14 @@ which diffs desired shares against existing rows, notifies genuinely new
 sharees (`NotificationType.PERSONA_SHARED`), and never re-notifies on a
 level-only change.
 
+When `DEEPX_PRESETS_URL` is set, the single-tenant api_server startup fetches
+the presets JSON and creates each listed assistant
+(`backend/onyx/deepx/presets_bootstrap.py:create_missing_preset_assistants`). It calls
+`upsert_persona` with `user=None`, `is_public=True`, and the tool ids of the
+default assistant. It skips a name that any persona has, deleted personas
+included (`fetch_all_persona_names`), so a restart never changes or brings back
+an assistant. A fetch or parse failure only logs a warning.
+
 ### 4.3 Tool construction
 
 `onyx/tools/tool_constructor.py:construct_tools` (via `_construct_tools_impl`)
