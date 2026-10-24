@@ -128,7 +128,7 @@ jobs:
           jq --arg v "${VERSION}" '.version = $v' package.json > package.json.tmp
           mv package.json.tmp package.json
 
-      # Apple signing is optional: without the secrets the app is not signed.
+      # Apple signing is optional: without the secrets the app gets an ad-hoc signature.
       - name: Import Apple certificate
         if: runner.os == 'macOS'
         id: apple
@@ -139,8 +139,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${APPLE_CERTIFICATE}" ]; then
-            echo "No Apple certificate secret. The macOS build is not signed."
-            echo "identity=" >> "$GITHUB_OUTPUT"
+            # "-" is an ad-hoc signature. Apple silicon runs only signed code.
+            echo "No Apple certificate secret. The macOS build gets an ad-hoc signature."
+            echo "identity=-" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "${APPLE_CERTIFICATE}" | base64 --decode > certificate.p12
