@@ -21,7 +21,12 @@ from onyx.configs.constants import DEFAULT_PERSONA_ID
 from onyx.db.engine.sql_engine import SqlEngine
 from onyx.db.enums import LLMModelFlowType
 from onyx.db.image_generation import get_all_image_generation_configs
-from onyx.db.llm import fetch_default_model, fetch_existing_llm_providers
+from onyx.db.llm import (
+    fetch_default_model,
+    fetch_existing_llm_providers,
+    update_default_model,
+    upsert_llm_provider,
+)
 from onyx.db.models import (
     Base,
     ImageGenerationConfig,
@@ -32,7 +37,12 @@ from onyx.db.models import (
 from onyx.deepx.bootstrap import run_deepx_bootstrap
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.server.manage.llm.models import DeepXRouteFinalModelResponse
+from onyx.server.manage.llm.models import (
+    DeepXRouteFinalModelResponse,
+    LLMProviderUpsertRequest,
+    ModelConfigurationUpsertRequest,
+)
+from onyx.tools.tool_implementations.search.search_tool import SearchTool
 from shared_configs.contextvars import CURRENT_TENANT_ID_CONTEXTVAR
 
 FAKE_ROUTE_KEY = "sk-dxr-test-bootstrap-key"
@@ -199,6 +209,73 @@ def test_existing_provider_and_image_config_are_kept(db_session: Session) -> Non
     assert stored_key is not None
     assert stored_key.get_value(apply_mask=False) == FAKE_ROUTE_KEY
     assert len(get_all_image_generation_configs(db_session)) == 1
+
+
+def test_route_key_adds_provider_next_to_other_provider(db_session: Session) -> None:
+    other = upsert_llm_provider(
+        llm_provider_upsert_request=LLMProviderUpsertRequest(
+            name="Onboarding provider",
+            provider="openai",
+            api_key="sk-other",
+            api_key_changed=True,
+            is_public=True,
+            groups=[],
+            model_configurations=[
+                ModelConfigurationUpsertRequest(name="gpt-5-mini", is_visible=True)
+            ],
+        ),
+        db_session=db_session,
+    )
+    update_default_model(
+        db_session=db_session,
+        provider_id=other.id,
+        model="gpt-5-mini",
+        flow_type=LLMModelFlowType.CHAT,
+    )
+
+    with patch(CATALOG_PATCH, return_value=_catalog()):
+        _bootstrap_route(db_session)
+        _bootstrap_route(db_session)
+
+    providers = fetch_existing_llm_providers(db_session, flow_type_filter=[])
+    assert sorted(p.provider for p in providers) == ["deepx_route", "openai"]
+    default_model = fetch_default_model(db_session, LLMModelFlowType.CHAT)
+    assert default_model is not None
+    assert default_model.llm_provider_id == other.id
+    assert default_model.name == "gpt-5-mini"
+
+
+def test_presets_skip_unavailable_built_in_tools(db_session: Session) -> None:
+    custom_tool = Tool(name="DeepXCustomTool", description="custom", enabled=True)
+    search_tool = Tool(
+        name="SearchTool",
+        description="search",
+        in_code_tool_id=SearchTool.__name__,
+        enabled=True,
+    )
+    db_session.add_all([custom_tool, search_tool])
+    db_session.flush()
+    db_session.add(
+        Persona(
+            id=DEFAULT_PERSONA_ID,
+            name="Assistant",
+            description="default",
+            builtin_persona=True,
+            is_public=True,
+            tools=[custom_tool, search_tool],
+        )
+    )
+    db_session.commit()
+
+    payload = {"version": 1, "assistants": [_preset("Writer")]}
+    with (
+        patch(PRESETS_GET_PATCH, return_value=_presets_response(payload)),
+        patch.object(SearchTool, "is_available", return_value=False),
+    ):
+        run_deepx_bootstrap(db_session, route_api_key=None, presets_url=PRESETS_URL)
+
+    writer = db_session.scalars(select(Persona).where(Persona.name == "Writer")).one()
+    assert [t.id for t in writer.tools] == [custom_tool.id]
 
 
 def test_presets_create_missing_assistants_only(db_session: Session) -> None:
