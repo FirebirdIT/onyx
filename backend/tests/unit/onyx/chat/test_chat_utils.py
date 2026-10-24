@@ -5,6 +5,7 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 from onyx.chat.chat_utils import (
+    MAX_REPLAYED_TOOL_RESPONSE_CHARS,
     _build_tool_call_response_history_message,
     _get_or_extract_plaintext,
     convert_chat_history,
@@ -182,11 +183,19 @@ class TestBuildToolCallResponseHistoryMessage:
         )
         assert message == '[{"file_id": "img-1", "revised_prompt": "p1"}]'
 
-    def test_non_image_tool_uses_placeholder(self) -> None:
+    def test_non_image_tool_keeps_short_response(self) -> None:
+        message = _build_tool_call_response_history_message(
+            tool_name="create_pdf",
+            generated_images=None,
+            tool_call_response='{"file_link":"/api/chat/file/1"}',
+        )
+        assert message == '{"file_link":"/api/chat/file/1"}'
+
+    def test_non_image_tool_long_response_uses_placeholder(self) -> None:
         message = _build_tool_call_response_history_message(
             tool_name="web_search",
             generated_images=None,
-            tool_call_response='{"raw":"value"}',
+            tool_call_response="x" * (MAX_REPLAYED_TOOL_RESPONSE_CHARS + 1),
         )
         assert message == TOOL_CALL_RESPONSE_CROSS_MESSAGE
 
@@ -331,7 +340,7 @@ class TestConvertChatHistory:
         tool_call.tool_call_arguments = {"queries": ["alpha"]}
         tool_call.tool_call_tokens = 12
         tool_call.generated_images = None
-        tool_call.tool_call_response = "original tool output"
+        tool_call.tool_call_response = "o" * (MAX_REPLAYED_TOOL_RESPONSE_CHARS + 1)
 
         assistant_msg = self._make_chat_message("final answer", MessageType.ASSISTANT)
         assistant_msg.tool_calls = [tool_call]

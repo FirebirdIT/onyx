@@ -602,9 +602,12 @@ cd backend && uv run pytest tests/integration -k chat
   final answers under that arrangement. Do not "simplify" by merging the two.
 - **Tool responses become placeholders only in later turns.** Inside one
   turn, every cycle sees the full responses. When a later turn loads saved
-  history, ordinary responses turn into `TOOL_CALL_RESPONSE_CROSS_MESSAGE`.
-  Tool-call arguments survive. Do not assume a fact from an earlier turn's tool
-  response is still visible. Do not remove in-turn responses to save context.
+  history, responses longer than `chat_utils.py:MAX_REPLAYED_TOOL_RESPONSE_CHARS`
+  turn into `TOOL_CALL_RESPONSE_CROSS_MESSAGE`. Shorter responses (file links,
+  short program output) stay. The placeholder tells the model that it saw the
+  result earlier, so it does not doubt its earlier answer. Tool-call arguments
+  survive. Do not assume a fact from a long earlier tool response is still
+  visible. Do not remove in-turn responses to save context.
 - **Internal search arguments in history are the LLM's original arguments, not
   the expanded queries.** If you are debugging "why did the model re-search,"
   the expanded queries are in the `SearchToolQueriesDelta` packet, not in history.
