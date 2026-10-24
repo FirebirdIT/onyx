@@ -7,6 +7,10 @@ on:
   pull_request:
     paths:
       - "desktop/**"
+      # The app embeds these engine files at build time.
+      - "deployment/docker_compose/docker-compose.yml"
+      - "deployment/docker_compose/docker-compose.onyx-lite.yml"
+      - "deployment/data/nginx/**"
       - ".github/workflows/pr-desktop-build.yml"
       - "package.json"
       - "bun.lock"

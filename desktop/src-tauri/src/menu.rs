@@ -11,7 +11,7 @@ use tauri::menu::{
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager, Wry};
 
-const TRAY_ID: &str = "onyx-tray";
+const TRAY_ID: &str = "deepx-tray";
 const TRAY_ICON_BYTES: &[u8] = include_bytes!("../icons/tray-icon.png");
 // GTK's AboutDialog renders the logo at the image's native size (muda does no
 // scaling), so embed the 128px asset rather than the 256px @2x one.
@@ -32,6 +32,8 @@ pub const MENU_OPEN_DOCS_ID: &str = "open_docs";
 pub const MENU_RELOAD_ID: &str = "reload_page";
 pub const MENU_GO_BACK_ID: &str = "go_back";
 pub const MENU_GO_FORWARD_ID: &str = "go_forward";
+pub const MENU_BACKUP_ID: &str = "backup_now";
+pub const MENU_RESTORE_ID: &str = "restore_backup";
 
 /// Handles to the checkable menu items, populated once in `setup_app_menu`.
 /// Toggling reaches for these directly instead of re-walking the whole menu
@@ -62,19 +64,42 @@ fn build_file_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
         Some("CmdOrCtrl+Comma"),
     )?;
 
+    let backup_item = MenuItem::with_id(app, MENU_BACKUP_ID, "Back Up Now…", true, None::<&str>)?;
+    let restore_item = MenuItem::with_id(
+        app,
+        MENU_RESTORE_ID,
+        "Restore from Backup…",
+        true,
+        None::<&str>,
+    )?;
+    let separator = PredefinedMenuItem::separator(app)?;
+
     if let Some(file_menu) = menu
         .items()?
         .into_iter()
         .filter_map(|item| item.as_submenu().cloned())
         .find(|submenu| submenu.text().ok().as_deref() == Some("File"))
     {
-        file_menu.insert_items(&[&new_chat_item, &new_window_item, &settings_item], 0)?;
+        file_menu.insert_items(
+            &[
+                &new_chat_item,
+                &new_window_item,
+                &settings_item,
+                &separator,
+                &backup_item,
+                &restore_item,
+            ],
+            0,
+        )?;
     } else {
         let file_menu = SubmenuBuilder::new(app, "File")
             .items(&[
                 &new_chat_item,
                 &new_window_item,
                 &settings_item,
+                &separator,
+                &backup_item,
+                &restore_item,
                 &PredefinedMenuItem::close_window(app, None)?,
             ])
             .build()?;
@@ -86,7 +111,7 @@ fn build_file_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
 
 /// Reload/Back/Forward as View-menu accelerators. These are the chords the
 /// removed global-shortcut set (#7914) wrongly registered system-wide; as
-/// menu accelerators they only fire while an Onyx window has focus.
+/// menu accelerators they only fire while a Deep X window has focus.
 fn build_view_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
     let reload_item = MenuItem::with_id(app, MENU_RELOAD_ID, "Reload", true, Some("CmdOrCtrl+R"))?;
 
@@ -210,10 +235,11 @@ fn build_window_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
 }
 
 fn build_help_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
-    let docs_item = MenuItem::with_id(
+    let docs_item = MenuItem::with_id(app, MENU_OPEN_DOCS_ID, "Deep X Help", true, None::<&str>)?;
+    let updates_item = MenuItem::with_id(
         app,
-        MENU_OPEN_DOCS_ID,
-        "Onyx Documentation",
+        crate::updater::MENU_CHECK_UPDATES_ID,
+        "Check for Updates…",
         true,
         None::<&str>,
     )?;
@@ -225,7 +251,7 @@ fn build_help_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
         // Off macOS, `Menu::default` seeds this Help menu with a predefined
         // "About" item (at index 0) whose metadata carries no icon, so the
         // About dialog shows no logo. Rebuild that metadata -- keeping the name,
-        // version, and copyright `Menu::default` set -- with the Onyx icon added.
+        // version, and copyright `Menu::default` set -- with the Deep X icon added.
         // (On macOS the About item lives in the app menu, not Help.)
         #[cfg(not(target_os = "macos"))]
         {
@@ -243,9 +269,11 @@ fn build_help_menu(app: &AppHandle, menu: &Menu<Wry>) -> tauri::Result<()> {
             help_menu.insert(&about_item, 0)?;
         }
         help_menu.append(&docs_item)?;
+        help_menu.append(&updates_item)?;
     } else {
         let help_menu = SubmenuBuilder::with_id(app, HELP_SUBMENU_ID, "Help")
             .item(&docs_item)
+            .item(&updates_item)
             .build()?;
         menu.append(&help_menu)?;
     }
@@ -376,7 +404,7 @@ fn build_tray_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let open_app = MenuItem::with_id(
         app,
         TRAY_MENU_OPEN_APP_ID,
-        "Open Onyx",
+        "Open Deep X",
         true,
         open_app_chord.as_deref(),
     )?;
@@ -410,7 +438,7 @@ fn build_tray_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     )?;
     // Keep it visible/pinned without letting users uncheck (avoids orphaning the tray)
     show_in_menu_bar.set_enabled(false)?;
-    let quit = PredefinedMenuItem::quit(app, Some("Quit Onyx"))?;
+    let quit = PredefinedMenuItem::quit(app, Some("Quit Deep X"))?;
 
     let mut builder = MenuBuilder::new(app).item(&open_app).item(&open_chat);
     if let Some(item) = summon_new_chat.as_ref() {
@@ -473,7 +501,7 @@ fn handle_tray_menu_event(app: &AppHandle, id: &str) {
 }
 
 pub fn setup_tray_icon(app: &AppHandle) -> tauri::Result<()> {
-    let mut builder = TrayIconBuilder::with_id(TRAY_ID).tooltip("Onyx");
+    let mut builder = TrayIconBuilder::with_id(TRAY_ID).tooltip("Deep X");
 
     let tray_icon = Image::from_bytes(TRAY_ICON_BYTES)
         .ok()

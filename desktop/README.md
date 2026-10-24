@@ -1,18 +1,86 @@
-# Onyx Desktop
+# Deep X Desktop
 
-A lightweight macOS desktop application for [Onyx Cloud](https://cloud.onyx.app).
+The Deep X desktop app for macOS and Windows. It runs the Deep X engine on
+this computer with Docker, and it opens the engine at `http://localhost:3000`
+in a native window. It can also open a remote Deep X server.
 
-Built with [Tauri](https://tauri.app) for minimal bundle size (~10MB vs Electron's 150MB+).
+Built with [Tauri](https://tauri.app) v2.
 
-## Features
+## What the app does
 
-- 🪶 **Lightweight** - Native macOS WebKit, no bundled Chromium
-- ⌨️ **Keyboard Shortcuts** - Quick navigation and actions
-- 🪟 **Native Feel** - macOS-style title bar with traffic lights
-- 💾 **Window State** - Remembers size/position between sessions
-- 🔗 **Multi-window** - Open multiple Onyx windows
+- **First-run setup** (`src/index.html`, `src/setup.js`):
+  1. Checks that the Docker CLI is installed and that the Docker engine runs.
+  2. Asks for the engine mode: **Lite** (default) or **Full**.
+  3. Connects Deep X Route: "Sign in with Deep X Route" (PKCE, only when
+     `deepx_route_client_id` is set) or "paste API key". The app checks each
+     key with `GET https://api.deepxroute.com/v1/key` and keeps it in the OS
+     keychain (or in a 0600 file if there is no keychain).
+  4. Starts the engine and shows the progress, then opens the app.
+- **Engine** (`src-tauri/src/engine/`): writes the compose files, the nginx
+  files and a 0600 `.env` to the app data folder, then runs
+  `docker compose -p deepx ... up -d --wait`.
+- **Settings** (`⌘ ,`): engine mode, start, stop, restart, "stop the engine
+  when Deep X quits", Deep X Route key, and a remote server address.
+- **Updates**: on start and from **Help > Check for Updates…**. The feed is
+  `{hub_url}/api/desktop/latest.json`.
+- **Backup and restore**: **File > Back Up Now…** and
+  **File > Restore from Backup…**. The app encrypts a `pg_dump` of the engine
+  database on this computer and uploads it to the hub in parts. The hub sees
+  only ciphertext.
 
-## Keyboard Shortcuts
+## Engine files
+
+The app writes these files on each engine start. The layout is the same as in
+the repo, because the base compose file mounts `../data/nginx`.
+
+```
+<app data>/engine/
+├── secrets.json                       # made once, mode 0600
+├── engine-info.json                   # images of the last start (offline fallback)
+├── docker_compose/
+│   ├── docker-compose.yml             # deployment/docker_compose/docker-compose.yml
+│   ├── docker-compose.onyx-lite.yml   # Lite overlay (Lite mode only)
+│   ├── docker-compose.deepx.yml       # desktop overlay: nginx on 127.0.0.1:3000 only
+│   └── .env                           # mode 0600
+└── data/nginx/                        # deployment/data/nginx templates
+```
+
+The compose and nginx files are part of the app binary (`include_str!`), so a
+change to them in the repo goes into the next app build.
+
+The `.env` file sets the engine images (from `GET {hub_url}/api/engine`, else
+the images of the last start, else `latest`), `PRODUCT_BRAND=deepx`,
+`AUTH_TYPE=basic`, the generated secrets, `DEEPX_ROUTE_API_KEY` and
+`DEEPX_PRESETS_URL={hub_url}/api/presets`. Files stay in Postgres
+(`FILE_STORE_BACKEND=postgres`) in both modes, so a backup holds the user files.
+
+App data folder:
+
+- macOS: `~/Library/Application Support/com.deepx.deepx-desktop/`
+- Windows: `%APPDATA%\deepx\deepx-desktop\data\`
+
+## Configuration
+
+The config file is `config.json` in the config folder:
+
+- macOS: `~/Library/Application Support/com.deepx.deepx-desktop/config.json`
+- Windows: `%APPDATA%\deepx\deepx-desktop\config\config.json`
+- Linux: `~/.config/deepx-desktop/config.json`
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `server_url` | `http://localhost:3000` | The address that the window opens. |
+| `local_engine` | `true` | Start and stop the local engine. `false` for a remote server. |
+| `engine_mode` | `"lite"` | `"lite"` or `"full"`. |
+| `stop_engine_on_quit` | `true` | Stop the engine when the app quits. |
+| `setup_complete` | `false` | `true` after the first-run setup. |
+| `hub_url` | `https://deepx-hub.vercel.app` | The hub for engine images, updates and backups. |
+| `deepx_route_client_id` | `""` | Public client ID for the Deep X Route sign-in. Empty shows only "paste API key". |
+
+Press `⌘ ,` (Settings) to change most values. To use a remote server, enter its
+address in Settings. Then the app does not start the local engine.
+
+## Keyboard shortcuts
 
 | Shortcut | Action           |
 | -------- | ---------------- |
@@ -21,201 +89,84 @@ Built with [Tauri](https://tauri.app) for minimal bundle size (~10MB vs Electron
 | `⌘ R`    | Reload           |
 | `⌘ [`    | Go Back          |
 | `⌘ ]`    | Go Forward       |
-| `⌘ ,`    | Open Config File |
+| `⌘ ,`    | Settings         |
 | `⌘ W`    | Close Window     |
 | `⌘ Q`    | Quit             |
 
 ## Prerequisites
 
-1. **Rust** (latest stable)
-
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   source $HOME/.cargo/env
-   ```
-
-2. **Bun** (1.3+)
-
-   ```bash
-   curl -fsSL https://bun.sh/install | bash
-   ```
-
-3. **Xcode Command Line Tools**
-   ```bash
-   xcode-select --install
-   ```
+1. **Rust** (latest stable): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+2. **Bun** (1.3+): `curl -fsSL https://bun.sh/install | bash`
+3. **Xcode Command Line Tools** (macOS): `xcode-select --install`
+4. **Docker Desktop** to run the engine.
 
 ## Development
 
-Dependencies for `desktop/` are managed by the root bun workspace, so install
-once at the repo root:
+Dependencies for `desktop/` are in the root bun workspace. Install once at the
+repo root:
 
 ```bash
-# From the repo root
 bun install
 ```
 
 Then, from `desktop/`:
 
 ```bash
-# Run in development mode
-bun run dev
-
-# Run in debug mode
-bun run debug
+bun run dev      # development mode
+bun run debug    # development mode with DevTools and console capture
 ```
+
+Tests and lints, from `desktop/src-tauri/`:
+
+```bash
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test
+# Checks the written compose files with the real Docker CLI (no containers start):
+cargo test -- --ignored compose_config
+```
+
+Do not run the engine in development while another stack uses port 3000.
 
 ## Building
 
-### Build for current architecture
-
 ```bash
-bun run build
+bun run build          # current architecture
+bun run build:dmg      # macOS universal (add both rustup targets first)
+bun run build:windows  # Windows from macOS or Linux (cargo-xwin)
 ```
 
-### Build Universal Binary (Intel + Apple Silicon)
+## Releases
 
-```bash
-# First, add the targets
-rustup target add x86_64-apple-darwin
-rustup target add aarch64-apple-darwin
+Push a tag `desktop-v<semver>`, or run the **Deep X Desktop Release** workflow
+(`.github/workflows/deepx-desktop-release.yml`). The workflow builds the macOS
+universal app and the Windows installers, signs the updater files with
+`TAURI_SIGNING_PRIVATE_KEY`, and publishes a GitHub release with `latest.json`.
+Apple signing runs only when the `APPLE_CERTIFICATE` secrets are set.
 
-# Build universal binary
-bun run build:dmg
-```
-
-The built `.dmg` will be in `src-tauri/target/release/bundle/dmg/`.
-
-### Cross-compiling for Windows
-
-Follow [Build Windows apps on Linux and macOS](https://v2.tauri.app/distribute/windows-installer/#build-windows-apps-on-linux-and-macos).
-
-_TIP: if facing `Error failed to build app: 'cargo-xwin' command not found.`, try `uv tool install cargo-xwin`._
-
-Once the first-time setup is complete,
-
-```bash
-bun run build:windows
-```
-
-## Project Structure
-
-```
-onyx-desktop/
-├── package.json          # Node dependencies & scripts
-├── src/
-│   └── index.html        # Fallback/loading page
-└── src-tauri/
-    ├── Cargo.toml        # Rust dependencies
-    ├── tauri.conf.json   # Tauri configuration
-    ├── build.rs          # Build script
-    ├── icons/            # App icons
-    └── src/
-        └── main.rs       # Rust backend code
-```
+The updater public key is `plugins.updater.pubkey` in
+`src-tauri/tauri.conf.json`.
 
 ## Icons
 
-Before building, add your app icons to `src-tauri/icons/`:
-
-- `32x32.png`
-- `128x128.png`
-- `128x128@2x.png`
-- `icon.icns` (macOS)
-- `icon.ico` (Windows, optional)
-
-You can generate these from a 1024x1024 source image using:
+The source icon is `src-tauri/icons/icon.svg`, a copy of `web/public/deepx.svg`.
+To make the icon files again:
 
 ```bash
-# Using tauri's icon generator
-bunx tauri icon path/to/your-icon.png
+bunx tauri icon src-tauri/icons/icon.svg
 ```
 
-## Customization
+`src-tauri/icons/tray-icon.svg` is the monochrome menu bar icon.
 
-### Self-Hosted / Custom Server URL
+## Security notes
 
-The app defaults to `https://cloud.onyx.app` but supports any Onyx instance.
-
-**Config file location:**
-
-- macOS: `~/Library/Application Support/app.onyx.onyx-desktop/config.json`
-- Linux: `~/.config/onyx-desktop/config.json` (or `$XDG_CONFIG_HOME/onyx-desktop/config.json`)
-- Windows: `%APPDATA%\onyx\onyx-desktop\config\config.json`
-
-**To use a self-hosted instance:**
-
-1. Launch the app once (creates default config)
-2. Press `⌘ ,` to open the config file, or edit it manually
-3. Change the `server_url`:
-
-```json
-{
-  "server_url": "https://your-onyx-instance.company.com",
-  "window_title": "Onyx"
-}
-```
-
-4. Restart the app
-
-**Quick edit via terminal:**
-
-```bash
-# macOS
-open -t ~/Library/Application\ Support/app.onyx.onyx-desktop/config.json
-
-# Or use any editor
-code ~/Library/Application\ Support/app.onyx.onyx-desktop/config.json
-```
-
-### Change the default URL in build
-
-Edit `src-tauri/tauri.conf.json`:
-
-```json
-{
-  "app": {
-    "windows": [
-      {
-        "url": "https://your-onyx-instance.com"
-      }
-    ]
-  }
-}
-```
-
-### Add more shortcuts
-
-Edit `src-tauri/src/main.rs` in the `setup_shortcuts` function.
-
-### Window appearance
-
-Modify the window configuration in `src-tauri/tauri.conf.json`:
-
-- `titleBarStyle`: `"Overlay"` (macOS native) or `"Visible"`
-- `decorations`: Window chrome
-- `transparent`: For custom backgrounds
-
-## Troubleshooting
-
-### "Unable to resolve host"
-
-Make sure you have an internet connection. The app loads content from `cloud.onyx.app`.
-
-### Build fails on M1/M2 Mac
-
-```bash
-# Ensure you have the right target
-rustup target add aarch64-apple-darwin
-```
-
-### Code signing for distribution
-
-For distributing outside the App Store, you'll need to:
-
-1. Get an Apple Developer certificate
-2. Sign the app: `codesign --deep --force --sign "Developer ID" target/release/bundle/macos/Onyx.app`
-3. Notarize with Apple
+- The bundled pages get the engine, key and backup commands
+  (`src-tauri/capabilities/local.json`). Server pages, local or remote, get only
+  window dragging, the menu bar toggle and debug logging
+  (`src-tauri/capabilities/main.json`). `build.rs` lists the app commands, so a
+  command without a permission is refused.
+- The app never writes the Deep X Route key or the engine secrets to a log.
+- The engine listens on `127.0.0.1` only.
 
 ## License
 

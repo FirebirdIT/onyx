@@ -17,7 +17,7 @@ pub const MENU_OPEN_DEBUG_LOG_ID: &str = "open_debug_log";
 const CONSOLE_CAPTURE_SCRIPT: &str = include_str!("scripts/console_capture.js");
 
 pub fn is_debug_mode(cli_debug: bool) -> bool {
-    cli_debug || std::env::var("ONYX_DEBUG").is_ok()
+    cli_debug || std::env::var("DEEPX_DEBUG").is_ok()
 }
 
 pub fn get_debug_log_path() -> Option<PathBuf> {
@@ -29,7 +29,7 @@ pub fn init_debug_log_file() -> Option<fs::File> {
     if let Some(parent) = log_path.parent() {
         if let Err(e) = fs::create_dir_all(parent) {
             eprintln!(
-                "[ONYX ERROR] Failed to create debug log directory {}: {e}",
+                "[DEEPX ERROR] Failed to create debug log directory {}: {e}",
                 parent.display()
             );
         }
@@ -43,7 +43,7 @@ pub fn init_debug_log_file() -> Option<fs::File> {
         Ok(file) => Some(file),
         Err(e) => {
             eprintln!(
-                "[ONYX ERROR] Failed to open debug log file {}: {e}",
+                "[DEEPX ERROR] Failed to open debug log file {}: {e}",
                 log_path.display()
             );
             None
@@ -87,7 +87,7 @@ pub fn format_utc_timestamp() -> String {
 /// Used in place of silently swallowing a `Result` with `let _ = ...` for
 /// failures worth knowing about.
 pub fn log_backend_error(app: &AppHandle, message: &str) {
-    eprintln!("[ONYX ERROR] {message}");
+    eprintln!("[DEEPX ERROR] {message}");
 
     let state = app.state::<ConfigState>();
     if !state.debug_mode {
@@ -103,7 +103,7 @@ pub fn log_backend_debug(app: &AppHandle, message: &str) {
     if !state.debug_mode {
         return;
     }
-    eprintln!("[ONYX DEBUG] {message}");
+    eprintln!("[DEEPX DEBUG] {message}");
     append_debug_log_line(&state, "DEBUG", message);
 }
 
@@ -173,7 +173,7 @@ pub fn handle_open_debug_log() {
 
     if !log_path.exists() {
         eprintln!(
-            "[ONYX DEBUG] Log file does not exist yet: {}",
+            "[DEEPX DEBUG] Log file does not exist yet: {}",
             log_path.display()
         );
         return;
@@ -182,7 +182,7 @@ pub fn handle_open_debug_log() {
     let url_path = log_path.to_string_lossy().replace('\\', "/");
     if !open_in_default_browser(&format!("file:///{}", url_path.trim_start_matches('/'))) {
         eprintln!(
-            "[ONYX ERROR] Failed to open debug log at {}",
+            "[DEEPX ERROR] Failed to open debug log at {}",
             log_path.display()
         );
     }

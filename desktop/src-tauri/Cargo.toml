@@ -1,13 +1,13 @@
 [package]
-name = "onyx"
+name = "deepx"
 version = "0.0.0-dev"
-description = "Lightweight desktop app for Onyx Cloud"
-authors = ["you"]
+description = "Deep X desktop app: runs the local Deep X engine and opens it"
+authors = ["Deep X"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/onyx-dot-app/onyx"
+repository = "https://github.com/FirebirdIT/onyx"
 readme = "../README.md"
-keywords = ["desktop", "tauri", "onyx"]
+keywords = ["desktop", "tauri", "deepx"]
 categories = ["gui"]
 publish = false
 
@@ -24,10 +24,23 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4"] }
 directories = "5.0"
-tokio = { version = "1", features = ["time"] }
+tokio = { version = "1", features = ["time", "process", "io-util", "sync", "macros", "rt", "net"] }
 window-vibrancy = "0.7.1"
 url = "2.5"
 reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
+tauri-plugin-updater = "2"
+tauri-plugin-dialog = "2"
+keyring = { version = "3", features = ["apple-native", "windows-native", "linux-native"] }
+argon2 = "0.5"
+hkdf = "0.12"
+sha2 = "0.10"
+chacha20poly1305 = "0.10"
+subtle = "2.6"
+hex = "0.4"
+base64 = "0.22"
+
+[dev-dependencies]
+tempfile = "3"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.18"

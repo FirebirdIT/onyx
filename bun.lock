@@ -9,7 +9,7 @@
       },
     },
     "desktop": {
-      "name": "onyx-desktop",
+      "name": "deepx-desktop",
       "version": "0.0.0-dev",
       "dependencies": {
         "@tauri-apps/api": "^2.11.1",
@@ -600,7 +600,7 @@
 
     "onyx-chat-widget": ["onyx-chat-widget@workspace:widget"],
 
-    "onyx-desktop": ["onyx-desktop@workspace:desktop"],
+    "deepx-desktop": ["deepx-desktop@workspace:desktop"],
 
     "parse-entities": ["parse-entities@4.0.2", "", { "dependencies": { "@types/unist": "^2.0.0", "character-entities-legacy": "^3.0.0", "character-reference-invalid": "^2.0.0", "decode-named-character-reference": "^1.0.0", "is-alphanumerical": "^2.0.0", "is-decimal": "^2.0.0", "is-hexadecimal": "^2.0.0" } }, "sha512-GG2AQYWoLgL877gQIKeRPGO1xF9+eG1ujIb5soS5gPvLQ1y2o8FL90w2QWNdf9I361Mpp7726c+lj3U0qK1uGw=="],
 

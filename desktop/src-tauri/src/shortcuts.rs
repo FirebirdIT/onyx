@@ -18,9 +18,9 @@ pub struct SummonShortcut {
 struct DismissedWindows(Mutex<Vec<String>>);
 
 /// Register the configured summon shortcut. This is deliberately the only
-/// global (system-wide) shortcut the app registers: summoning Onyx is the one
+/// global (system-wide) shortcut the app registers: summoning Deep X is the one
 /// action that must work while another app is focused. Every other shortcut
-/// belongs in the menus, which only fire while Onyx has focus -- registering
+/// belongs in the menus, which only fire while Deep X has focus -- registering
 /// in-app chords like CmdOrCtrl+N globally steals them from every other
 /// application (the #7914 regression).
 pub fn setup_global_shortcuts(app: &AppHandle) {
@@ -44,10 +44,10 @@ pub fn setup_global_shortcuts(app: &AppHandle) {
             if event.state() != ShortcutState::Pressed {
                 return;
             }
-            // Toggle contract: the chord that summons Onyx also dismisses it,
+            // Toggle contract: the chord that summons Deep X also dismisses it,
             // returning focus to whatever app was active before. Dismissal
-            // hides every visible Onyx window -- hiding only the focused one
-            // would just hand focus to the next Onyx window instead of the
+            // hides every visible Deep X window -- hiding only the focused one
+            // would just hand focus to the next Deep X window instead of the
             // previous application.
             if focused_webview_window(app).is_some() {
                 dismiss_all_windows(app);

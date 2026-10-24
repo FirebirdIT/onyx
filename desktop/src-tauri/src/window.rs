@@ -84,7 +84,7 @@ pub fn open_chat_window(app: &AppHandle) {
     });
 }
 
-/// Build a new Onyx window (title, size, platform-specific transparency /
+/// Build a new Deep X window (title, size, platform-specific transparency /
 /// titlebar / background-color quirks, vibrancy, the Alt-menu toggle, and
 /// devtools) and apply current settings to it. The single source of truth
 /// for window creation -- previously duplicated between the menu/tray
@@ -92,7 +92,7 @@ pub fn open_chat_window(app: &AppHandle) {
 /// once (the Windows transparency fix had to be hand-applied to both).
 pub fn build_and_setup_window(app: &AppHandle) -> Result<WebviewWindow, String> {
     let config = app.state::<ConfigState>().config();
-    let window_label = format!("onyx-{}", uuid::Uuid::new_v4());
+    let window_label = format!("deepx-{}", uuid::Uuid::new_v4());
     let url = config
         .server_url
         .parse()
@@ -157,7 +157,8 @@ pub fn trigger_new_window(app: &AppHandle) {
 }
 
 pub fn open_docs(app: &AppHandle) {
-    if !open_in_default_browser("https://docs.onyx.app") {
+    let hub_url = app.state::<ConfigState>().config().hub_url;
+    if !open_in_default_browser(&hub_url) {
         log_backend_error(app, "Failed to open docs in default browser");
     }
 }

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deep X Backup</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="panel">
+      <div class="panel-header">
+        <img src="deepx.svg" alt="" />
+        <div>
+          <div class="panel-title" id="title">Back up Deep X</div>
+          <div class="panel-subtitle">Encrypted on this computer</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <p id="intro"></p>
+        <form id="form">
+          <input type="email" id="email" placeholder="Email" required />
+          <input
+            type="password"
+            id="passphrase"
+            placeholder="Backup passphrase (12 characters or more)"
+            autocomplete="new-password"
+            required
+          />
+          <input
+            type="password"
+            id="confirm"
+            placeholder="Type the passphrase again"
+            autocomplete="new-password"
+          />
+          <div class="message" id="message"></div>
+          <div class="buttons">
+            <button class="primary" id="submitBtn" type="submit">
+              Back up now
+            </button>
+            <button id="closeBtn" type="button">Close</button>
+          </div>
+        </form>
+        <div class="log" id="log" style="display: none; margin-top: 12px"></div>
+      </div>
+    </div>
+    <script src="backup.js"></script>
+  </body>
+</html>
