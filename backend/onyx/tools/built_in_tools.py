@@ -13,6 +13,7 @@ from onyx.tools.tool_implementations.knowledge_graph.knowledge_graph_tool import
 from onyx.tools.tool_implementations.memory.memory_tool import MemoryTool
 from onyx.tools.tool_implementations.office.office_tools import (
     CreateDocumentTool,
+    CreatePdfTool,
     CreatePresentationTool,
     CreateSpreadsheetTool,
 )
@@ -38,6 +39,7 @@ BUILT_IN_TOOL_TYPES = Union[
     CreateDocumentTool,
     CreateSpreadsheetTool,
     CreatePresentationTool,
+    CreatePdfTool,
 ]
 
 BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
@@ -53,6 +55,7 @@ BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
     CreateDocumentTool.__name__: CreateDocumentTool,
     CreateSpreadsheetTool.__name__: CreateSpreadsheetTool,
     CreatePresentationTool.__name__: CreatePresentationTool,
+    CreatePdfTool.__name__: CreatePdfTool,
 }
 
 STOPPING_TOOLS_NAMES: list[str] = [ImageGenerationTool.NAME]

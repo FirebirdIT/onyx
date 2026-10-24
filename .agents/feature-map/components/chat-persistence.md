@@ -405,7 +405,7 @@ incognito mode does not persist content skip the naming call.
   prompt (injects system/reminder messages that this component never stores).
 - [[streaming-protocol]]: the `Packet` vocabulary that replay reconstructs.
   Office file tool calls (`create_document`, `create_spreadsheet`,
-  `create_presentation`) replay as custom-tool file packets
+  `create_presentation`, `create_pdf`) replay as custom-tool file packets
   (`session_loading.py:create_office_file_packets`), the same packets they
   stream live.
 - [[background-jobs]]: hosts the EE chat-TTL Celery chain.

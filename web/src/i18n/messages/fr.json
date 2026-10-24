@@ -762,6 +762,9 @@
       },
       "powerpointPresentation": {
         "label": "Présentation PowerPoint"
+      },
+      "pdfDocument": {
+        "label": "Document PDF"
       }
     },
     "toolsPopover": {
@@ -2452,7 +2455,7 @@
         },
         "officeFiles": {
           "title": "Fichiers Office",
-          "description": "Créez des documents Word, des feuilles de calcul Excel et des présentations PowerPoint à télécharger."
+          "description": "Créez des documents Word, des feuilles de calcul Excel, des présentations PowerPoint et des PDF à télécharger."
         }
       }
     },
@@ -11203,7 +11206,7 @@
         },
         "officeFiles": {
           "title": "Fichiers Office",
-          "description": "Créez des documents Word, des feuilles de calcul Excel et des présentations PowerPoint à télécharger."
+          "description": "Créez des documents Word, des feuilles de calcul Excel, des présentations PowerPoint et des PDF à télécharger."
         }
       },
       "advanced": {

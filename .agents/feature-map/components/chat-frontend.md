@@ -227,7 +227,7 @@ types present and returns one renderer:
 | `image_generation_start` | `ImageToolRenderer` (`messageComponents/renderers/ImageToolRenderer.tsx`) |
 | `python_tool_start`, or `tool_call_argument_delta` for a code-interpreter tool type | `PythonToolRenderer` (`web/src/app/app/message/messageComponents/timeline/renderers/code/`) |
 | `file_reader_start` | `FileReaderToolRenderer` (`web/src/app/app/message/messageComponents/timeline/renderers/filereader/`) |
-| `custom_tool_start` | `CustomToolRenderer` (`messageComponents/renderers/CustomToolRenderer.tsx`). It also renders the built-in Office file tools (`create_document`, `create_spreadsheet`, `create_presentation`). Their `custom_tool_delta` has `response_type: "file"` and the saved `file_ids`. |
+| `custom_tool_start` | `CustomToolRenderer` (`messageComponents/renderers/CustomToolRenderer.tsx`). It also renders the built-in Office file tools (`create_document`, `create_spreadsheet`, `create_presentation`, `create_pdf`). Their `custom_tool_delta` has `response_type: "file"` and the saved `file_ids`. |
 | `open_url_start` | `FetchToolRenderer` (`web/src/app/app/message/messageComponents/timeline/renderers/fetch/`) |
 | `memory_tool_start`/`memory_tool_no_access` | `MemoryToolRenderer` (`web/src/app/app/message/messageComponents/timeline/renderers/memory/`) |
 | `reasoning_start`/`_delta`, or a bare `section_end`/`error` | `ReasoningRenderer` (`web/src/app/app/message/messageComponents/timeline/renderers/reasoning/`) |

@@ -1,4 +1,4 @@
-"""Built-in tools that create Word, Excel and PowerPoint files.
+"""Built-in tools that create Word, Excel, PowerPoint and PDF files.
 
 The files are built in the API server process and saved to the file store as
 chat-session-scoped generated files, the same way `run_python` saves its
@@ -16,6 +16,7 @@ from typing_extensions import override
 from onyx.chat.emitter import Emitter
 from onyx.configs.constants import FileOrigin
 from onyx.file_processing.file_types import (
+    PDF_MIME_TYPE,
     PRESENTATION_MIME_TYPE,
     SPREADSHEET_MIME_TYPE,
     WORD_PROCESSING_MIME_TYPE,
@@ -44,6 +45,7 @@ from onyx.tools.tool_implementations.office.docx_builder import (
     DOCX_EXTENSION,
     DocumentSpec,
     build_docx,
+    document_parameters,
     summarize_docx,
 )
 from onyx.tools.tool_implementations.office.models import (
@@ -51,6 +53,11 @@ from onyx.tools.tool_implementations.office.models import (
     OfficeFileResult,
     OfficeFileSpec,
     sanitize_file_name,
+)
+from onyx.tools.tool_implementations.office.pdf_builder import (
+    PDF_EXTENSION,
+    build_pdf,
+    summarize_pdf,
 )
 from onyx.tools.tool_implementations.office.pptx_builder import (
     PPTX_EXTENSION,
@@ -298,8 +305,35 @@ class CreatePresentationTool(OfficeFileTool[PresentationSpec]):
         return build_pptx, summarize_pptx
 
 
+class CreatePdfTool(OfficeFileTool[DocumentSpec]):
+    NAME = "create_pdf"
+    DISPLAY_NAME = "PDF Document"
+    DESCRIPTION = (
+        "Create a PDF (.pdf) file that the user can download. Use it when the "
+        "user asks for a PDF, or for a document to print, sign or send that must "
+        "not change. Give a title and the body as ordered blocks: headings, "
+        "paragraphs, bullet and numbered lists, tables and page breaks. Do not "
+        "use it for answers that fit in the chat."
+    )
+    EXTENSION = PDF_EXTENSION
+    MIME_TYPE = PDF_MIME_TYPE
+    PARAMETERS = document_parameters(PDF_EXTENSION)
+    SPEC_MODEL = DocumentSpec
+
+    @property
+    def name(self) -> str:
+        return self.NAME
+
+    @override
+    def _builder(
+        self,
+    ) -> tuple[Callable[[DocumentSpec], bytes], Callable[[DocumentSpec], str]]:
+        return build_pdf, summarize_pdf
+
+
 OFFICE_TOOL_CLASSES: tuple[type[OfficeFileTool[Any]], ...] = (
     CreateDocumentTool,
     CreateSpreadsheetTool,
     CreatePresentationTool,
+    CreatePdfTool,
 )

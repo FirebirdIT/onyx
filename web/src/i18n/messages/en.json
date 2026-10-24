@@ -762,6 +762,9 @@
       },
       "powerpointPresentation": {
         "label": "PowerPoint Presentation"
+      },
+      "pdfDocument": {
+        "label": "PDF Document"
       }
     },
     "toolsPopover": {
@@ -2452,7 +2455,7 @@
         },
         "officeFiles": {
           "title": "Office Files",
-          "description": "Create Word documents, Excel spreadsheets and PowerPoint presentations to download."
+          "description": "Create Word documents, Excel spreadsheets, PowerPoint presentations and PDFs to download."
         }
       }
     },
@@ -11203,7 +11206,7 @@
         },
         "officeFiles": {
           "title": "Office Files",
-          "description": "Create Word documents, Excel spreadsheets and PowerPoint presentations to download."
+          "description": "Create Word documents, Excel spreadsheets, PowerPoint presentations and PDFs to download."
         }
       },
       "advanced": {

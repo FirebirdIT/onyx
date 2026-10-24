@@ -4,6 +4,7 @@ import { ToolSnapshot } from "@/lib/tools/types";
 import {
   CREATE_DOCUMENT_TOOL_ID,
   CREATE_PRESENTATION_TOOL_ID,
+  CREATE_PDF_TOOL_ID,
   CREATE_SPREADSHEET_TOOL_ID,
 } from "@/lib/tools/constants";
 import {
@@ -12,6 +13,7 @@ import {
   SvgGlobe,
   SvgImage,
   SvgLink,
+  SvgPdfFile,
   SvgPowerpointFile,
   SvgSearch,
   SvgServer,
@@ -82,6 +84,7 @@ export function getIconForAction(
     return SvgExcelFile;
   if (action.in_code_tool_id === CREATE_PRESENTATION_TOOL_ID)
     return SvgPowerpointFile;
+  if (action.in_code_tool_id === CREATE_PDF_TOOL_ID) return SvgPdfFile;
   if (isSearchTool(action)) return SvgSearch;
   if (isWebSearchTool(action)) return SvgGlobe;
   if (isImageGenerationTool(action)) return SvgImage;

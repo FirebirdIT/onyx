@@ -162,7 +162,7 @@ once per turn. A turn that runs three tool cycles calls
 4. Per-tool guidance sections, each gated on the turn's configured tools
    list (not the tools exposed in this cycle): search, internal-search, web-search, open-URL, Python, image
    generation, memory, and Office files (`OFFICE_FILES_GUIDANCE`, added when any of
-   `create_document`, `create_spreadsheet` or `create_presentation` is configured)
+   `create_document`, `create_spreadsheet`, `create_presentation` or `create_pdf` is configured)
    (`prompts/tool_prompts.py`). `include_all_guidance=True`
    forces every section on; `calculate_reserved_tokens` uses this to size a
    worst-case prompt up front (§4.8).

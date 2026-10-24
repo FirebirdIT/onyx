@@ -762,6 +762,9 @@
       },
       "powerpointPresentation": {
         "label": "PowerPoint 프레젠테이션"
+      },
+      "pdfDocument": {
+        "label": "PDF 문서"
       }
     },
     "toolsPopover": {
@@ -2452,7 +2455,7 @@
         },
         "officeFiles": {
           "title": "Office 파일",
-          "description": "다운로드할 수 있는 Word 문서, Excel 스프레드시트, PowerPoint 프레젠테이션을 만듭니다."
+          "description": "다운로드할 수 있는 Word 문서, Excel 스프레드시트, PowerPoint 프레젠테이션, PDF를 만듭니다."
         }
       }
     },
@@ -11203,7 +11206,7 @@
         },
         "officeFiles": {
           "title": "Office 파일",
-          "description": "다운로드할 수 있는 Word 문서, Excel 스프레드시트, PowerPoint 프레젠테이션을 만듭니다."
+          "description": "다운로드할 수 있는 Word 문서, Excel 스프레드시트, PowerPoint 프레젠테이션, PDF를 만듭니다."
         }
       },
       "advanced": {

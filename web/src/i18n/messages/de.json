@@ -762,6 +762,9 @@
       },
       "powerpointPresentation": {
         "label": "PowerPoint-Präsentation"
+      },
+      "pdfDocument": {
+        "label": "PDF-Dokument"
       }
     },
     "toolsPopover": {
@@ -2452,7 +2455,7 @@
         },
         "officeFiles": {
           "title": "Office-Dateien",
-          "description": "Word-Dokumente, Excel-Tabellen und PowerPoint-Präsentationen zum Herunterladen erstellen."
+          "description": "Word-Dokumente, Excel-Tabellen, PowerPoint-Präsentationen und PDFs zum Herunterladen erstellen."
         }
       }
     },
@@ -11203,7 +11206,7 @@
         },
         "officeFiles": {
           "title": "Office-Dateien",
-          "description": "Word-Dokumente, Excel-Tabellen und PowerPoint-Präsentationen zum Herunterladen erstellen."
+          "description": "Word-Dokumente, Excel-Tabellen, PowerPoint-Präsentationen und PDFs zum Herunterladen erstellen."
         }
       },
       "advanced": {

@@ -762,6 +762,9 @@
       },
       "powerpointPresentation": {
         "label": "PowerPoint 演示文稿"
+      },
+      "pdfDocument": {
+        "label": "PDF 文档"
       }
     },
     "toolsPopover": {
@@ -2452,7 +2455,7 @@
         },
         "officeFiles": {
           "title": "Office 文件",
-          "description": "创建可下载的 Word 文档、Excel 电子表格和 PowerPoint 演示文稿。"
+          "description": "创建可下载的 Word 文档、Excel 电子表格、PowerPoint 演示文稿和 PDF。"
         }
       }
     },
@@ -11203,7 +11206,7 @@
         },
         "officeFiles": {
           "title": "Office 文件",
-          "description": "创建可下载的 Word 文档、Excel 电子表格和 PowerPoint 演示文稿。"
+          "description": "创建可下载的 Word 文档、Excel 电子表格、PowerPoint 演示文稿和 PDF。"
         }
       },
       "advanced": {

@@ -8,6 +8,7 @@ import pytest
 from docx import Document
 
 from onyx.configs.constants import FileOrigin
+from onyx.file_processing.file_types import PDF_MIME_TYPE
 from onyx.server.query_and_chat.placement import Placement
 from onyx.server.query_and_chat.session_loading import create_office_file_packets
 from onyx.server.query_and_chat.streaming_models import (
@@ -21,6 +22,7 @@ from onyx.tools.tool_implementations.office.models import OfficeFileResult
 from onyx.tools.tool_implementations.office.office_tools import (
     OFFICE_TOOL_CLASSES,
     CreateDocumentTool,
+    CreatePdfTool,
     CreatePresentationTool,
     CreateSpreadsheetTool,
 )
@@ -89,12 +91,30 @@ def test_run_saves_file_and_reports_it() -> None:
     assert delta.response_type == "file"
 
 
+def test_pdf_tool_saves_a_pdf() -> None:
+    tool = CreatePdfTool(tool_id=7, emitter=MagicMock(), chat_session_id=uuid4())
+    file_store = MagicMock()
+    file_store.save_file.return_value = _FILE_ID
+
+    with patch(f"{TOOL_MODULE}.get_default_file_store", return_value=file_store):
+        response = tool.run(_PLACEMENT, None, **_DOCUMENT_ARGS)
+
+    save_kwargs = file_store.save_file.call_args.kwargs
+    assert save_kwargs["display_name"] == "Plan.pdf"
+    assert save_kwargs["file_type"] == PDF_MIME_TYPE
+    assert save_kwargs["content"].getvalue().startswith(b"%PDF")
+    result = OfficeFileResult.model_validate_json(response.llm_facing_response)
+    assert result.file_name == "Plan.pdf"
+    assert ".pdf extension" in json.dumps(tool.tool_definition().parameters)
+
+
 @pytest.mark.parametrize(
     ("tool_cls", "args"),
     [
         (CreateDocumentTool, {"file_name": "a", "title": "T", "blocks": []}),
         (CreateSpreadsheetTool, {"file_name": "a", "sheets": [{"name": "S"}]}),
         (CreatePresentationTool, {"file_name": "a", "title": "T"}),
+        (CreatePdfTool, {"file_name": "a", "title": "T", "blocks": []}),
     ],
 )
 def test_invalid_arguments_fail_without_saving(
