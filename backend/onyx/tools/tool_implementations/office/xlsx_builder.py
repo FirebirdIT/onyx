@@ -21,6 +21,10 @@ from pydantic import (
     model_validator,
 )
 
+from onyx.tools.tool_implementations.office.branding import (
+    OFFICE_BRAND,
+    OfficeBrand,
+)
 from onyx.tools.tool_implementations.office.models import (
     MAX_CELL_TEXT_LENGTH,
     MAX_TITLE_LENGTH,
@@ -209,12 +213,22 @@ def _add_chart(sheet: Worksheet, spec: ChartSpec, anchor: str) -> None:
     sheet.add_chart(chart, anchor)
 
 
-def _fill_sheet(sheet: Worksheet, spec: SheetSpec) -> None:
+def _header_style(brand: OfficeBrand | None) -> tuple[Font, PatternFill]:
+    if brand is None:
+        return Font(bold=True), _HEADER_FILL
+    fill = PatternFill(
+        start_color=brand.primary, end_color=brand.primary, fill_type="solid"
+    )
+    return Font(bold=True, color=brand.on_primary), fill
+
+
+def _fill_sheet(sheet: Worksheet, spec: SheetSpec, brand: OfficeBrand | None) -> None:
     sheet.append([clean_text(text) for text in spec.header])
+    header_font, header_fill = _header_style(brand)
     for column in range(1, len(spec.header) + 1):
         header_cell = sheet.cell(row=1, column=column)
-        header_cell.font = Font(bold=True)
-        header_cell.fill = _HEADER_FILL
+        header_cell.font = header_font
+        header_cell.fill = header_fill
     for row in spec.rows:
         sheet.append([_cell(value) for value in row])
     for index, width in enumerate(spec.column_widths or [], start=1):
@@ -229,13 +243,15 @@ def _fill_sheet(sheet: Worksheet, spec: SheetSpec) -> None:
         _add_chart(sheet, chart, anchor)
 
 
-def build_xlsx(spec: WorkbookSpec) -> bytes:
+def build_xlsx(spec: WorkbookSpec, brand: OfficeBrand | None = OFFICE_BRAND) -> bytes:
     workbook = Workbook()
+    if brand is not None:
+        workbook.properties.creator = brand.name
     first = workbook.active
     if isinstance(first, Worksheet):
         workbook.remove(first)
     for sheet_spec in spec.sheets:
-        _fill_sheet(workbook.create_sheet(title=sheet_spec.name), sheet_spec)
+        _fill_sheet(workbook.create_sheet(title=sheet_spec.name), sheet_spec, brand)
     buffer = BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()

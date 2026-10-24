@@ -67,10 +67,10 @@ Therefore batch multi-step work into a single script per call: e.g. load a workb
 """.lstrip()
 
 OFFICE_FILES_GUIDANCE = """
-## create_document, create_spreadsheet, create_presentation
-Use these tools when the user asks for a downloadable Word document, Excel spreadsheet or PowerPoint presentation. \
+## create_document, create_spreadsheet, create_presentation, create_pdf
+Use these tools when the user asks for a downloadable Word document, Excel spreadsheet, PowerPoint presentation or PDF. \
 Use `create_document` for reports, letters, memos and other text documents, `create_spreadsheet` for tabular data, formulas and charts, \
-and `create_presentation` for slide decks. Do not use them when a chat answer is enough, and do not create a file the user did not ask for.
+`create_presentation` for slide decks, and `create_pdf` when the user asks for a PDF. Prefer `create_pdf` over `run_python` for PDF documents. Do not use them when a chat answer is enough, and do not create a file the user did not ask for.
 Write the complete content in one call. Gather any facts you need with other tools first. \
 The tool returns a `file_link`; share it as [file_name](file_link) and briefly describe what the file contains. Do not paste the full file content into the reply.
 If the tool reports invalid arguments, fix them and call it again.

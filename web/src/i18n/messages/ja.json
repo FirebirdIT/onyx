@@ -762,6 +762,9 @@
       },
       "powerpointPresentation": {
         "label": "PowerPoint プレゼンテーション"
+      },
+      "pdfDocument": {
+        "label": "PDF ドキュメント"
       }
     },
     "toolsPopover": {
@@ -2452,7 +2455,7 @@
         },
         "officeFiles": {
           "title": "Office ファイル",
-          "description": "ダウンロードできる Word 文書、Excel スプレッドシート、PowerPoint プレゼンテーションを作成します。"
+          "description": "ダウンロードできる Word 文書、Excel スプレッドシート、PowerPoint プレゼンテーション、PDF を作成します。"
         }
       }
     },
@@ -11203,7 +11206,7 @@
         },
         "officeFiles": {
           "title": "Office ファイル",
-          "description": "ダウンロードできる Word 文書、Excel スプレッドシート、PowerPoint プレゼンテーションを作成します。"
+          "description": "ダウンロードできる Word 文書、Excel スプレッドシート、PowerPoint プレゼンテーション、PDF を作成します。"
         }
       },
       "advanced": {

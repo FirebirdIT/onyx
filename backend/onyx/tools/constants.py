@@ -19,6 +19,7 @@ CODING_AGENT_TOOL_ID = "CodingAgentTool"
 CREATE_DOCUMENT_TOOL_ID = "CreateDocumentTool"
 CREATE_SPREADSHEET_TOOL_ID = "CreateSpreadsheetTool"
 CREATE_PRESENTATION_TOOL_ID = "CreatePresentationTool"
+CREATE_PDF_TOOL_ID = "CreatePdfTool"
 
 # Tool names as referenced by tool results / tool calls (read_file)
 FILE_READER_TOOL_NAME = "read_file"

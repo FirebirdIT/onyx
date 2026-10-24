@@ -5,6 +5,7 @@ import {
   SvgGlobe,
   SvgImage,
   SvgLink,
+  SvgPdfFile,
   SvgPowerpointFile,
   SvgSearch,
   SvgTerminal,
@@ -31,12 +32,14 @@ export const MEMORY_TOOL_ID = "MemoryTool";
 export const CREATE_DOCUMENT_TOOL_ID = "CreateDocumentTool";
 export const CREATE_SPREADSHEET_TOOL_ID = "CreateSpreadsheetTool";
 export const CREATE_PRESENTATION_TOOL_ID = "CreatePresentationTool";
+export const CREATE_PDF_TOOL_ID = "CreatePdfTool";
 
-// The Word, Excel and PowerPoint tools. Settings pages switch them as one group.
+// The Word, Excel, PowerPoint and PDF tools. Settings pages switch them as one group.
 export const OFFICE_FILE_TOOL_IDS: readonly string[] = [
   CREATE_DOCUMENT_TOOL_ID,
   CREATE_SPREADSHEET_TOOL_ID,
   CREATE_PRESENTATION_TOOL_ID,
+  CREATE_PDF_TOOL_ID,
 ];
 
 // Icon mappings for system tools
@@ -53,6 +56,7 @@ export const SYSTEM_TOOL_ICONS: Record<
   [CREATE_DOCUMENT_TOOL_ID]: SvgWordFile,
   [CREATE_SPREADSHEET_TOOL_ID]: SvgExcelFile,
   [CREATE_PRESENTATION_TOOL_ID]: SvgPowerpointFile,
+  [CREATE_PDF_TOOL_ID]: SvgPdfFile,
 };
 
 import { ADMIN_ROUTES } from "@/lib/admin-routes";

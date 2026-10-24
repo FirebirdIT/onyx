@@ -4,14 +4,21 @@ from io import BytesIO
 from typing import Annotated, Literal
 
 from pptx import Presentation
+from pptx.chart.chart import Chart
 from pptx.chart.data import CategoryChartData
+from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
+from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
 from pptx.presentation import Presentation as PptxPresentation
 from pptx.slide import Slide
 from pptx.text.text import TextFrame
 from pptx.util import Emu, Inches, Pt
 from pydantic import BaseModel, Field, FiniteFloat, JsonValue, model_validator
 
+from onyx.tools.tool_implementations.office.branding import (
+    OFFICE_BRAND,
+    OfficeBrand,
+)
 from onyx.tools.tool_implementations.office.models import (
     MAX_NOTES_LENGTH,
     MAX_TITLE_LENGTH,
@@ -59,6 +66,8 @@ _GEOMETRY: dict[int, dict[int, _Box]] = {
 }
 _TABLE_ROW_HEIGHT_IN = 0.45
 _TABLE_FONT_SIZE = Pt(14)
+# Brand band across the top edge of every slide.
+_BAND_HEIGHT = Inches(0.12)
 
 Bullet = Annotated[str, Field(min_length=1, max_length=MAX_BULLET_LENGTH)]
 Cell = Annotated[str, Field(max_length=MAX_TABLE_CELL_LENGTH)]
@@ -163,12 +172,36 @@ def _place(slide: Slide, layout_index: int) -> None:
         placeholder.height = Inches(height)
 
 
-def _new_slide(prs: PptxPresentation, layout_index: int, title: str) -> Slide:
+def _rgb(hex_color: str) -> RGBColor:
+    return RGBColor.from_string(hex_color)
+
+
+def _add_band(slide: Slide, brand: OfficeBrand) -> None:
+    band = slide.shapes.add_shape(
+        MSO_AUTO_SHAPE_TYPE.RECTANGLE, Emu(0), Emu(0), _SLIDE_WIDTH, _BAND_HEIGHT
+    )
+    band.fill.solid()
+    band.fill.fore_color.rgb = _rgb(brand.primary)
+    band.line.fill.background()
+
+
+def _new_slide(
+    prs: PptxPresentation,
+    layout_index: int,
+    title: str,
+    brand: OfficeBrand | None,
+) -> Slide:
     slide = prs.slides.add_slide(prs.slide_layouts[layout_index])
     _place(slide, layout_index)
     title_shape = slide.shapes.title
     if title_shape is not None:
         title_shape.text_frame.text = clean_text(title)
+        if brand is not None:
+            for paragraph in title_shape.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.color.rgb = _rgb(brand.primary)
+    if brand is not None:
+        _add_band(slide, brand)
     return slide
 
 
@@ -195,7 +228,7 @@ def _fill_bullets(frame: TextFrame, bullets: list[str]) -> None:
             styled.font.italic = run.italic or None
 
 
-def _add_table(slide: Slide, spec: TableSlide) -> None:
+def _add_table(slide: Slide, spec: TableSlide, brand: OfficeBrand | None) -> None:
     left, top, width, _ = _BODY_BOX
     height = _TABLE_ROW_HEIGHT_IN * (len(spec.rows) + 1)
     shape = slide.shapes.add_table(
@@ -213,9 +246,40 @@ def _add_table(slide: Slide, spec: TableSlide) -> None:
             frame.text = clean_text(text)
             for paragraph in frame.paragraphs:
                 paragraph.font.size = _TABLE_FONT_SIZE
+            if brand is None:
+                continue
+            cell = table.cell(row_index, col)
+            cell.fill.solid()
+            if row_index == 0:
+                cell.fill.fore_color.rgb = _rgb(brand.primary)
+                for paragraph in frame.paragraphs:
+                    paragraph.font.bold = True
+                    paragraph.font.color.rgb = _rgb(brand.on_primary)
+            else:
+                band = brand.tint if row_index % 2 == 0 else "FFFFFF"
+                cell.fill.fore_color.rgb = _rgb(band)
 
 
-def _add_chart(slide: Slide, spec: ChartSlide) -> None:
+def _color_chart(chart: Chart, chart_type: str, brand: OfficeBrand) -> None:
+    colors = brand.chart_colors
+    plot = chart.plots[0]
+    if chart_type == "pie":
+        for index, point in enumerate(plot.series[0].points):
+            point.format.fill.solid()
+            point.format.fill.fore_color.rgb = _rgb(colors[index % len(colors)])
+        return
+    for index, series in enumerate(plot.series):
+        color = _rgb(colors[index % len(colors)])
+        if chart_type == "line":
+            series.format.line.color.rgb = color
+            series.marker.format.fill.solid()
+            series.marker.format.fill.fore_color.rgb = color
+        else:
+            series.format.fill.solid()
+            series.format.fill.fore_color.rgb = color
+
+
+def _add_chart(slide: Slide, spec: ChartSlide, brand: OfficeBrand | None) -> None:
     data = CategoryChartData()
     data.categories = [clean_text(category) for category in spec.categories]
     for series in spec.series:
@@ -233,40 +297,48 @@ def _add_chart(slide: Slide, spec: ChartSlide) -> None:
     if chart.has_legend:
         chart.legend.position = XL_LEGEND_POSITION.BOTTOM
         chart.legend.include_in_layout = False
+    if brand is not None:
+        _color_chart(chart, spec.chart_type, brand)
 
 
-def _add_slide(prs: PptxPresentation, spec: SlideSpec) -> Slide:
+def _add_slide(
+    prs: PptxPresentation, spec: SlideSpec, brand: OfficeBrand | None
+) -> Slide:
     if isinstance(spec, TitleSlide | SectionSlide):
         layout = _LAYOUT_TITLE if isinstance(spec, TitleSlide) else _LAYOUT_SECTION
-        slide = _new_slide(prs, layout, spec.title)
+        slide = _new_slide(prs, layout, spec.title, brand)
         _fill_text(slide, 1, spec.subtitle)
     elif isinstance(spec, BulletsSlide):
-        slide = _new_slide(prs, _LAYOUT_TITLE_AND_CONTENT, spec.title)
+        slide = _new_slide(prs, _LAYOUT_TITLE_AND_CONTENT, spec.title, brand)
         _fill_bullets(slide.placeholders[1].text_frame, spec.bullets)
     elif isinstance(spec, TwoColumnSlide):
-        slide = _new_slide(prs, _LAYOUT_COMPARISON, spec.title)
+        slide = _new_slide(prs, _LAYOUT_COMPARISON, spec.title, brand)
         _fill_bullets(slide.placeholders[2].text_frame, spec.left_bullets)
         _fill_bullets(slide.placeholders[4].text_frame, spec.right_bullets)
         _fill_text(slide, 1, spec.left_heading)
         _fill_text(slide, 3, spec.right_heading)
     elif isinstance(spec, TableSlide):
-        slide = _new_slide(prs, _LAYOUT_TITLE_ONLY, spec.title)
-        _add_table(slide, spec)
+        slide = _new_slide(prs, _LAYOUT_TITLE_ONLY, spec.title, brand)
+        _add_table(slide, spec, brand)
     else:
-        slide = _new_slide(prs, _LAYOUT_TITLE_ONLY, spec.title)
-        _add_chart(slide, spec)
+        slide = _new_slide(prs, _LAYOUT_TITLE_ONLY, spec.title, brand)
+        _add_chart(slide, spec, brand)
     if spec.notes:
         slide.notes_slide.notes_text_frame.text = clean_text(spec.notes)
     return slide
 
 
-def build_pptx(spec: PresentationSpec) -> bytes:
+def build_pptx(
+    spec: PresentationSpec, brand: OfficeBrand | None = OFFICE_BRAND
+) -> bytes:
     prs = Presentation()
     prs.slide_width = _SLIDE_WIDTH
     prs.slide_height = _SLIDE_HEIGHT
     prs.core_properties.title = clean_text(spec.title)
+    if brand is not None:
+        prs.core_properties.author = brand.name
     for slide_spec in spec.slides:
-        _add_slide(prs, slide_spec)
+        _add_slide(prs, slide_spec, brand)
     buffer = BytesIO()
     prs.save(buffer)
     return buffer.getvalue()

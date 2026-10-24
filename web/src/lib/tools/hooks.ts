@@ -18,6 +18,7 @@ import {
   CODING_AGENT_TOOL_ID,
   CREATE_DOCUMENT_TOOL_ID,
   CREATE_PRESENTATION_TOOL_ID,
+  CREATE_PDF_TOOL_ID,
   CREATE_SPREADSHEET_TOOL_ID,
   FILE_READER_TOOL_ID,
   IMAGE_GENERATION_TOOL_ID,
@@ -584,6 +585,7 @@ export function useBuiltInToolNames(): Record<string, string> {
       [CREATE_PRESENTATION_TOOL_ID]: t(
         "toolNames.powerpointPresentation.label"
       ),
+      [CREATE_PDF_TOOL_ID]: t("toolNames.pdfDocument.label"),
     }),
     [t]
   );

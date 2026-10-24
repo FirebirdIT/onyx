@@ -23,7 +23,7 @@
 
 When an agent needs to do something beyond generating text, it calls a tool: search
 the company index, search the web, open a URL, generate an image, run Python, read
-an attached file, create a Word, Excel or PowerPoint file, or remember a fact about the user. The user sees a tool block in
+an attached file, create a Word, Excel, PowerPoint or PDF file, or remember a fact about the user. The user sees a tool block in
 the transcript (queries, a spinner, then a result) while the tool runs, and the
 final answer folds the result back into prose with citations where relevant.
 
@@ -166,12 +166,13 @@ runtime lookup `tool_constructor.py` uses for every persona-attached built-in to
 | Word document | `CreateDocumentTool` : `tool_implementations/office/office_tools.py` | `create_document` | Build a .docx (title, headings, paragraphs, lists, tables, page breaks) and save it as a generated file. | No override; default `True`. |
 | Excel spreadsheet | `CreateSpreadsheetTool` : `tool_implementations/office/office_tools.py` | `create_spreadsheet` | Build a .xlsx (sheets, typed cells, formulas, frozen header, native bar/line/pie charts). | No override; default `True`. |
 | PowerPoint presentation | `CreatePresentationTool` : `tool_implementations/office/office_tools.py` | `create_presentation` | Build a 16:9 .pptx (title, section, bullets, two-column, table and chart layouts, speaker notes). | No override; default `True`. |
+| PDF document | `CreatePdfTool` : `tool_implementations/office/office_tools.py` | `create_pdf` | Build an A4 .pdf from the same document spec as `create_document`, with reportlab. | No override; default `True`. |
 | Bash | `BashTool` : `tool_implementations/bash/bash_tool.py` | `bash` | Run a shell command in an isolated code-interpreter session. | `True` if `CODE_INTERPRETER_BASE_URL` is set, the server is enabled, its health check passes, and it `supports(...)` the session/bash routes (`bash_tool.py:is_available`). Not persona-attachable (see §5). |
 
-The three Office file tools share `OfficeFileTool` (`office/office_tools.py`). They run in
+The four Office file tools share `OfficeFileTool` (`office/office_tools.py`). They run in
 the API server process, not in the Code Interpreter. Each tool validates its arguments
 with a pydantic spec (`office/docx_builder.py`, `xlsx_builder.py`, `pptx_builder.py`;
-the size limits are module constants there), builds the file in memory, and saves it with
+the size limits are module constants there; `pdf_builder.py` reuses `DocumentSpec`), builds the file in memory, and saves it with
 `FileOrigin.CHAT_IMAGE_GEN` and `chat_image_gen_metadata(chat_session_id)`, like
 `run_python` output. `sanitize_file_name` (`office/models.py`) removes path parts and sets
 the format's extension. Invalid arguments raise `ToolCallException`, so the model can
@@ -181,9 +182,16 @@ packet type. `rich_response` is a `PythonToolRichResponse`, so `llm_loop.py` add
 file reminder and `save_chat.py` attaches the file when the answer links it. The
 `llm_facing_response` is an `OfficeFileResult` JSON (file name, file id, file link,
 summary). `session_loading.py:create_office_file_packets` replays it. Migration
-`7bad622c5b00_seed_office_file_tools.py` seeds the three `Tool` rows and attaches them
-to the default persona. The agent editor and the admin Chat Preferences page switch the
-three tools with one "Office Files" toggle. There is no approval step.
+`7bad622c5b00_seed_office_file_tools.py` seeds the first three `Tool` rows and
+`924ba501b4d9_seed_pdf_file_tool.py` seeds `create_pdf`. Both attach the tools to the
+default persona. The agent editor and the admin Chat Preferences page switch the four
+tools with one "Office Files" toggle. There is no approval step.
+`office/branding.py:OFFICE_BRAND` holds the brand colours. It is `None` for the stock
+brand, so the files keep the library defaults. A Deep X build (`PRODUCT_BRAND=deepx`)
+colours titles, headings, table headers and charts, adds a top band to slides and PDF
+pages, and sets the file author. The PDF builder uses Helvetica when the text fits
+cp1252, and a built-in CID font (Chinese, Japanese or Korean) otherwise. It cannot
+shape Arabic or other complex scripts.
 
 `KnowledgeGraphTool` (`tool_implementations/knowledge_graph/knowledge_graph_tool.py`)
 belongs to the knowledge graph, an incomplete feature (see INDEX.md, Incomplete
