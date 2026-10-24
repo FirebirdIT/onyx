@@ -72,6 +72,11 @@ from onyx.tools.tool_implementations.office.office_tools import (
     OFFICE_TOOL_CLASSES,
 )
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
+from onyx.tools.tool_implementations.publish_html.publish_html_tool import (
+    PublishHtmlResult,
+    PublishHtmlTool,
+    summarize_publish_result,
+)
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
@@ -221,6 +226,31 @@ def create_office_file_packets(
         tab_index=tab_index,
         data=f"{result.file_name}: {result.summary}",
         file_ids=[result.file_id],
+        tool_id=tool_id,
+    )
+
+
+def create_publish_html_packets(
+    tool_name: str,
+    tool_id: int,
+    saved_response: str,
+    turn_index: int,
+    tab_index: int = 0,
+) -> list[Packet]:
+    """Replay a publish_html call with the text it streamed live. A failed
+    call saved a plain-text error instead of a result."""
+    try:
+        text = summarize_publish_result(
+            PublishHtmlResult.model_validate_json(saved_response)
+        )
+    except ValidationError:
+        text = saved_response
+    return create_custom_tool_packets(
+        tool_name=tool_name,
+        response_type="text",
+        turn_index=turn_index,
+        tab_index=tab_index,
+        data=text,
         tool_id=tool_id,
     )
 
@@ -775,6 +805,17 @@ def translate_assistant_message_to_packets(
                     elif tool.in_code_tool_id in _OFFICE_TOOL_IDS:
                         packet_list.extend(
                             create_office_file_packets(
+                                tool_name=tool.display_name or tool.name,
+                                tool_id=tool_call.tool_id,
+                                saved_response=tool_call.tool_call_response or "",
+                                turn_index=turn_num,
+                                tab_index=tool_call.tab_index,
+                            )
+                        )
+
+                    elif tool.in_code_tool_id == PublishHtmlTool.__name__:
+                        packet_list.extend(
+                            create_publish_html_packets(
                                 tool_name=tool.display_name or tool.name,
                                 tool_id=tool_call.tool_id,
                                 saved_response=tool_call.tool_call_response or "",

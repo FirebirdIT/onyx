@@ -765,6 +765,9 @@
       },
       "pdfDocument": {
         "label": "مستند PDF"
+      },
+      "publishWebPage": {
+        "label": "نشر صفحة ويب"
       }
     },
     "toolsPopover": {

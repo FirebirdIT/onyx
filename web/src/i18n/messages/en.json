@@ -765,6 +765,9 @@
       },
       "pdfDocument": {
         "label": "PDF Document"
+      },
+      "publishWebPage": {
+        "label": "Publish Web Page"
       }
     },
     "toolsPopover": {

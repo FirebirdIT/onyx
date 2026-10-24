@@ -53,6 +53,9 @@ from onyx.tools.tool_implementations.mcp.mcp_tool import MCPTool
 from onyx.tools.tool_implementations.memory.memory_tool import MemoryTool
 from onyx.tools.tool_implementations.office.office_tools import OFFICE_TOOL_CLASSES
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
+from onyx.tools.tool_implementations.publish_html.publish_html_tool import (
+    PublishHtmlTool,
+)
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
@@ -399,6 +402,17 @@ def _construct_tools_impl(
                         chat_session_id=_require_chat_session_id(
                             custom_tool_config, office_tool_cls.__name__
                         ),
+                    )
+                ]
+
+            # Handle Publish HTML Tool. A published link belongs to a user
+            # account, so anonymous users do not get the tool.
+            elif tool_cls.__name__ == PublishHtmlTool.__name__:
+                if user.is_anonymous:
+                    continue
+                tool_dict[db_tool_model.id] = [
+                    PublishHtmlTool(
+                        tool_id=db_tool_model.id, emitter=emitter, user=user
                     )
                 ]
 

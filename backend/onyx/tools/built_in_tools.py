@@ -18,6 +18,9 @@ from onyx.tools.tool_implementations.office.office_tools import (
     CreateSpreadsheetTool,
 )
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
+from onyx.tools.tool_implementations.publish_html.publish_html_tool import (
+    PublishHtmlTool,
+)
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
@@ -40,6 +43,7 @@ BUILT_IN_TOOL_TYPES = Union[
     CreateSpreadsheetTool,
     CreatePresentationTool,
     CreatePdfTool,
+    PublishHtmlTool,
 ]
 
 BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
@@ -56,6 +60,7 @@ BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
     CreateSpreadsheetTool.__name__: CreateSpreadsheetTool,
     CreatePresentationTool.__name__: CreatePresentationTool,
     CreatePdfTool.__name__: CreatePdfTool,
+    PublishHtmlTool.__name__: PublishHtmlTool,
 }
 
 STOPPING_TOOLS_NAMES: list[str] = [ImageGenerationTool.NAME]

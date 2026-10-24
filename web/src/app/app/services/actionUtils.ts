@@ -6,6 +6,7 @@ import {
   CREATE_PRESENTATION_TOOL_ID,
   CREATE_PDF_TOOL_ID,
   CREATE_SPREADSHEET_TOOL_ID,
+  PUBLISH_HTML_TOOL_ID,
 } from "@/lib/tools/constants";
 import {
   SvgCpu,
@@ -17,6 +18,7 @@ import {
   SvgPowerpointFile,
   SvgSearch,
   SvgServer,
+  SvgShare,
   SvgTerminal,
   SvgWordFile,
 } from "@opal/icons";
@@ -85,6 +87,7 @@ export function getIconForAction(
   if (action.in_code_tool_id === CREATE_PRESENTATION_TOOL_ID)
     return SvgPowerpointFile;
   if (action.in_code_tool_id === CREATE_PDF_TOOL_ID) return SvgPdfFile;
+  if (action.in_code_tool_id === PUBLISH_HTML_TOOL_ID) return SvgShare;
   if (isSearchTool(action)) return SvgSearch;
   if (isWebSearchTool(action)) return SvgGlobe;
   if (isImageGenerationTool(action)) return SvgImage;

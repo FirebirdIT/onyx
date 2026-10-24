@@ -3,6 +3,7 @@ made for this module.
 
 The schema is new and empty, so the tests do not read or change the data of
 the default schema. The hub HTTP calls and the file bytes are mocked.
+The `publish_html` chat tool tests use the same schema and mocks.
 """
 
 import datetime
@@ -20,13 +21,16 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema, DropSchema
 
-from onyx.configs.constants import FileOrigin
+from onyx.configs.constants import KV_DEEPX_HUB_INSTALL_TOKEN_KEY, FileOrigin
+from onyx.db.encrypted_kv_store import load_encrypted_kv, upsert_encrypted_kv
 from onyx.db.engine.sql_engine import SqlEngine
 from onyx.db.enums import AccountType
 from onyx.db.file_record import FileRecordNotFoundError
 from onyx.db.models import (
     Base,
     ChatSession,
+    EncryptedJson,
+    EncryptedKeyValueStore,
     EncryptedString,
     FileRecord,
     LLMProvider,
@@ -36,20 +40,36 @@ from onyx.db.models import (
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.file_store.utils import chat_image_gen_metadata
+from onyx.key_value_store.interface import KvKeyNotFoundError, unwrap_str
 from onyx.llm.constants import LlmProviderNames
 from onyx.server.features.published_artifacts.api import (
-    MAX_PUBLISH_BYTES,
     list_published_artifacts,
     publish_artifact,
     unpublish_artifact,
 )
 from onyx.server.features.published_artifacts.models import PublishArtifactRequest
+from onyx.server.features.published_artifacts.service import MAX_PUBLISH_BYTES
+from onyx.server.query_and_chat.placement import Placement
+from onyx.server.query_and_chat.session_loading import create_publish_html_packets
+from onyx.server.query_and_chat.streaming_models import CustomToolDelta
+from onyx.tools.built_in_tools import BUILT_IN_TOOL_MAP, TOOL_NAME_TO_CLASS
+from onyx.tools.models import ToolCallException
+from onyx.tools.tool_implementations.publish_html.publish_html_tool import (
+    PublishHtmlResult,
+    PublishHtmlTool,
+    extract_chat_file_id,
+    summarize_publish_result,
+)
 from shared_configs.contextvars import CURRENT_TENANT_ID_CONTEXTVAR
 
 API_MODULE = "onyx.server.features.published_artifacts.api"
+SERVICE_MODULE = "onyx.server.features.published_artifacts.service"
 HUB_MODULE = "onyx.deepx.hub_artifacts"
+TOOL_MODULE = "onyx.tools.tool_implementations.publish_html.publish_html_tool"
 HUB_URL = "https://hub.example.test"
 FAKE_ROUTE_KEY = "sk-dxr-test-publish-key"
+INSTALL_TOKEN = "dxi_" + "I" * 22 + "." + "1" * 64
+NEW_INSTALL_TOKEN = "dxi_" + "N" * 22 + "." + "2" * 64
 DELETE_TOKEN = "a" * 64
 HTML = "<!doctype html><html><body><h1>Report</h1></body></html>"
 
@@ -91,6 +111,7 @@ _TABLES = (
     "llm_provider",
     "llm_provider__persona",
     "llm_provider__user_group",
+    "encrypted_key_value_store",
 )
 
 
@@ -131,7 +152,14 @@ def db_session(schema_engine: Engine) -> Generator[Session, None, None]:
     with Session(schema_engine, expire_on_commit=False) as session:
         yield session
         session.rollback()
-        for model in (PublishedArtifact, FileRecord, ChatSession, LLMProvider, User):
+        for model in (
+            PublishedArtifact,
+            FileRecord,
+            ChatSession,
+            LLMProvider,
+            EncryptedKeyValueStore,
+            User,
+        ):
             session.execute(delete(model))
         session.commit()
 
@@ -139,13 +167,16 @@ def db_session(schema_engine: Engine) -> Generator[Session, None, None]:
 @pytest.fixture
 def file_store(db_session: Session) -> Generator[FakeFileStore, None, None]:
     store = FakeFileStore(db_session)
-    with patch(f"{API_MODULE}.get_default_file_store", return_value=store):
+    with patch(f"{SERVICE_MODULE}.get_default_file_store", return_value=store):
         yield store
 
 
 @pytest.fixture(autouse=True)
 def hub_url() -> Generator[None, None, None]:
-    with patch(f"{API_MODULE}.DEEPX_HUB_URL", HUB_URL):
+    with (
+        patch(f"{SERVICE_MODULE}.DEEPX_HUB_URL", HUB_URL),
+        patch(f"{API_MODULE}.DEEPX_HUB_URL", HUB_URL),
+    ):
         yield
 
 
@@ -342,19 +373,6 @@ def test_file_over_limit_is_rejected(
     post.assert_not_called()
 
 
-def test_publish_without_route_provider_fails_clearly(
-    db_session: Session, file_store: FakeFileStore
-) -> None:
-    user = _user(db_session)
-    file_id = _generated_file(db_session, file_store, user)
-    with patch(f"{HUB_MODULE}.requests.post") as post:
-        with pytest.raises(OnyxError) as exc:
-            _publish(db_session, user, file_id)
-    assert exc.value.error_code == OnyxErrorCode.FEATURE_DISABLED
-    assert "Deep X Route" in exc.value.detail
-    post.assert_not_called()
-
-
 @pytest.mark.parametrize(
     "hub_status,expected",
     [
@@ -475,3 +493,305 @@ def test_request_validation() -> None:
     with pytest.raises(ValueError):
         PublishArtifactRequest(file_id="f", title="   ")
     assert PublishArtifactRequest(file_id="f", title="t").expires_in_days == 7
+
+
+# --- Install token: publishing without a Deep X Route provider ---
+
+
+class FakeHubPost:
+    """Answers hub POSTs by path, in order, and records each call."""
+
+    def __init__(
+        self,
+        installs: list[requests.Response],
+        artifacts: list[requests.Response],
+    ) -> None:
+        self._responses = {"/api/installs": installs, "/api/artifacts": artifacts}
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+
+    def __call__(self, url: str, **kwargs: Any) -> requests.Response:
+        path = url.removeprefix(HUB_URL)
+        self.calls.append((path, kwargs))
+        return self._responses[path].pop(0)
+
+    def paths(self) -> list[str]:
+        return [path for path, _ in self.calls]
+
+    def bearer_tokens(self) -> list[str]:
+        return [
+            kwargs["headers"]["Authorization"].removeprefix("Bearer ")
+            for path, kwargs in self.calls
+            if path == "/api/artifacts"
+        ]
+
+
+def _install_response(token: str = INSTALL_TOKEN) -> requests.Response:
+    return _response(201, {"token": token})
+
+
+def _stored_install_token() -> str | None:
+    try:
+        return unwrap_str(load_encrypted_kv(KV_DEEPX_HUB_INSTALL_TOKEN_KEY))
+    except KvKeyNotFoundError:
+        return None
+
+
+def test_publish_without_route_provider_registers_install_once(
+    db_session: Session, file_store: FakeFileStore
+) -> None:
+    user = _user(db_session)
+    first = _generated_file(db_session, file_store, user)
+    second = _generated_file(db_session, file_store, user)
+    hub = FakeHubPost(
+        installs=[_install_response()],
+        artifacts=[
+            _hub_publish_response("first00000000000000000"),
+            _hub_publish_response("second0000000000000000"),
+        ],
+    )
+
+    with patch(f"{HUB_MODULE}.requests.post", side_effect=hub):
+        _publish(db_session, user, first)
+        _publish(db_session, user, second)
+
+    assert hub.paths() == ["/api/installs", "/api/artifacts", "/api/artifacts"]
+    install_kwargs = hub.calls[0][1]
+    assert install_kwargs["json"] == {}
+    assert "headers" not in install_kwargs
+    assert hub.bearer_tokens() == [INSTALL_TOKEN, INSTALL_TOKEN]
+    assert _stored_install_token() == INSTALL_TOKEN
+    # The token is in an encrypted column.
+    assert isinstance(EncryptedKeyValueStore.__table__.c.value.type, EncryptedJson)
+
+
+def test_refused_install_token_registers_again_once(
+    db_session: Session, file_store: FakeFileStore
+) -> None:
+    user = _user(db_session)
+    upsert_encrypted_kv(KV_DEEPX_HUB_INSTALL_TOKEN_KEY, {"value": INSTALL_TOKEN})
+    file_id = _generated_file(db_session, file_store, user)
+    hub = FakeHubPost(
+        installs=[_install_response(NEW_INSTALL_TOKEN)],
+        artifacts=[_response(401, {"error": "unknown"}), _hub_publish_response()],
+    )
+
+    with patch(f"{HUB_MODULE}.requests.post", side_effect=hub):
+        snapshot = _publish(db_session, user, file_id)
+
+    assert hub.paths() == ["/api/artifacts", "/api/installs", "/api/artifacts"]
+    assert hub.bearer_tokens() == [INSTALL_TOKEN, NEW_INSTALL_TOKEN]
+    assert _stored_install_token() == NEW_INSTALL_TOKEN
+    assert db_session.get(PublishedArtifact, snapshot.id) is not None
+
+
+def test_install_token_refused_twice_fails_without_a_loop(
+    db_session: Session, file_store: FakeFileStore
+) -> None:
+    user = _user(db_session)
+    upsert_encrypted_kv(KV_DEEPX_HUB_INSTALL_TOKEN_KEY, {"value": INSTALL_TOKEN})
+    file_id = _generated_file(db_session, file_store, user)
+    hub = FakeHubPost(
+        installs=[_install_response(NEW_INSTALL_TOKEN)],
+        artifacts=[_response(401), _response(401)],
+    )
+
+    with patch(f"{HUB_MODULE}.requests.post", side_effect=hub):
+        with pytest.raises(OnyxError) as exc:
+            _publish(db_session, user, file_id)
+
+    assert exc.value.error_code == OnyxErrorCode.CREDENTIAL_INVALID
+    assert "install token" in exc.value.detail
+    assert NEW_INSTALL_TOKEN not in exc.value.detail
+    assert hub.paths() == ["/api/artifacts", "/api/installs", "/api/artifacts"]
+
+
+def test_route_key_401_does_not_register_an_install(
+    db_session: Session, file_store: FakeFileStore
+) -> None:
+    user = _user(db_session)
+    _route_provider(db_session)
+    file_id = _generated_file(db_session, file_store, user)
+    hub = FakeHubPost(installs=[], artifacts=[_response(401)])
+
+    with patch(f"{HUB_MODULE}.requests.post", side_effect=hub):
+        with pytest.raises(OnyxError) as exc:
+            _publish(db_session, user, file_id)
+
+    assert exc.value.error_code == OnyxErrorCode.CREDENTIAL_INVALID
+    assert hub.paths() == ["/api/artifacts"]
+    assert _stored_install_token() is None
+
+
+@pytest.mark.parametrize(
+    "status,payload,expected",
+    [
+        (429, None, OnyxErrorCode.RATE_LIMITED),
+        (503, None, OnyxErrorCode.BAD_GATEWAY),
+        (201, {"token": "not-an-install-token"}, OnyxErrorCode.BAD_GATEWAY),
+    ],
+)
+def test_install_registration_errors(
+    db_session: Session,
+    file_store: FakeFileStore,
+    status: int,
+    payload: dict[str, Any] | None,
+    expected: OnyxErrorCode,
+) -> None:
+    user = _user(db_session)
+    file_id = _generated_file(db_session, file_store, user)
+    hub = FakeHubPost(installs=[_response(status, payload)], artifacts=[])
+
+    with patch(f"{HUB_MODULE}.requests.post", side_effect=hub):
+        with pytest.raises(OnyxError) as exc:
+            _publish(db_session, user, file_id)
+
+    assert exc.value.error_code == expected
+    assert hub.paths() == ["/api/installs"]
+    assert _stored_install_token() is None
+
+
+# --- The publish_html chat tool ---
+
+_PLACEMENT = Placement(turn_index=1, tab_index=0)
+
+
+def _tool(user: User) -> tuple[PublishHtmlTool, MagicMock]:
+    emitter = MagicMock()
+    return PublishHtmlTool(tool_id=7, emitter=emitter, user=user), emitter
+
+
+def _last_delta(emitter: MagicMock) -> CustomToolDelta:
+    delta = emitter.emit.call_args_list[-1].args[0].obj
+    assert isinstance(delta, CustomToolDelta)
+    return delta
+
+
+def test_tool_is_registered_and_available() -> None:
+    assert BUILT_IN_TOOL_MAP[PublishHtmlTool.__name__] is PublishHtmlTool
+    assert TOOL_NAME_TO_CLASS["publish_html"] is PublishHtmlTool
+    assert PublishHtmlTool.is_available(MagicMock()) is True
+    with patch(f"{TOOL_MODULE}.DEEPX_HUB_URL", ""):
+        assert PublishHtmlTool.is_available(MagicMock()) is False
+
+
+def test_tool_definition_tells_the_model_the_rules(db_session: Session) -> None:
+    tool, _ = _tool(_user(db_session))
+    definition = tool.tool_definition()
+    assert definition.name == "publish_html"
+    properties = definition.parameters["properties"]
+    assert isinstance(properties, dict)
+    assert set(properties) == {"file_id", "title", "expires_in_days"}
+    assert definition.parameters["required"] == ["file_id", "title"]
+    description = definition.description
+    assert "only when the user asks to publish" in description
+    assert "Anyone who has the link" in description
+    assert "Settings > Published Links" in description
+    assert "expires" in description
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("abc-123", "abc-123"),
+        ("  abc-123 ", "abc-123"),
+        ("/api/chat/file/abc-123", "abc-123"),
+        ("https://deepx.example/api/chat/file/abc-123?download=1", "abc-123"),
+        ("[index.html](/api/chat/file/abc-123)", "abc-123"),
+    ],
+)
+def test_extract_chat_file_id(value: str, expected: str) -> None:
+    assert extract_chat_file_id(value) == expected
+
+
+def test_tool_publishes_a_chat_file_link(
+    db_session: Session, file_store: FakeFileStore
+) -> None:
+    user = _user(db_session)
+    file_id = _generated_file(db_session, file_store, user, display_name="index.html")
+    tool, emitter = _tool(user)
+    hub = FakeHubPost(
+        installs=[_install_response()], artifacts=[_hub_publish_response()]
+    )
+
+    with patch(f"{HUB_MODULE}.requests.post", side_effect=hub):
+        response = tool.run(
+            _PLACEMENT,
+            None,
+            file_id=f"https://deepx.example/api/chat/file/{file_id}",
+            title=" Landing page ",
+        )
+
+    assert set(json.loads(response.llm_facing_response)) == {
+        "url",
+        "title",
+        "expires_at",
+    }
+    result = PublishHtmlResult.model_validate_json(response.llm_facing_response)
+    assert result.url == f"{HUB_URL}/a/AbCdEfGhIjKlMnOpQrStUv"
+    assert result.title == "Landing page"
+    assert hub.calls[-1][1]["json"]["expiresInDays"] == 7
+
+    stored = db_session.scalars(select(PublishedArtifact)).one()
+    assert stored.file_id == file_id
+    assert stored.user_id == user.id
+
+    delta = _last_delta(emitter)
+    assert delta.response_type == "text"
+    assert delta.data == summarize_publish_result(result)
+    assert INSTALL_TOKEN not in str(delta.data)
+
+
+def test_tool_reports_publish_errors_to_the_model(
+    db_session: Session, file_store: FakeFileStore
+) -> None:
+    owner = _user(db_session)
+    other = _user(db_session)
+    file_id = _generated_file(db_session, file_store, owner)
+    tool, emitter = _tool(other)
+
+    with patch(f"{HUB_MODULE}.requests.post") as post:
+        with pytest.raises(ToolCallException) as exc:
+            tool.run(_PLACEMENT, None, file_id=file_id, title="Not mine")
+
+    post.assert_not_called()
+    assert exc.value.llm_facing_message == (
+        "The page was not published. File not found"
+    )
+    assert "not published" in str(_last_delta(emitter).data)
+
+
+def test_tool_rejects_invalid_arguments(db_session: Session) -> None:
+    tool, _ = _tool(_user(db_session))
+    with patch(f"{HUB_MODULE}.requests.post") as post:
+        with pytest.raises(ToolCallException) as exc:
+            tool.run(_PLACEMENT, None, file_id="f", title="t", expires_in_days=31)
+    post.assert_not_called()
+    assert "expires_in_days" in exc.value.llm_facing_message
+
+
+def test_publish_html_replay_matches_live_text() -> None:
+    result = PublishHtmlResult(
+        url=f"{HUB_URL}/a/x",
+        title="Page",
+        expires_at=datetime.datetime(2026, 11, 1, tzinfo=datetime.timezone.utc),
+    )
+    packets = create_publish_html_packets(
+        tool_name="Publish Web Page",
+        tool_id=7,
+        saved_response=result.model_dump_json(),
+        turn_index=1,
+    )
+    delta = packets[1].obj
+    assert isinstance(delta, CustomToolDelta)
+    assert delta.data == summarize_publish_result(result)
+    assert "2026-11-01" in str(delta.data)
+
+    failed = create_publish_html_packets(
+        tool_name="Publish Web Page",
+        tool_id=7,
+        saved_response="The page was not published. File not found",
+        turn_index=1,
+    )
+    failed_delta = failed[1].obj
+    assert isinstance(failed_delta, CustomToolDelta)
+    assert failed_delta.data == "The page was not published. File not found"

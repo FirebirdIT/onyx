@@ -407,7 +407,8 @@ incognito mode does not persist content skip the naming call.
   Office file tool calls (`create_document`, `create_spreadsheet`,
   `create_presentation`, `create_pdf`) replay as custom-tool file packets
   (`session_loading.py:create_office_file_packets`), the same packets they
-  stream live.
+  stream live. `publish_html` calls replay as the same text delta
+  (`session_loading.py:create_publish_html_packets`).
 - [[background-jobs]]: hosts the EE chat-TTL Celery chain.
 - [[multi-tenancy]]: every table here is tenant-scoped like the rest of the
   schema.
