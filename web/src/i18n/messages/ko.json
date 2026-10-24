@@ -765,6 +765,9 @@
       },
       "pdfDocument": {
         "label": "PDF 문서"
+      },
+      "publishWebPage": {
+        "label": "웹 페이지 게시"
       }
     },
     "toolsPopover": {

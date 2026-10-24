@@ -124,6 +124,8 @@ KV_CUSTOM_ANALYTICS_SCRIPT_KEY = "__custom_analytics_script__"
 KV_KG_CONFIG_KEY = "kg_config"
 KV_CC_PAIR_IDS_BACKFILL_PROGRESS_KEY = "opensearch_cc_pair_ids_backfill_progress"
 KV_TABULAR_RECHUNK_PROGRESS_KEY = "tabular_rechunk_progress"
+# Install token for the Deep X hub, used when no Deep X Route key exists.
+KV_DEEPX_HUB_INSTALL_TOKEN_KEY = "deepx_hub_install_token"
 
 # NOTE: we use this timeout / 4 in various places to refresh a lock
 # might be worth separating this timeout into separate timeouts for each situation

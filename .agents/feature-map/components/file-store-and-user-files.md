@@ -17,7 +17,8 @@
 `backend/onyx/tools/tool_implementations/file_reader/file_reader_tool.py`,
 `web/src/lib/projects/`, `web/src/app/app/components/files/`,
 `backend/onyx/server/features/published_artifacts/`, `backend/onyx/db/published_artifact.py`,
-`backend/onyx/deepx/hub_artifacts.py`, `web/src/lib/publishedArtifacts/`,
+`backend/onyx/deepx/hub_artifacts.py`,
+`backend/onyx/tools/tool_implementations/publish_html/`, `web/src/lib/publishedArtifacts/`,
 `web/src/sections/modals/PublishArtifactModal.tsx`,
 `web/src/app/app/settings/published-links/`
 
@@ -420,8 +421,10 @@ access-control consequence of this.
 ### 4.10 Publishing an HTML file to the Deep X hub
 
 `POST /user/published-artifacts` (`published_artifacts/api.py:publish_artifact`)
-takes `file_id` (a storage `file_id` or a `UserFile.id`), `title` (1-200
-characters) and `expires_in_days` (1-30, default 7):
+and the `publish_html` chat tool both call
+`published_artifacts/service.py:publish_chat_html_file`. It takes `file_id` (a
+storage `file_id` or a `UserFile.id`), `title` (1-200 characters) and
+`expires_in_days` (1-30, default 7):
 
 1. Resolves a `UserFile.id` to its `FileRecord.file_id` (only when the input is a
    UUID), then authorizes with `access.py:user_can_access_chat_file`, the rule of
@@ -430,12 +433,20 @@ characters) and `expires_in_days` (1-30, default 7):
    ends in `.html`/`.htm`, with at most 4 MiB of UTF-8 bytes. In practice the HTML
    comes from `run_python` output files ([[code-execution]]) or an uploaded HTML
    attachment; the office, image and custom tools never write HTML.
-3. Reads the API key of the first Deep X Route LLM provider the user may use
-   (`db/llm.py:fetch_first_accessible_llm_provider_by_type`). With none, it
-   raises `FEATURE_DISABLED`.
-4. Calls `POST {DEEPX_HUB_URL}/api/artifacts` (`deepx/hub_artifacts.py`). Hub
-   401, 413, 429, 5xx and timeouts become `CREDENTIAL_INVALID`,
-   `PAYLOAD_TOO_LARGE`, `RATE_LIMITED`, `BAD_GATEWAY` and `GATEWAY_TIMEOUT`.
+3. Picks the hub credential (`service.py:resolve_hub_credential`). It uses the
+   API key of the first Deep X Route LLM provider the user may use
+   (`db/llm.py:fetch_first_accessible_llm_provider_by_type`). Without one, it uses
+   the install token in the encrypted key-value store
+   (`KV_DEEPX_HUB_INSTALL_TOKEN_KEY`, `db/encrypted_kv_store.py`). Without a stored
+   token, it calls `POST {DEEPX_HUB_URL}/api/installs` once
+   (`hub_artifacts.py:register_install_with_hub`) and stores the `dxi_` token. So
+   publishing works with any LLM provider.
+4. Calls `POST {DEEPX_HUB_URL}/api/artifacts` with `Authorization: Bearer
+   <credential>` (`deepx/hub_artifacts.py`). When the hub answers 401 for an
+   install token, it registers again once, stores the new token and retries once.
+   Hub 401, 413, 429, 5xx and timeouts become `CREDENTIAL_INVALID`,
+   `PAYLOAD_TOO_LARGE`, `RATE_LIMITED`, `BAD_GATEWAY` and `GATEWAY_TIMEOUT`. A 429
+   on `/api/installs` (5 new installs per IP and day) is `RATE_LIMITED`.
 5. Saves a `PublishedArtifact` row (`db/published_artifact.py`). The hub delete
    token is in an `EncryptedString` column. If the save fails, it deletes the hub
    artifact again.
@@ -444,6 +455,15 @@ characters) and `expires_in_days` (1-30, default 7):
 403 keeps the row (the link stays public until it expires). An expired row is
 deleted without a hub call. The row has no foreign key to `file_record`: the
 hub copy stays valid when the local file is deleted.
+
+The `publish_html` tool (`tool_implementations/publish_html/publish_html_tool.py`)
+lets the model publish when the user asks in chat. It accepts a bare file id or a
+chat file link (`/api/chat/file/<id>`), runs as the chat user, and returns
+`{url, title, expires_at}`. On an `OnyxError` it raises `ToolCallException` with
+the error detail, so the model can tell the user why. It streams a text
+`CustomToolDelta`; `session_loading.py:create_publish_html_packets` replays the
+same text. Migration `13b01ea7efcb_seed_publish_html_tool.py` seeds the `Tool` row
+and attaches it to the default persona. There is no approval step.
 
 In the UI, `PreviewModal` shows a Publish button for HTML files
 (`isPublishableHtml`), except in the shared-chat view (`allowPublish={false}`).
@@ -516,9 +536,10 @@ links with copy, open and unpublish.
    when the record is already gone.
 
 8. **Publishing must use the download access rule and never leak secrets.**
-   `publish_artifact` calls `user_can_access_chat_file` before it reads bytes
-   or calls the hub. The Deep X Route key and the hub delete token are never
-   logged or returned to the browser.
+   `publish_chat_html_file` calls `user_can_access_chat_file` before it reads
+   bytes or calls the hub, for the endpoint and the chat tool. The Deep X Route
+   key, the install token and the hub delete token are never logged or returned
+   to the browser or the model.
 
 ---
 

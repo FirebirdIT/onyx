@@ -1,6 +1,6 @@
 """HTTP client for the Deep X hub artifact API.
 
-Never log the Deep X Route API key or a delete token.
+Never log the Deep X Route API key, an install token or a delete token.
 """
 
 import datetime
@@ -19,6 +19,8 @@ logger = setup_logger()
 # (connect, read) seconds. The publish body is at most 4 MiB.
 HUB_PUBLISH_TIMEOUT_SECONDS: tuple[float, float] = (5.0, 30.0)
 HUB_DELETE_TIMEOUT_SECONDS: tuple[float, float] = (5.0, 15.0)
+HUB_INSTALL_TIMEOUT_SECONDS: tuple[float, float] = (5.0, 15.0)
+INSTALL_TOKEN_PREFIX = "dxi_"
 DELETE_TOKEN_HEADER = "X-Delete-Token"
 
 
@@ -31,6 +33,12 @@ class HubArtifact(BaseModel):
     url: str = Field(min_length=1)
     expires_at: datetime.datetime = Field(alias="expiresAt")
     delete_token: str = Field(alias="deleteToken", min_length=1)
+
+
+class HubInstall(BaseModel):
+    """The hub response to an install registration (`POST /api/installs`)."""
+
+    token: str = Field(min_length=len(INSTALL_TOKEN_PREFIX) + 1)
 
 
 def _hub_error(response: requests.Response) -> OnyxError:
@@ -104,6 +112,38 @@ def publish_html_to_hub(
             OnyxErrorCode.BAD_GATEWAY,
             "The Deep X hub sent a response that is not valid.",
         )
+
+
+def register_install_with_hub(hub_url: str) -> str:
+    """Register this Onyx install with the hub and return its install token.
+
+    The hub limits new installs per IP and day (429)."""
+    response = _send(
+        lambda: requests.post(
+            f"{hub_url}/api/installs",
+            json={},
+            timeout=HUB_INSTALL_TIMEOUT_SECONDS,
+        )
+    )
+    if response.status_code == 429:
+        raise OnyxError(
+            OnyxErrorCode.RATE_LIMITED,
+            "The Deep X hub refused to register this install today. "
+            "Try again tomorrow.",
+        )
+    if response.status_code not in (200, 201):
+        raise _hub_error(response)
+    try:
+        install = HubInstall.model_validate(response.json())
+    except (ValueError, ValidationError):
+        install = None
+    if install is None or not install.token.startswith(INSTALL_TOKEN_PREFIX):
+        logger.warning("The Deep X hub sent an install response that is not valid.")
+        raise OnyxError(
+            OnyxErrorCode.BAD_GATEWAY,
+            "The Deep X hub sent a response that is not valid.",
+        )
+    return install.token
 
 
 def delete_artifact_from_hub(

@@ -8,6 +8,7 @@ import {
   SvgPdfFile,
   SvgPowerpointFile,
   SvgSearch,
+  SvgShare,
   SvgTerminal,
   SvgWordFile,
 } from "@opal/icons";
@@ -33,6 +34,7 @@ export const CREATE_DOCUMENT_TOOL_ID = "CreateDocumentTool";
 export const CREATE_SPREADSHEET_TOOL_ID = "CreateSpreadsheetTool";
 export const CREATE_PRESENTATION_TOOL_ID = "CreatePresentationTool";
 export const CREATE_PDF_TOOL_ID = "CreatePdfTool";
+export const PUBLISH_HTML_TOOL_ID = "PublishHtmlTool";
 
 // The Word, Excel, PowerPoint and PDF tools. Settings pages switch them as one group.
 export const OFFICE_FILE_TOOL_IDS: readonly string[] = [
@@ -57,6 +59,7 @@ export const SYSTEM_TOOL_ICONS: Record<
   [CREATE_SPREADSHEET_TOOL_ID]: SvgExcelFile,
   [CREATE_PRESENTATION_TOOL_ID]: SvgPowerpointFile,
   [CREATE_PDF_TOOL_ID]: SvgPdfFile,
+  [PUBLISH_HTML_TOOL_ID]: SvgShare,
 };
 
 import { ADMIN_ROUTES } from "@/lib/admin-routes";

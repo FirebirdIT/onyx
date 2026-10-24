@@ -765,6 +765,9 @@
       },
       "pdfDocument": {
         "label": "PDF 文档"
+      },
+      "publishWebPage": {
+        "label": "发布网页"
       }
     },
     "toolsPopover": {
