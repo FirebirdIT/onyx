@@ -20,6 +20,7 @@ from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.models import Skill, User
 from onyx.error_handling.exceptions import OnyxError
 from onyx.llm.models import ToolDefinition
+from onyx.server.features.build.configs import ENABLE_CRAFT
 from onyx.server.query_and_chat.placement import Placement
 from onyx.server.query_and_chat.streaming_models import (
     CustomToolDelta,
@@ -36,6 +37,10 @@ logger = setup_logger()
 
 NAME_FIELD = "name"
 PATH_FIELD = "path"
+
+# Built-in skills that only make sense inside Craft. Chat leaves them out
+# while Craft is off.
+CRAFT_ONLY_BUILT_IN_SKILL_IDS = frozenset({"craft-documentation"})
 
 # The tool description lists at most this many skills.
 MAX_INDEXED_SKILLS = 50
@@ -82,6 +87,12 @@ def _shorten(text: str, limit: int) -> str:
     return collapsed[: limit - 1].rstrip() + "…"
 
 
+def is_chat_skill(skill: Skill, *, craft_enabled: bool = ENABLE_CRAFT) -> bool:
+    """True when chat offers ``skill``: everything except Craft-only built-ins
+    while Craft is off."""
+    return craft_enabled or skill.built_in_skill_id not in CRAFT_ONLY_BUILT_IN_SKILL_IDS
+
+
 def build_read_skill_description(skills: Sequence[SkillIndexEntry]) -> str:
     """The tool description: usage guidance plus a compact skill index."""
     listed = skills[:MAX_INDEXED_SKILLS]
@@ -122,7 +133,7 @@ def load_effective_skill_files(
                 for skill in list_runtime_skills_for_user(
                     db_session=db_session, user=user
                 )
-                if skill.name == skill_name
+                if skill.name == skill_name and is_chat_skill(skill)
             ),
             None,
         )

@@ -292,8 +292,8 @@ def test_loader_uses_effective_skills_and_push_rendering(
     monkeypatch.setattr(
         read_skill_tool, "get_session_with_current_tenant", lambda: session_cm
     )
-    built_in = cast(Skill, SimpleNamespace(name="pptx"))
-    custom = cast(Skill, SimpleNamespace(name=SKILL_NAME))
+    built_in = cast(Skill, SimpleNamespace(name="pptx", built_in_skill_id="pptx"))
+    custom = cast(Skill, SimpleNamespace(name=SKILL_NAME, built_in_skill_id=None))
     monkeypatch.setattr(
         skill_db, "list_runtime_skills_for_user", lambda **_: [built_in, custom]
     )
@@ -382,3 +382,19 @@ def test_constructor_indexes_built_in_and_custom_skills(
     assert isinstance(tools[0], ReadSkillTool)
     assert "- pptx: Build slide decks." in tools[0].description
     assert f"- {SKILL_NAME}: Fill PDF forms." in tools[0].description
+
+
+@pytest.mark.parametrize(
+    ("built_in_skill_id", "craft_enabled", "offered"),
+    [
+        ("craft-documentation", False, False),
+        ("craft-documentation", True, True),
+        ("pptx", False, True),
+        (None, False, True),
+    ],
+)
+def test_chat_leaves_out_craft_only_skills_while_craft_is_off(
+    built_in_skill_id: str | None, craft_enabled: bool, offered: bool
+) -> None:
+    skill = cast(Skill, SimpleNamespace(built_in_skill_id=built_in_skill_id))
+    assert read_skill_tool.is_chat_skill(skill, craft_enabled=craft_enabled) is offered

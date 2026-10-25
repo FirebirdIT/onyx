@@ -62,6 +62,7 @@ from onyx.tools.tool_implementations.search.search_tool import SearchTool
 from onyx.tools.tool_implementations.skills.read_skill_tool import (
     ReadSkillTool,
     SkillIndexEntry,
+    is_chat_skill,
 )
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
 from onyx.utils.headers import header_dict_to_header_list
@@ -431,6 +432,7 @@ def _construct_tools_impl(
                     for skill in list_runtime_skills_for_user(
                         db_session=db_session, user=user
                     )
+                    if is_chat_skill(skill)
                 ]
                 if not skill_index:
                     continue

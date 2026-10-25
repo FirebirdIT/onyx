@@ -100,7 +100,9 @@ and create and edit open the settings editor routes, not `/craft/v1/skills/*`.
 
 In chat, an enabled skill is listed in the description of the `read_skill`
 tool. Before a task that matches a skill, the model reads its instructions
-and follows them (§4.5).
+and follows them (§4.5). While Craft is off, chat leaves out Craft-only
+built-in skills (`read_skill_tool.py:CRAFT_ONLY_BUILT_IN_SKILL_IDS`, now
+`craft-documentation`).
 
 If a skill changes while a session is already running (edited, toggled,
 shared, an app's policy changed), the running agent keeps whatever it already
