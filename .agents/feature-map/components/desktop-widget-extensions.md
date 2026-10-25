@@ -27,7 +27,7 @@ setup page asks for the engine mode, connects Deep X Route (PKCE sign-in or a
 pasted API key), and starts the local engine (`desktop/src-tauri/src/engine/`).
 There are three modes (`config.rs:EngineMode`):
 
-- **Native ("Without Docker")**, the default on macOS. `desktop/src-tauri/src/engine/native/` runs the
+- **Native ("Without Docker")**, macOS only, and the default on Apple silicon (the only platform with a published bundle). `desktop/src-tauri/src/engine/native/` runs the
   engine as processes, with no Docker. It downloads one bundle from the hub
   (`GET {hub}/api/engine/native`, checked with sha256; `DEEPX_ENGINE_BUNDLE` names a
   local archive for tests), built by `desktop/native-engine/build-bundle.sh`. The
