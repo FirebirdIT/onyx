@@ -136,6 +136,10 @@ inside Anthropic's sandbox-runtime (`srt`, set by `DEEPX_CODE_RUNNER_SRT_COMMAND
   (`sandbox.py:python_roots`). It can write only to its job folders, and its temp folder
   is a short `/tmp/deepx-job-*` folder, because `srt` puts its proxy socket there.
 - **Network:** a job has no network.
+- **Callers:** the runner refuses a request with no `Authorization: Bearer` token equal to
+  `DEEPX_CODE_RUNNER_TOKEN`, and any request with an `Origin` header, so a web page in the
+  browser cannot post jobs to it. The backend sends the token from
+  `CODE_INTERPRETER_API_TOKEN` (`CodeInterpreterClient.__init__`).
 - **Limits:** `run_in_sandbox` enforces the time limit, and `_watch_memory` stops the
   job's process group when its RSS goes over `DEEPX_CODE_RUNNER_MAX_MEMORY_MB`.
 - **Output files:** `workspace.py:collect_outputs` returns only new or changed regular

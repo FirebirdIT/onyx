@@ -10,7 +10,10 @@ from typing import Any, Concatenate, Literal, ParamSpec, TypedDict, TypeVar, Uni
 import requests
 from pydantic import BaseModel
 
-from onyx.configs.app_configs import CODE_INTERPRETER_BASE_URL
+from onyx.configs.app_configs import (
+    CODE_INTERPRETER_API_TOKEN,
+    CODE_INTERPRETER_BASE_URL,
+)
 from onyx.utils.logger import setup_logger
 from onyx.utils.retry_after import parse_retry_after_seconds
 
@@ -239,6 +242,10 @@ class CodeInterpreterClient:
             raise ValueError("CODE_INTERPRETER_BASE_URL not configured")
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
+        if CODE_INTERPRETER_API_TOKEN:
+            self.session.headers["Authorization"] = (
+                f"Bearer {CODE_INTERPRETER_API_TOKEN}"
+            )
         self._closed = False
 
     def __enter__(self) -> CodeInterpreterClient:
