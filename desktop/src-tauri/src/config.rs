@@ -14,22 +14,23 @@ pub const DOCKER_SERVER_URL: &str = "http://localhost:3000";
 /// The native engine serves the app on this address.
 pub const NATIVE_SERVER_URL: &str = "http://localhost:9999";
 /// The local engine address of the default engine mode.
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 pub const DEFAULT_SERVER_URL: &str = NATIVE_SERVER_URL;
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
 pub const DEFAULT_SERVER_URL: &str = DOCKER_SERVER_URL;
 pub const DEFAULT_HUB_URL: &str = "https://deepx-hub.vercel.app";
 const CONFIG_FILE_NAME: &str = "config.json";
 
 /// How the engine runs. Native runs the engine processes on this computer
-/// with no Docker (macOS only for now). Lite and Full use Docker: Lite is
+/// with no Docker (macOS only for now, and the default on Apple silicon, the
+/// only platform with a published bundle). Lite and Full use Docker: Lite is
 /// Postgres + API + web only, and Full adds connectors and search.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum EngineMode {
-    #[cfg_attr(target_os = "macos", default)]
+    #[cfg_attr(all(target_os = "macos", target_arch = "aarch64"), default)]
     Native,
-    #[cfg_attr(not(target_os = "macos"), default)]
+    #[cfg_attr(not(all(target_os = "macos", target_arch = "aarch64")), default)]
     Lite,
     Full,
 }
