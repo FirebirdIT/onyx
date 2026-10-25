@@ -245,3 +245,61 @@ def test_user_payload_returns_hydrated_files_and_connectable_apps(
         user,
         db_session,
     )
+
+
+def test_build_skill_files_for_user_returns_paths_relative_to_skill_root(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    file_store = MagicMock(spec=FileStore)
+    file_store.read_file.return_value = io.BytesIO(_bundle("canonical-name"))
+    monkeypatch.setattr(push, "get_default_file_store", lambda: file_store)
+    monkeypatch.setattr(push, "persist_skill_validity", MagicMock())
+
+    files = push.build_skill_files_for_user(
+        _skill(is_valid=True),
+        cast(User, SimpleNamespace()),
+        MagicMock(spec=Session),
+    )
+
+    assert set(files) == {"SKILL.md", "scripts/run.py"}
+    assert files["scripts/run.py"] == b"print('hello')\n"
+
+
+def test_build_skill_files_for_user_reads_built_in_from_disk(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(push, "persist_skill_validity", MagicMock())
+    skill = cast(
+        Skill,
+        SimpleNamespace(
+            id=uuid4(),
+            name="pptx",
+            bundle_file_id=None,
+            built_in_skill_id="pptx",
+            is_valid=None,
+        ),
+    )
+
+    files = push.build_skill_files_for_user(
+        skill, cast(User, SimpleNamespace()), MagicMock(spec=Session)
+    )
+
+    assert "SKILL.md" in files
+    assert not any(path.endswith(".template") for path in files)
+
+
+def test_build_skill_files_for_user_returns_empty_for_invalid_skill(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    file_store = MagicMock(spec=FileStore)
+    monkeypatch.setattr(push, "get_default_file_store", lambda: file_store)
+    monkeypatch.setattr(push, "persist_skill_validity", MagicMock())
+
+    files = push.build_skill_files_for_user(
+        _skill(is_valid=False),
+        cast(User, SimpleNamespace()),
+        MagicMock(spec=Session),
+    )
+
+    assert files == {}
+    file_store.read_file.assert_not_called()

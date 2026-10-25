@@ -23,7 +23,7 @@
 
 When an agent needs to do something beyond generating text, it calls a tool: search
 the company index, search the web, open a URL, generate an image, run Python, read
-an attached file, create a Word, Excel, PowerPoint or PDF file, publish an HTML file as a public link, or remember a fact about the user. The user sees a tool block in
+an attached file, create a Word, Excel, PowerPoint or PDF file, publish an HTML file as a public link, read one of the user's skills, or remember a fact about the user. The user sees a tool block in
 the transcript (queries, a spinner, then a result) while the tool runs, and the
 final answer folds the result back into prose with citations where relevant.
 
@@ -168,6 +168,7 @@ runtime lookup `tool_constructor.py` uses for every persona-attached built-in to
 | PowerPoint presentation | `CreatePresentationTool` : `tool_implementations/office/office_tools.py` | `create_presentation` | Build a 16:9 .pptx (title, section, bullets, two-column, table and chart layouts, speaker notes). | No override; default `True`. |
 | PDF document | `CreatePdfTool` : `tool_implementations/office/office_tools.py` | `create_pdf` | Build an A4 .pdf from the same document spec as `create_document`, with reportlab. | No override; default `True`. |
 | Publish web page | `PublishHtmlTool` : `tool_implementations/publish_html/publish_html_tool.py` | `publish_html` | Publish an HTML chat file to the Deep X hub and return the public link (see [[file-store-and-user-files]] §4.10). | `True` when `DEEPX_HUB_URL` is set, which it always is by default (`publish_html_tool.py:is_available`). The constructor skips it for anonymous users. |
+| Read skill | `ReadSkillTool` : `tool_implementations/skills/read_skill_tool.py` | `read_skill` | Return a skill's `SKILL.md` instructions and file list, or one UTF-8 text file of the skill (see [[skills]] §4.5). | No override; default `True`. The constructor skips it for anonymous users and for users with no effective skill (`db/skill.py:list_runtime_skills_for_user`). The description lists the user's skills, so it differs per user. |
 | Bash | `BashTool` : `tool_implementations/bash/bash_tool.py` | `bash` | Run a shell command in an isolated code-interpreter session. | `True` if `CODE_INTERPRETER_BASE_URL` is set, the server is enabled, its health check passes, and it `supports(...)` the session/bash routes (`bash_tool.py:is_available`). Not persona-attachable (see §5). |
 
 The four Office file tools share `OfficeFileTool` (`office/office_tools.py`). They run in
@@ -229,7 +230,7 @@ For each `db_tool_model` in `persona.tools`, in order:
    (`tool_constructor.py:_construct_tools_impl`), then dispatch to a class-specific
    constructor branch (`SearchTool`, `ImageGenerationTool`, `WebSearchTool`,
    `OpenURLTool`, `PythonTool`, the Office file tools in `OFFICE_TOOL_CLASSES`,
-   `CodingAgentTool`, `FileReaderTool`). The
+   `PublishHtmlTool`, `ReadSkillTool`, `CodingAgentTool`, `FileReaderTool`). The
    `SearchTool` branch skips the tool when `search_usage_forcing_setting` is
    `SearchToolUsage.DISABLED`.
 4. For a custom tool (`openapi_schema` set), resolve OAuth (per-tool OAuth config,

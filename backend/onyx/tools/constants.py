@@ -21,6 +21,7 @@ CREATE_SPREADSHEET_TOOL_ID = "CreateSpreadsheetTool"
 CREATE_PRESENTATION_TOOL_ID = "CreatePresentationTool"
 CREATE_PDF_TOOL_ID = "CreatePdfTool"
 PUBLISH_HTML_TOOL_ID = "PublishHtmlTool"
+READ_SKILL_TOOL_ID = "ReadSkillTool"
 
 # Tool names as referenced by tool results / tool calls (read_file)
 FILE_READER_TOOL_NAME = "read_file"

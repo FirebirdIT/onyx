@@ -23,6 +23,7 @@ from onyx.tools.tool_implementations.publish_html.publish_html_tool import (
 )
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
+from onyx.tools.tool_implementations.skills.read_skill_tool import ReadSkillTool
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
 from onyx.utils.logger import setup_logger
 
@@ -44,6 +45,7 @@ BUILT_IN_TOOL_TYPES = Union[
     CreatePresentationTool,
     CreatePdfTool,
     PublishHtmlTool,
+    ReadSkillTool,
 ]
 
 BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
@@ -61,6 +63,7 @@ BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
     CreatePresentationTool.__name__: CreatePresentationTool,
     CreatePdfTool.__name__: CreatePdfTool,
     PublishHtmlTool.__name__: PublishHtmlTool,
+    ReadSkillTool.__name__: ReadSkillTool,
 }
 
 STOPPING_TOOLS_NAMES: list[str] = [ImageGenerationTool.NAME]

@@ -21,6 +21,7 @@ from onyx.db.mcp import (
 from onyx.db.models import User
 from onyx.db.oauth_config import get_oauth_config
 from onyx.db.search_settings import get_current_search_settings
+from onyx.db.skill import list_runtime_skills_for_user
 from onyx.db.tools import get_builtin_tool, get_tool_user_preferences
 from onyx.document_index.factory import get_default_document_index
 from onyx.image_gen.interfaces import ImageGenerationProviderCredentials
@@ -58,6 +59,10 @@ from onyx.tools.tool_implementations.publish_html.publish_html_tool import (
 )
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
+from onyx.tools.tool_implementations.skills.read_skill_tool import (
+    ReadSkillTool,
+    SkillIndexEntry,
+)
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
 from onyx.utils.headers import header_dict_to_header_list
 from onyx.utils.logger import setup_logger
@@ -413,6 +418,28 @@ def _construct_tools_impl(
                 tool_dict[db_tool_model.id] = [
                     PublishHtmlTool(
                         tool_id=db_tool_model.id, emitter=emitter, user=user
+                    )
+                ]
+
+            # Handle Read Skill Tool. Skills belong to a user account, and the
+            # tool is left out when the user has no effective skill.
+            elif tool_cls.__name__ == ReadSkillTool.__name__:
+                if user.is_anonymous:
+                    continue
+                skill_index = [
+                    SkillIndexEntry.from_model(skill)
+                    for skill in list_runtime_skills_for_user(
+                        db_session=db_session, user=user
+                    )
+                ]
+                if not skill_index:
+                    continue
+                tool_dict[db_tool_model.id] = [
+                    ReadSkillTool(
+                        tool_id=db_tool_model.id,
+                        emitter=emitter,
+                        user_id=user.id,
+                        skills=skill_index,
                     )
                 ]
 
