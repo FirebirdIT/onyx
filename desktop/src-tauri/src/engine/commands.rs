@@ -2,20 +2,9 @@
 // Tauri command handlers take IPC arguments and extractors by value.
 #![allow(clippy::needless_pass_by_value)]
 
-use super::docker::{check_docker, open_docker_desktop, DockerCheck};
 use super::{EngineLock, EngineStatus};
-use crate::config::{ConfigState, EngineMode};
+use crate::config::ConfigState;
 use tauri::{AppHandle, Manager, State};
-
-#[tauri::command]
-pub async fn engine_check_docker() -> DockerCheck {
-    check_docker().await
-}
-
-#[tauri::command]
-pub fn engine_open_docker() -> Result<(), String> {
-    open_docker_desktop()
-}
 
 #[tauri::command]
 pub async fn engine_status() -> Result<EngineStatus, String> {
@@ -35,29 +24,13 @@ pub async fn engine_stop(app: AppHandle, lock: State<'_, EngineLock>) -> Result<
     super::stop(&app).await
 }
 
-/// Stop all services and start the services of the configured mode. Used
-/// after a mode change, so that the services of the old mode do not run on.
+/// Stop the engine and start it again.
 #[tauri::command]
 pub async fn engine_restart(app: AppHandle, lock: State<'_, EngineLock>) -> Result<(), String> {
     let _guard = lock.0.lock().await;
-    // The first start has no files yet, so there is nothing to stop.
-    if super::status().await.is_ok() {
-        super::stop(&app).await?;
-    }
+    super::stop(&app).await?;
     let config = app.state::<ConfigState>().config();
     super::start(&app, &config).await
-}
-
-#[tauri::command]
-pub fn engine_set_mode(state: State<ConfigState>, mode: EngineMode) -> Result<(), String> {
-    state
-        .update_and_persist(|c| {
-            c.engine_mode = mode;
-            if c.local_engine {
-                c.server_url = mode.local_server_url().to_string();
-            }
-        })
-        .map(|_| ())
 }
 
 #[tauri::command]
@@ -72,7 +45,7 @@ pub fn engine_set_stop_on_quit(state: State<ConfigState>, enabled: bool) -> Resu
 pub fn use_local_engine(state: State<ConfigState>) -> Result<String, String> {
     let config = state.update_and_persist(|c| {
         c.local_engine = true;
-        c.server_url = c.engine_mode.local_server_url().to_string();
+        c.server_url = crate::config::DEFAULT_SERVER_URL.to_string();
     })?;
     state.set_config_initialized(true);
     Ok(config.server_url)

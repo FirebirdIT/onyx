@@ -23,38 +23,30 @@ This document maps all three to code and adds verification guidance.
 ## 1. What the user experiences
 
 **Desktop.** The Deep X desktop app (`desktop/README.md`). On first launch a
-setup page asks for the engine mode, connects Deep X Route (PKCE sign-in or a
-pasted API key), and starts the local engine (`desktop/src-tauri/src/engine/`).
-There are three modes (`config.rs:EngineMode`):
-
-- **Native ("Without Docker")**, macOS only, and the default on Apple silicon (the only platform with a published bundle). `desktop/src-tauri/src/engine/native/` runs the
-  engine as processes, with no Docker. It downloads one bundle from the hub
-  (`GET {hub}/api/engine/native`, checked with sha256; `DEEPX_ENGINE_BUNDLE` names a
-  local archive for tests), built by `desktop/native-engine/build-bundle.sh`. The
-  bundle holds Python with the backend, Node with the Next.js standalone server,
-  Postgres 15, Anthropic sandbox-runtime and a job Python. The app starts Postgres
-  (data in `engine-native/postgres-data`), runs the migrations, then starts the
-  code runner (`backend/onyx/deepx/code_runner/`, with a new token at each start),
-  `uvicorn onyx.main:app`, and `node server.js` on `http://localhost:9999` with
-  `OVERRIDE_API_PRODUCTION=true`, because there is no nginx. Every service except
-  the web entry point uses a free loopback port. `process.rs:Supervised` restarts
-  a crashed service at most 3 times a minute. At each start, `stop_leftovers`
-  stops processes whose executable is in the bundle folder, so a crash does not
-  leave the port in use. On the first native start, `import_docker_data` copies
-  the Docker engine database (`deepx_db_volume`) with `pg_dump` and `pg_restore`.
-  The Docker data stays. Backups use the bundled `pg_dump` in this mode.
-- **Lite** and **Full** (Docker) run `docker compose -p deepx`, and the setup
-  page checks Docker first.
-
-In the Docker modes: After a
-successful start it removes `ghcr.io/firebirdit/deepx-*` images that the current
-engine does not use (`engine/images.rs:remove_old_engine_images`). It never
-removes other Docker images. The engine `.env` sets `DEEPX_LOCAL_ENGINE=true`, so
+setup page connects Deep X Route (PKCE sign-in or a pasted API key) and starts
+the local engine. The engine runs with no Docker (`desktop/src-tauri/src/engine/native/`),
+on macOS only for now (`engine::is_supported`); elsewhere the setup page asks for a
+remote server. The app downloads one bundle from the hub (`GET {hub}/api/engine/native`,
+checked with sha256; `DEEPX_ENGINE_BUNDLE` names a local archive for tests), built by
+`desktop/native-engine/build-bundle.sh`. The bundle holds Python with the backend,
+Node with the Next.js standalone server, Postgres 15, Anthropic sandbox-runtime and a
+job Python. The app starts Postgres (data in the app data folder, password from
+`desktop/src-tauri/src/engine/secrets.rs`), runs the migrations, then starts the code runner
+(`backend/onyx/deepx/code_runner/`, with a new token at each start), `uvicorn
+onyx.main:app`, and `node server.js` on `http://localhost:9999` with
+`OVERRIDE_API_PRODUCTION=true`, because there is no nginx. Every service except the
+web entry point uses a free loopback port. `process.rs:Supervised` restarts a crashed
+service at most 3 times a minute. At each start, `stop_leftovers` stops processes whose
+executable is in the bundle folder, so a crash does not leave the port in use. Backups
+use the bundled `pg_dump` and `pg_restore`. Versions before 0.1.4 ran the engine in
+Docker: `AppConfig::with_current_engine_address` moves a config that points to
+`http://localhost:3000` to the new address. The backend gets `DEEPX_LOCAL_ENGINE=true`, so
 the web app hides admin pages that one person does not need
 (`notLocal` in `web/src/lib/admin-routes.ts`): Users, Groups, SCIM, SSO, Security &
 Hardening, Theming, Billing and Upgrade Plan, Service Accounts, Slack, Discord, Hook
 Extensions, LLM Gateway, Decision Models, Usage, Analytics, Query History, Tracing
-and Export Logs. The pages still open from their URL. Then the window opens the engine address of the mode (`EngineMode::local_server_url`: `http://localhost:9999` native, `http://localhost:3000` Docker). A remote server is a Settings option.
+and Export Logs. The pages still open from their URL. Then the window opens
+`http://localhost:9999`. A remote server is a Settings option.
 The app also checks for updates from the hub and makes encrypted backups of
 the engine database (`desktop/src-tauri/src/backup/`). Around the web app it
 is a small native shell: a custom
@@ -123,9 +115,9 @@ state. The window state (size, position) comes from
 `summon_opens_new_chat` and the Deep X engine settings. No credential is
 stored in it. The Deep X Route key is in the OS keychain, or in a 0600 file
 in the config folder (`desktop/src-tauri/src/route/keystore.rs`). The engine
-folder in the app data folder holds a secrets file (0600, made once), the
-compose files and a 0600 `.env` (`desktop/src-tauri/src/engine/files.rs`,
-`env.rs`). Whatever cookie the webview accumulates is the webview's own
+folder in the app data folder holds a secrets file (0600, made once,
+`desktop/src-tauri/src/engine/secrets.rs`), and `engine-native/` holds the engine
+bundle, the database and the service logs. Whatever cookie the webview accumulates is the webview's own
 storage, managed by the OS webview engine, not by Tauri code.
 
 **Widget.** `sessionStorage`, one JSON blob per browser tab

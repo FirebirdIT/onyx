@@ -1,8 +1,8 @@
 //! Settings of the native engine processes.
 
 use super::bundle::Bundle;
-use crate::config::NATIVE_SERVER_URL;
-use crate::engine::env::{EngineSecrets, POSTGRES_USER};
+use crate::config::DEFAULT_SERVER_URL;
+use crate::engine::secrets::{EngineSecrets, POSTGRES_USER};
 use std::path::Path;
 
 /// Port of the native engine web entry point on the loopback address.
@@ -67,7 +67,7 @@ pub fn backend_env(input: &NativeInput<'_>) -> Env {
         ("FILE_STORE_BACKEND", "postgres"),
         ("CACHE_BACKEND", "postgres"),
         ("AUTH_BACKEND", "postgres"),
-        ("WEB_DOMAIN", NATIVE_SERVER_URL),
+        ("WEB_DOMAIN", DEFAULT_SERVER_URL),
         ("DEEPX_PRESETS_URL", &format!("{hub}/api/presets")),
         ("DEEPX_HUB_URL", hub),
         ("DEEPX_LOCAL_ENGINE", "true"),
@@ -170,7 +170,6 @@ mod tests {
         EngineSecrets {
             postgres_password: "pgpass".into(),
             user_auth_secret: "authsecret".into(),
-            opensearch_admin_password: "x".into(),
         }
     }
 

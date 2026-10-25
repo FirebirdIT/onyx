@@ -3,11 +3,10 @@
 #![allow(clippy::needless_pass_by_value)]
 
 pub mod crypto;
-pub mod dump;
 pub mod hub_client;
 pub mod window;
 
-use crate::config::{get_data_dir, ConfigState, EngineMode};
+use crate::config::{get_data_dir, ConfigState};
 use crate::engine::{self, EngineLock};
 use crate::route::keystore;
 use crypto::{decrypt_stream, derive_keys, encrypt_stream, BackupKeys};
@@ -158,7 +157,7 @@ async fn backup_flow(
     let sealed_path = work.path("engine.dxb");
 
     progress(app, "Exporting the database");
-    dump_database(config.engine_mode, &dump_path).await?;
+    dump_database(&dump_path).await?;
     progress(app, "Encrypting");
     let keys = std::sync::Arc::new(keys);
     let (source, target, sealing_keys) = (dump_path.clone(), sealed_path.clone(), keys.clone());
@@ -206,38 +205,25 @@ async fn download(app: &AppHandle, hub: &HubBackup<'_>, path: &Path) -> Result<(
     Ok(())
 }
 
-async fn dump_database(mode: EngineMode, dump_path: &Path) -> Result<(), String> {
-    #[cfg(unix)]
-    if mode == EngineMode::Native {
-        return engine::native::dump_database(dump_path).await;
-    }
-    dump::dump_to_file(&engine::compose_for(mode)?, dump_path).await
+#[cfg(unix)]
+async fn dump_database(dump_path: &Path) -> Result<(), String> {
+    engine::native::dump_database(dump_path).await
 }
 
-async fn restore_database(
-    app: &AppHandle,
-    mode: EngineMode,
-    dump_path: &Path,
-) -> Result<(), String> {
-    #[cfg(unix)]
-    if mode == EngineMode::Native {
-        progress(app, "Restoring the database");
-        return engine::native::restore_database(app, dump_path).await;
-    }
-    progress(app, "Stopping the API services");
-    let all = engine::compose_for(EngineMode::Full)?;
-    all.run_capture([
-        "--profile",
-        "*",
-        "stop",
-        "api_server",
-        "background",
-        "mcp_server",
-    ])
-    .await
-    .map_err(|e| format!("Failed to stop the API services: {e}"))?;
+#[cfg(unix)]
+async fn restore_database(app: &AppHandle, dump_path: &Path) -> Result<(), String> {
     progress(app, "Restoring the database");
-    dump::restore_from_file(&engine::compose_for(mode)?, dump_path).await
+    engine::native::restore_database(app, dump_path).await
+}
+
+#[cfg(not(unix))]
+async fn dump_database(_dump_path: &Path) -> Result<(), String> {
+    Err("Backups need the engine, which does not run on this computer yet.".to_string())
+}
+
+#[cfg(not(unix))]
+async fn restore_database(_app: &AppHandle, _dump_path: &Path) -> Result<(), String> {
+    Err("Backups need the engine, which does not run on this computer yet.".to_string())
 }
 
 async fn restore_flow(app: &AppHandle, email: String, passphrase: String) -> Result<(), String> {
@@ -269,7 +255,7 @@ async fn restore_flow(app: &AppHandle, email: String, passphrase: String) -> Res
     })
     .await?;
 
-    let restored = restore_database(app, config.engine_mode, &dump_path).await;
+    let restored = restore_database(app, &dump_path).await;
     // Start the services again also when the restore failed.
     progress(app, "Starting the engine again");
     let started = engine::start(app, &config).await;

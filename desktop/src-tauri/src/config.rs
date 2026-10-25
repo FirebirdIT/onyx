@@ -9,45 +9,17 @@ use std::path::PathBuf;
 use std::sync::{Mutex, RwLock};
 use url::Url;
 
-/// The Docker engine serves the app on this address.
-pub const DOCKER_SERVER_URL: &str = "http://localhost:3000";
-/// The native engine serves the app on this address.
-pub const NATIVE_SERVER_URL: &str = "http://localhost:9999";
-/// The local engine address of the default engine mode.
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub const DEFAULT_SERVER_URL: &str = NATIVE_SERVER_URL;
-#[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
-pub const DEFAULT_SERVER_URL: &str = DOCKER_SERVER_URL;
+/// The local engine serves the app on this address.
+pub const DEFAULT_SERVER_URL: &str = "http://localhost:9999";
+/// The address of the Docker engine that app versions before 0.1.4 ran. A
+/// config with this address is moved to `DEFAULT_SERVER_URL` when it loads.
+const OLD_DOCKER_SERVER_URL: &str = "http://localhost:3000";
 pub const DEFAULT_HUB_URL: &str = "https://deepx-hub.vercel.app";
 const CONFIG_FILE_NAME: &str = "config.json";
 
-/// How the engine runs. Native runs the engine processes on this computer
-/// with no Docker (macOS only for now, and the default on Apple silicon, the
-/// only platform with a published bundle). Lite and Full use Docker: Lite is
-/// Postgres + API + web only, and Full adds connectors and search.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EngineMode {
-    #[cfg_attr(all(target_os = "macos", target_arch = "aarch64"), default)]
-    Native,
-    #[cfg_attr(not(all(target_os = "macos", target_arch = "aarch64")), default)]
-    Lite,
-    Full,
-}
-
-impl EngineMode {
-    /// The address of the local engine in this mode.
-    pub const fn local_server_url(self) -> &'static str {
-        match self {
-            Self::Native => NATIVE_SERVER_URL,
-            Self::Lite | Self::Full => DOCKER_SERVER_URL,
-        }
-    }
-}
-
-/// True when `url` is the address of a local engine.
+/// True when `url` is the address of the local engine.
 pub fn is_local_server_url(url: &str) -> bool {
-    url == NATIVE_SERVER_URL || url == DOCKER_SERVER_URL
+    url == DEFAULT_SERVER_URL || url == OLD_DOCKER_SERVER_URL
 }
 
 // Independent on/off settings read from config.json, not a state machine.
@@ -57,14 +29,11 @@ pub struct AppConfig {
     #[serde(default = "default_server_url")]
     pub server_url: String,
 
-    /// When true, the app starts and stops the local Docker engine and opens
+    /// When true, the app starts and stops the local engine and opens
     /// `server_url` after the engine is ready. When false, `server_url` is a
     /// remote server and the app only opens it.
     #[serde(default = "default_true")]
     pub local_engine: bool,
-
-    #[serde(default)]
-    pub engine_mode: EngineMode,
 
     #[serde(default = "default_true")]
     pub stop_engine_on_quit: bool,
@@ -142,7 +111,6 @@ impl Default for AppConfig {
         Self {
             server_url: default_server_url(),
             local_engine: true,
-            engine_mode: EngineMode::default(),
             stop_engine_on_quit: true,
             setup_complete: false,
             hub_url: default_hub_url(),
@@ -175,6 +143,19 @@ pub fn get_config_path() -> Option<PathBuf> {
     get_config_dir().map(|dir| dir.join(CONFIG_FILE_NAME))
 }
 
+impl AppConfig {
+    /// Move a config that points to the old Docker engine to the engine
+    /// address of this version. Older configs also have an `engine_mode`
+    /// field, which serde now ignores.
+    #[must_use]
+    pub fn with_current_engine_address(mut self) -> Self {
+        if self.local_engine && self.server_url == OLD_DOCKER_SERVER_URL {
+            self.server_url = DEFAULT_SERVER_URL.to_string();
+        }
+        self
+    }
+}
+
 /// Load config from file, or create default if it doesn't exist
 pub fn load_config() -> (AppConfig, bool) {
     let Some(config_path) = get_config_path() else {
@@ -186,8 +167,8 @@ pub fn load_config() -> (AppConfig, bool) {
     }
 
     match fs::read_to_string(&config_path) {
-        Ok(contents) => match serde_json::from_str(&contents) {
-            Ok(config) => (config, true),
+        Ok(contents) => match serde_json::from_str::<AppConfig>(&contents) {
+            Ok(config) => (config.with_current_engine_address(), true),
             Err(e) => {
                 eprintln!(
                     "[DEEPX ERROR] Failed to parse config file {}: {e}",
@@ -340,27 +321,22 @@ mod tests {
         let config = parse("{}");
         assert_eq!(config.server_url, DEFAULT_SERVER_URL);
         assert!(config.local_engine);
-        assert_eq!(config.engine_mode, EngineMode::default());
-        assert_eq!(config.engine_mode.local_server_url(), DEFAULT_SERVER_URL);
         assert!(!config.setup_complete);
         assert_eq!(config.hub_url, DEFAULT_HUB_URL);
         assert_eq!(config.deepx_route_client_id, "");
     }
 
     #[test]
-    fn engine_mode_uses_lowercase_names() {
-        let config = parse(r#"{"engine_mode": "full"}"#);
-        assert_eq!(config.engine_mode, EngineMode::Full);
-        let config = parse(r#"{"engine_mode": "native"}"#);
-        assert_eq!(config.engine_mode, EngineMode::Native);
-    }
-
-    #[test]
-    fn each_mode_has_its_local_address() {
-        assert_eq!(EngineMode::Native.local_server_url(), NATIVE_SERVER_URL);
-        assert_eq!(EngineMode::Lite.local_server_url(), DOCKER_SERVER_URL);
-        assert!(is_local_server_url(NATIVE_SERVER_URL));
-        assert!(is_local_server_url(DOCKER_SERVER_URL));
+    fn an_old_docker_config_moves_to_the_engine_address() {
+        let config = parse(
+            r#"{"server_url": "http://localhost:3000", "local_engine": true, "engine_mode": "lite"}"#,
+        )
+        .with_current_engine_address();
+        assert_eq!(config.server_url, DEFAULT_SERVER_URL);
+        let remote = parse(r#"{"server_url": "https://deepx.example.com", "local_engine": false}"#)
+            .with_current_engine_address();
+        assert_eq!(remote.server_url, "https://deepx.example.com");
+        assert!(is_local_server_url("http://localhost:3000"));
         assert!(!is_local_server_url("https://deepx.example.com"));
     }
 

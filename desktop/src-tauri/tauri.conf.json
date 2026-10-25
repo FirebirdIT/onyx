@@ -48,7 +48,7 @@
     ],
     "category": "Productivity",
     "shortDescription": "Deep X desktop app",
-    "longDescription": "Deep X runs its engine on this computer with Docker and opens it in a native window.",
+    "longDescription": "Deep X runs its engine on this computer and opens it in a native window. It does not need Docker.",
     "macOS": {
       "entitlements": null,
       "minimumSystemVersion": "10.15",
