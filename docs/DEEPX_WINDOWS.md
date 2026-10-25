@@ -13,11 +13,18 @@ computer. It tells you what to change, how to test it, and how to ship it.
   so its setup still asks for Docker Desktop.
 - The desktop engine code now supports Windows (steps 2 and 4 below are done),
   and `desktop/native-engine/build-bundle.ps1` builds the Windows bundle
-  (step 1). The bundle works when started by hand with the app's programs,
-  arguments and settings: `initdb`, Postgres, the migrations, the API server
-  and the web server start, `http://localhost:9999` answers, and sign-up and
-  log-in work. What is left: the test in the app itself (step 3 of **Test**),
-  the hub (step 3 below) and the release.
+  (step 1). The hub accepts `windows-x86_64` (step 3, merged in `deepx-hub`
+  but **not deployed yet**).
+- Tested in the app (`bun run tauri dev` with a local 0.2.2 bundle):
+  setup shows 2 steps and no Docker step; the engine starts in about 2.5
+  minutes on the first run (77 s of that is unpacking) and 40 s after that;
+  `http://localhost:9999` opens Deep X and sign-up and log-in work; an ended
+  web server comes back; quitting stops every engine process and Postgres
+  shuts down cleanly; the data is still there after a restart; and when the
+  app is force-ended, all engine processes end with it. Not tested yet: a
+  chat with Deep X Route (it needs a key and spends credits) and a clean
+  Windows user account.
+- What is left: deploy the hub, then the release.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
@@ -115,9 +122,15 @@ Things that differ from the macOS script, and why:
 
 ### 3. Hub
 
-`deepx-hub/src/lib/native-engine.ts` accepts only `darwin-aarch64` and
-`darwin-x86_64`. Add `windows-x86_64` to the enum, add a test, and deploy with
-`vercel deploy --prod`.
+Done in `deepx-hub` (`windows-x86_64` is in the `native.json` schema, with
+tests). Deploy it with `vercel deploy --prod` (the hub is not deployed from
+git) **before** you publish a `native.json` with a `windows-x86_64` entry. The
+old schema refuses unknown platforms, so it would answer 502 for every
+platform, and Macs could not get the engine either.
+
+On Windows, run the hub's `pnpm install` and `pnpm test` with Node 22 or
+later. With an older Node, pnpm skips rolldown's Windows binary and vitest
+does not start.
 
 ### 4. Code runner (no sandbox-runtime on Windows) (done)
 
@@ -166,8 +179,9 @@ The updater reads `latest.json` from the **newest** `desktop-v*` release. That
 file must list every platform, or Macs stop getting updates. So one release
 carries both platforms:
 
-1. Build the Windows engine bundle and publish it in a new `native-v<ver>`
-   release. Its `native.json` must keep the `darwin-aarch64` and
+1. Check that the deployed hub accepts `windows-x86_64` (step 3 of **What to
+   change**). Build the Windows engine bundle and publish it in a new
+   `native-v<ver>` release. Its `native.json` must keep the `darwin-aarch64` and
    `darwin-x86_64` entries and add `windows-x86_64`. Copy the macOS bundles
    from the last `native-v*` release, or rebuild them on the Mac.
 2. Build the desktop app on Windows with the signing key:
