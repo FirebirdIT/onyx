@@ -12,6 +12,7 @@ import useNotifications from "@/hooks/useNotifications";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/lib/settings/hooks";
+import { ADMIN_ROUTES } from "@/lib/admin-routes";
 import { MinimalAgent } from "@/lib/agents/types";
 import Text from "@/refresh-components/texts/Text";
 import ChatButton from "@/sections/sidebar/ChatButton";
@@ -184,7 +185,7 @@ function RecentsSection({
     >
       <SidebarLayouts.Section title={t("appSidebar.recents.title")}>
         {chatSessions.length === 0 ? (
-          <Text as="p" text01 className="px-3">
+          <Text as="p" text03 className="px-3">
             {t("appSidebar.recents.empty.text")}
           </Text>
         ) : (
@@ -506,6 +507,8 @@ export default function AppSidebar() {
   );
 
   const { hasAdminAccess, adminCapabilities, user, isAdmin } = useUser();
+  // The Deep X desktop app has one Settings place: the admin area.
+  const localEngine = useSettings().deepx_local_engine ?? false;
   const activeSidebarTab = useAppPosition();
   const createProjectModal = useCreateModal();
   const showLogoWhenFolded = useShowLogoWhenFolded();
@@ -750,10 +753,16 @@ export default function AppSidebar() {
           <div>
             {hasAdminAccess && (
               <SidebarTab
-                href={getFirstPermittedAdminRoute(adminCapabilities)}
+                href={
+                  localEngine
+                    ? ADMIN_ROUTES.PERSONAL_GENERAL.path
+                    : getFirstPermittedAdminRoute(adminCapabilities)
+                }
                 icon={SvgSettings}
               >
-                {t("appSidebar.adminPanel.label")}
+                {localEngine
+                  ? t("appSidebar.settings.label")
+                  : t("appSidebar.adminPanel.label")}
               </SidebarTab>
             )}
             <AccountPopover

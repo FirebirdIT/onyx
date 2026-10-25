@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import { useTranslations } from "next-intl";
@@ -12,6 +13,16 @@ import { Section } from "@/layouts/general-layouts";
 import { useLLMGatewayAvailable } from "@/lib/tiers/hooks";
 import { useLanguageModels } from "@/lib/languageModels/hooks";
 import { hasVisibleLLMModel } from "@/lib/languageModels/utils";
+import { useSettings } from "@/lib/settings/hooks";
+import { ADMIN_ROUTES } from "@/lib/admin-routes";
+
+/** Where each settings page lives in the Deep X desktop app, which keeps all
+ * settings in the admin area. Other pages there go to General. */
+const LOCAL_ENGINE_PAGES: Record<string, Route> = {
+  "/app/settings/chat-preferences": ADMIN_ROUTES.PERSONALIZATION.path,
+  "/app/settings/accounts-access": ADMIN_ROUTES.ACCOUNT.path,
+  "/app/settings/published-links": ADMIN_ROUTES.PUBLISHED_LINKS.path,
+};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,6 +41,15 @@ export default function Layout({ children }: LayoutProps) {
   const isMultiTenant = useIsMultiTenant();
   const gatewayTier = useLLMGatewayAvailable();
   const { llmProviders } = useLanguageModels();
+  const localEngine = useSettings().deepx_local_engine ?? false;
+
+  useEffect(() => {
+    if (localEngine) {
+      router.replace(
+        LOCAL_ENGINE_PAGES[pathname] ?? ADMIN_ROUTES.PERSONAL_GENERAL.path
+      );
+    }
+  }, [localEngine, pathname, router]);
 
   const showPasswordSection = Boolean(user?.password_configured);
   const showTokensSection = isMultiTenant !== null;
@@ -69,6 +89,10 @@ export default function Layout({ children }: LayoutProps) {
   // A route outside `tabs` selects nothing, so the select shows its
   // placeholder instead of the raw path.
   const activeTab = tabs.find((tab) => tab.href === pathname);
+
+  if (localEngine) {
+    return null;
+  }
 
   return (
     <SettingsLayouts.Root width="lg">

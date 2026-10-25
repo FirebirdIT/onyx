@@ -1599,7 +1599,8 @@
       },
       "header": {
         "description": "Personnalisez le comportement et les connaissances de l'IA avec des agents. Gérez les agents de votre organisation.",
-        "title": "Agents"
+        "title": "Agents",
+        "localDescription": "Créez des agents avec leurs propres instructions, outils et connaissances."
       },
       "modals": {
         "accessNote": {
@@ -2314,7 +2315,8 @@
         }
       },
       "header": {
-        "description": "Paramètres et valeurs par défaut des discussions pour toute l'organisation. Les utilisateurs peuvent en modifier certains dans leurs paramètres personnels."
+        "description": "Paramètres et valeurs par défaut des discussions pour toute l'organisation. Les utilisateurs peuvent en modifier certains dans leurs paramètres personnels.",
+        "localDescription": "Paramètres de chat par défaut de Deep X sur cet ordinateur."
       },
       "mcpServer": {
         "authTooltip": "Authentifiez ce serveur MCP avant d'activer ses outils.",
@@ -16020,6 +16022,16 @@
         },
         "title": "Prenons un moment pour vous configurer."
       }
+    },
+    "localFirstRun": {
+      "title": "Connectez Deep X Route pour commencer à discuter",
+      "description": "Deep X Route fournit les modèles d’IA de Deep X. Saisissez votre clé API Deep X Route pour commencer.",
+      "connect": {
+        "label": "Connecter Deep X Route"
+      },
+      "otherProviders": {
+        "label": "Utiliser un autre fournisseur"
+      }
     }
   },
   "opal": {
@@ -16785,6 +16797,18 @@
         },
         "webSearch": {
           "label": "Recherche web"
+        },
+        "personalGeneral": {
+          "label": "Général"
+        },
+        "personalization": {
+          "label": "Personnalisation"
+        },
+        "account": {
+          "label": "Compte"
+        },
+        "publishedLinks": {
+          "label": "Liens publiés"
         }
       },
       "sections": {
@@ -16808,6 +16832,9 @@
         },
         "usage": {
           "label": "Utilisation"
+        },
+        "you": {
+          "label": "Vous"
         }
       }
     },
@@ -16820,6 +16847,9 @@
       },
       "searchInput": {
         "placeholder": "Rechercher..."
+      },
+      "backToChat": {
+        "label": "Retour au chat"
       }
     },
     "appSidebar": {
@@ -16863,6 +16893,9 @@
       },
       "plugins": {
         "label": "Extensions"
+      },
+      "settings": {
+        "label": "Paramètres"
       }
     },
     "chatButton": {

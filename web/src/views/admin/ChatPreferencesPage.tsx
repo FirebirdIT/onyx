@@ -621,6 +621,9 @@ export default function ChatPreferencesPage() {
   const router = useRouter();
   const settings = useSettings();
   const s = settings;
+  // One person runs the Deep X desktop engine: no team history, retention
+  // policy or anonymous access.
+  const localEngine = settings.deepx_local_engine ?? false;
   // Search Mode toggle is Business+; Chat Retention is Enterprise-only.
   const businessTier = useTierAtLeast(Tier.BUSINESS);
   const enterpriseTier = useTierAtLeast(Tier.ENTERPRISE);
@@ -744,7 +747,9 @@ export default function ChatPreferencesPage() {
         <SettingsLayouts.Header
           icon={route.icon}
           title={adminRouteTitle(route)}
-          description={t("header.description")}
+          description={
+            localEngine ? t("header.localDescription") : t("header.description")
+          }
           divider
         />
 
@@ -1167,65 +1172,69 @@ export default function ChatPreferencesPage() {
           {/* Advanced Options */}
           <Collapsible defaultOpen={false} title={t("advanced.title")}>
             <Section gap={4}>
-              <Card border="solid" rounding={4}>
-                <Section alignItems="stretch">
-                  {/* Below Enterprise the row stays as is; only its
+              {!localEngine && (
+                <Card border="solid" rounding={4}>
+                  <Section alignItems="stretch">
+                    {/* Below Enterprise the row stays as is; only its
                   dropdown is locked. */}
-                  <InputHorizontal
-                    title={t("retention.title")}
-                    description={t("retention.description", {
-                      appName: settings.appName,
-                    })}
-                    tag={
-                      !enterpriseTier ? plans[Tier.ENTERPRISE].tag : undefined
-                    }
-                    withLabel
-                    fillInput
-                  >
-                    <RetentionField
-                      value={s.maximum_chat_retention_days ?? null}
-                      onSave={(maximum_chat_retention_days) =>
-                        void saveSettings({ maximum_chat_retention_days })
+                    <InputHorizontal
+                      title={t("retention.title")}
+                      description={t("retention.description", {
+                        appName: settings.appName,
+                      })}
+                      tag={
+                        !enterpriseTier ? plans[Tier.ENTERPRISE].tag : undefined
                       }
-                    />
-                  </InputHorizontal>
+                      withLabel
+                      fillInput
+                    >
+                      <RetentionField
+                        value={s.maximum_chat_retention_days ?? null}
+                        onSave={(maximum_chat_retention_days) =>
+                          void saveSettings({ maximum_chat_retention_days })
+                        }
+                      />
+                    </InputHorizontal>
 
-                  <InputHorizontal
-                    title={t("queryHistory.title")}
-                    description={t("queryHistory.description")}
-                    withLabel
-                    fillInput
-                  >
-                    <InputSingleSelect
-                      value={s.query_history_type ?? QueryHistoryType.NORMAL}
-                      onValueChange={(value) => {
-                        void saveSettings({
-                          query_history_type: value as QueryHistoryType,
-                        });
-                      }}
-                      defaultOption={QueryHistoryType.NORMAL}
-                      placeholder={tInputSelect("placeholder.fallback")}
-                      options={[
-                        {
-                          value: QueryHistoryType.NORMAL,
-                          title: t("queryHistory.normal.label"),
-                          description: t("queryHistory.normal.description"),
-                        },
-                        {
-                          value: QueryHistoryType.ANONYMIZED,
-                          title: t("queryHistory.anonymized.label"),
-                          description: t("queryHistory.anonymized.description"),
-                        },
-                        {
-                          value: QueryHistoryType.DISABLED,
-                          title: t("queryHistory.disabled.label"),
-                          description: t("queryHistory.disabled.description"),
-                        },
-                      ]}
-                    />
-                  </InputHorizontal>
-                </Section>
-              </Card>
+                    <InputHorizontal
+                      title={t("queryHistory.title")}
+                      description={t("queryHistory.description")}
+                      withLabel
+                      fillInput
+                    >
+                      <InputSingleSelect
+                        value={s.query_history_type ?? QueryHistoryType.NORMAL}
+                        onValueChange={(value) => {
+                          void saveSettings({
+                            query_history_type: value as QueryHistoryType,
+                          });
+                        }}
+                        defaultOption={QueryHistoryType.NORMAL}
+                        placeholder={tInputSelect("placeholder.fallback")}
+                        options={[
+                          {
+                            value: QueryHistoryType.NORMAL,
+                            title: t("queryHistory.normal.label"),
+                            description: t("queryHistory.normal.description"),
+                          },
+                          {
+                            value: QueryHistoryType.ANONYMIZED,
+                            title: t("queryHistory.anonymized.label"),
+                            description: t(
+                              "queryHistory.anonymized.description"
+                            ),
+                          },
+                          {
+                            value: QueryHistoryType.DISABLED,
+                            title: t("queryHistory.disabled.label"),
+                            description: t("queryHistory.disabled.description"),
+                          },
+                        ]}
+                      />
+                    </InputHorizontal>
+                  </Section>
+                </Card>
+              )}
 
               <Card border="solid" rounding={4}>
                 <InputVertical
@@ -1264,20 +1273,22 @@ export default function ChatPreferencesPage() {
 
               <Card border="solid" rounding={4}>
                 <Section>
-                  <InputHorizontal
-                    title={t("anonymousUsers.title")}
-                    description={markdown(t("anonymousUsers.description"))}
-                    withLabel
-                  >
-                    <InputSwitch
-                      checked={s.anonymous_user_enabled ?? false}
-                      onCheckedChange={(checked) => {
-                        void saveSettings({
-                          anonymous_user_enabled: checked,
-                        });
-                      }}
-                    />
-                  </InputHorizontal>
+                  {!localEngine && (
+                    <InputHorizontal
+                      title={t("anonymousUsers.title")}
+                      description={markdown(t("anonymousUsers.description"))}
+                      withLabel
+                    >
+                      <InputSwitch
+                        checked={s.anonymous_user_enabled ?? false}
+                        onCheckedChange={(checked) => {
+                          void saveSettings({
+                            anonymous_user_enabled: checked,
+                          });
+                        }}
+                      />
+                    </InputHorizontal>
+                  )}
 
                   <InputHorizontal
                     title={t("disableDefaultChat.title")}

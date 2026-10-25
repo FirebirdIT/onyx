@@ -1599,7 +1599,8 @@
       },
       "header": {
         "description": "خصص سلوك الذكاء الاصطناعي ومعرفته باستخدام الوكلاء. أدر الوكلاء في مؤسستك.",
-        "title": "الوكلاء"
+        "title": "الوكلاء",
+        "localDescription": "أنشئ وكلاء لكل منهم تعليماته وأدواته ومعرفته."
       },
       "modals": {
         "accessNote": {
@@ -2314,7 +2315,8 @@
         }
       },
       "header": {
-        "description": "إعدادات المحادثة وقيمها الافتراضية على مستوى المؤسسة. يمكن للمستخدمين تجاوز بعضها في إعداداتهم الشخصية."
+        "description": "إعدادات المحادثة وقيمها الافتراضية على مستوى المؤسسة. يمكن للمستخدمين تجاوز بعضها في إعداداتهم الشخصية.",
+        "localDescription": "إعدادات المحادثة الافتراضية لـ Deep X على هذا الكمبيوتر."
       },
       "mcpServer": {
         "authTooltip": "صادق على خادم MCP هذا قبل تفعيل أدواته.",
@@ -16020,6 +16022,16 @@
         },
         "title": "لنأخذ لحظة لإعدادك."
       }
+    },
+    "localFirstRun": {
+      "title": "اربط Deep X Route لبدء المحادثة",
+      "description": "يوفّر Deep X Route نماذج الذكاء الاصطناعي لـ Deep X. أدخل مفتاح Deep X Route API للبدء.",
+      "connect": {
+        "label": "ربط Deep X Route"
+      },
+      "otherProviders": {
+        "label": "استخدام مزوّد آخر"
+      }
     }
   },
   "opal": {
@@ -16785,6 +16797,18 @@
         },
         "webSearch": {
           "label": "البحث في الويب"
+        },
+        "personalGeneral": {
+          "label": "عام"
+        },
+        "personalization": {
+          "label": "التخصيص"
+        },
+        "account": {
+          "label": "الحساب"
+        },
+        "publishedLinks": {
+          "label": "الروابط المنشورة"
         }
       },
       "sections": {
@@ -16808,6 +16832,9 @@
         },
         "usage": {
           "label": "الاستخدام"
+        },
+        "you": {
+          "label": "أنت"
         }
       }
     },
@@ -16820,6 +16847,9 @@
       },
       "searchInput": {
         "placeholder": "بحث..."
+      },
+      "backToChat": {
+        "label": "العودة إلى المحادثة"
       }
     },
     "appSidebar": {
@@ -16863,6 +16893,9 @@
       },
       "plugins": {
         "label": "الإضافات"
+      },
+      "settings": {
+        "label": "الإعدادات"
       }
     },
     "chatButton": {

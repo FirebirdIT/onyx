@@ -3,6 +3,14 @@
 
 (function () {
   const TITLEBAR_ID = "onyx-desktop-titlebar";
+  // Declared before init() runs (it can run at once, below).
+  // The docked sidebar, or the rail and drawer of a narrow window.
+  const SIDEBAR_SELECTOR =
+    ".opal-sidebar-root__column, .opal-sidebar-root__overlay";
+  const CONTENT_SELECTOR = ".bg-background";
+  let paintScheduled = false;
+  let observedSidebar = null;
+  let sidebarResizeObserver = null;
   const TITLEBAR_HEIGHT = 36;
   const STYLE_ID = "onyx-desktop-titlebar-style";
   const VIEWPORT_VAR = "--onyx-desktop-viewport-height";
@@ -112,34 +120,89 @@
         -webkit-user-select: none !important;
         user-select: none !important;
         -webkit-app-region: drag;
-        background: rgba(255, 255, 255, 0.85);
         height: var(--onyx-desktop-titlebar-height);
-      }
-
-      /* Dark mode support */
-      .dark #${TITLEBAR_ID} {
-        background: linear-gradient(180deg, rgba(18, 18, 18, 0.82) 0%, rgba(18, 18, 18, 0.72) 100%);
-        border-bottom-color: rgba(255, 255, 255, 0.08);
       }
     `;
     document.head.appendChild(style);
+  }
+
+  // The strip above the page continues the page: the sidebar colour over the
+  // sidebar and the content colour over the rest, with no shadow or rule, so
+  // the window reads as one surface (the native unified title bar look).
+
+  function backgroundOf(element) {
+    if (!element) return null;
+    const color = getComputedStyle(element).backgroundColor;
+    return color && color !== "rgba(0, 0, 0, 0)" && color !== "transparent"
+      ? color
+      : null;
+  }
+
+  // The shown sidebar that reaches furthest right: the docked sidebar, or the
+  // rail or open drawer of a narrow window.
+  function findSidebar() {
+    let widest = null;
+    let widestRight = 0;
+    for (const element of document.querySelectorAll(SIDEBAR_SELECTOR)) {
+      const style = getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      const right = element.getBoundingClientRect().right;
+      if (right > widestRight) {
+        widest = element;
+        widestRight = right;
+      }
+    }
+    return widest;
   }
 
   function updateTitleBarTheme(isDark) {
     const titleBar = document.getElementById(TITLEBAR_ID);
     if (!titleBar) return;
 
-    if (isDark) {
-      titleBar.style.background =
-        "linear-gradient(180deg, rgba(18, 18, 18, 0.82) 0%, rgba(18, 18, 18, 0.72) 100%)";
-      titleBar.style.borderBottom = "1px solid rgba(255, 255, 255, 0.08)";
-      titleBar.style.boxShadow = "0 8px 28px rgba(0, 0, 0, 0.2)";
-    } else {
-      titleBar.style.background =
-        "linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.78) 100%)";
-      titleBar.style.borderBottom = "1px solid rgba(0, 0, 0, 0.06)";
-      titleBar.style.boxShadow = "0 8px 28px rgba(0, 0, 0, 0.04)";
+    const content =
+      backgroundOf(document.querySelector(CONTENT_SELECTOR)) ||
+      backgroundOf(document.body) ||
+      (isDark ? "rgb(18, 18, 18)" : "rgb(255, 255, 255)");
+    const sidebar = findSidebar();
+    const sidebarColor = backgroundOf(sidebar);
+    const edge = sidebar ? Math.round(sidebar.getBoundingClientRect().right) : 0;
+
+    titleBar.style.background =
+      sidebarColor && edge > 0
+        ? `linear-gradient(to right, ${sidebarColor} ${edge}px, ${content} ${edge}px)`
+        : content;
+    titleBar.style.borderBottom = "none";
+    titleBar.style.boxShadow = "none";
+  }
+
+  function isDarkTheme() {
+    return (
+      document.documentElement.classList.contains("dark") ||
+      Boolean(document.body?.classList.contains("dark"))
+    );
+  }
+
+  // Repaint when the sidebar appears, folds or changes width.
+  function schedulePaint() {
+    if (paintScheduled) return;
+    paintScheduled = true;
+    requestAnimationFrame(() => {
+      paintScheduled = false;
+      updateTitleBarTheme(isDarkTheme());
+    });
+  }
+
+
+  function watchSidebar() {
+    if (!sidebarResizeObserver && typeof ResizeObserver === "function") {
+      sidebarResizeObserver = new ResizeObserver(schedulePaint);
     }
+    const sidebar = findSidebar();
+    if (sidebar === observedSidebar) return;
+    if (observedSidebar) sidebarResizeObserver?.unobserve(observedSidebar);
+    observedSidebar = sidebar;
+    if (sidebar) sidebarResizeObserver?.observe(sidebar);
+    schedulePaint();
   }
 
   function buildTitleBar() {
@@ -175,9 +238,7 @@
       left: 0;
       right: 0;
       height: ${TITLEBAR_HEIGHT}px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.78) 100%);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.04);
+      background: transparent;
       z-index: 999999;
       display: flex;
       align-items: center;
@@ -186,11 +247,8 @@
       user-select: none;
       -webkit-user-select: none;
       font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-      backdrop-filter: blur(18px) saturate(180%);
-      -webkit-backdrop-filter: blur(18px) saturate(180%);
       -webkit-app-region: drag;
       padding: 0 12px;
-      transition: background 0.3s ease, border-bottom 0.3s ease, box-shadow 0.3s ease;
     `;
 
     // Apply correct theme
@@ -310,11 +368,16 @@
       passive: true,
     });
 
-    // Keep it around even if the app DOM re-renders
+    window.addEventListener("resize", schedulePaint, { passive: true });
+    watchSidebar();
+
+    // Keep it around even if the app DOM re-renders, and follow the sidebar
+    // across page changes.
     const observer = new MutationObserver(() => {
       if (!document.getElementById(TITLEBAR_ID)) {
         mountTitleBar();
       }
+      watchSidebar();
     });
 
     observer.observe(document.documentElement, {

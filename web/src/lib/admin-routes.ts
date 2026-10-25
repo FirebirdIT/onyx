@@ -18,7 +18,9 @@ import {
   SvgGlobe,
   SvgHistory,
   SvgImage,
+  SvgLink,
   SvgLinkedDots,
+  SvgLock,
   SvgMcp,
   SvgOnyxOctagon,
   SvgPaintBrush,
@@ -106,7 +108,55 @@ function notLocal(flags: FeatureFlags): boolean {
   return !flags.localEngine;
 }
 
+/** Shows a personal settings page only in the Deep X desktop app, where the
+ * admin area is the single Settings place for its one person. */
+function localOnly(flags: FeatureFlags): boolean {
+  return flags.localEngine;
+}
+
 export const ADMIN_ROUTES = {
+  // ── You (Deep X desktop app only) ─────────────────────────────────
+  PERSONAL_GENERAL: {
+    path: "/admin/settings/general",
+    icon: SvgUser,
+    title: "General",
+    sidebarLabel: "General",
+    requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
+    section: "You",
+    requiredTier: null,
+    visibleWhen: localOnly,
+  },
+  PERSONALIZATION: {
+    path: "/admin/settings/personalization",
+    icon: SvgSliders,
+    title: "Personalization",
+    sidebarLabel: "Personalization",
+    requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
+    section: "You",
+    requiredTier: null,
+    visibleWhen: localOnly,
+  },
+  ACCOUNT: {
+    path: "/admin/settings/account",
+    icon: SvgLock,
+    title: "Account",
+    sidebarLabel: "Account",
+    requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
+    section: "You",
+    requiredTier: null,
+    visibleWhen: localOnly,
+  },
+  PUBLISHED_LINKS: {
+    path: "/admin/settings/published-links",
+    icon: SvgLink,
+    title: "Published Links",
+    sidebarLabel: "Published Links",
+    requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
+    section: "You",
+    requiredTier: null,
+    visibleWhen: localOnly,
+  },
+
   // ── System Configuration (unlabeled section) ──────────────────────
   LLM_MODELS: {
     path: "/admin/language-models",

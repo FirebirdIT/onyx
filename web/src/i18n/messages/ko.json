@@ -1599,7 +1599,8 @@
       },
       "header": {
         "description": "에이전트로 AI 동작과 지식을 사용자 지정하세요. 조직의 에이전트를 관리합니다.",
-        "title": "에이전트"
+        "title": "에이전트",
+        "localDescription": "고유한 지침, 도구, 지식을 갖춘 에이전트를 만드세요."
       },
       "modals": {
         "accessNote": {
@@ -2314,7 +2315,8 @@
         }
       },
       "header": {
-        "description": "조직 전체에 적용되는 채팅 설정과 기본값입니다. 사용자는 개인 설정에서 일부 항목을 변경할 수 있습니다."
+        "description": "조직 전체에 적용되는 채팅 설정과 기본값입니다. 사용자는 개인 설정에서 일부 항목을 변경할 수 있습니다.",
+        "localDescription": "이 컴퓨터에서 사용하는 Deep X의 기본 채팅 설정입니다."
       },
       "mcpServer": {
         "authTooltip": "도구를 활성화하기 전에 이 MCP 서버를 인증하세요.",
@@ -16020,6 +16022,16 @@
         },
         "title": "잠시 설정을 진행하겠습니다."
       }
+    },
+    "localFirstRun": {
+      "title": "Deep X Route를 연결하여 채팅을 시작하세요",
+      "description": "Deep X Route는 Deep X의 AI 모델을 제공합니다. 시작하려면 Deep X Route API 키를 입력하세요.",
+      "connect": {
+        "label": "Deep X Route 연결"
+      },
+      "otherProviders": {
+        "label": "다른 공급자 사용"
+      }
     }
   },
   "opal": {
@@ -16785,6 +16797,18 @@
         },
         "webSearch": {
           "label": "웹 검색"
+        },
+        "personalGeneral": {
+          "label": "일반"
+        },
+        "personalization": {
+          "label": "개인 설정"
+        },
+        "account": {
+          "label": "계정"
+        },
+        "publishedLinks": {
+          "label": "게시된 링크"
         }
       },
       "sections": {
@@ -16808,6 +16832,9 @@
         },
         "usage": {
           "label": "사용량"
+        },
+        "you": {
+          "label": "나"
         }
       }
     },
@@ -16820,6 +16847,9 @@
       },
       "searchInput": {
         "placeholder": "검색..."
+      },
+      "backToChat": {
+        "label": "채팅으로 돌아가기"
       }
     },
     "appSidebar": {
@@ -16863,6 +16893,9 @@
       },
       "plugins": {
         "label": "플러그인"
+      },
+      "settings": {
+        "label": "설정"
       }
     },
     "chatButton": {

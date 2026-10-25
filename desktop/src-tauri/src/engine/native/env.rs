@@ -62,6 +62,8 @@ pub fn backend_env(input: &NativeInput<'_>) -> Env {
         ("AUTH_TYPE", "basic"),
         ("USER_AUTH_SECRET", &input.secrets.user_auth_secret),
         ("PRODUCT_BRAND", "deepx"),
+        // Shown in the app footer, in place of "Development".
+        ("ONYX_VERSION", &input.bundle.manifest.version),
         // Lite: no vector database, and Postgres holds files, cache and auth.
         ("DISABLE_VECTOR_DB", "true"),
         ("FILE_STORE_BACKEND", "postgres"),
@@ -208,6 +210,7 @@ mod tests {
         assert_eq!(env["DEEPX_ROUTE_API_KEY"], "dxr-key");
         assert_eq!(env["WEB_DOMAIN"], "http://localhost:9999");
         assert_eq!(env["PYTHONPATH"], "/b/backend");
+        assert_eq!(env["ONYX_VERSION"], "0.2.0");
 
         let runner = map(runner_env(&input, Path::new("/data/runner")));
         assert_eq!(runner["DEEPX_CODE_RUNNER_TOKEN"], "tok");

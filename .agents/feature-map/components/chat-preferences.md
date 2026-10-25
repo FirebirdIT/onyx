@@ -55,6 +55,12 @@ controls.
 
 ---
 
+
+**Deep X desktop engine.** With `deepx_local_engine`, the admin page
+(`web/src/views/admin/ChatPreferencesPage.tsx`) uses a single-user description and
+hides chat retention, query history and anonymous users. The personal chat
+preferences are the "Personalization" page at `/admin/settings/personalization`.
+
 ## 2. Surfaces
 
 ### HTTP endpoints

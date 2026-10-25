@@ -1,3 +1,12 @@
+/* Bundled so the setup page looks the same offline (SIL OFL, see fonts/OFL.txt). */
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("fonts/HankenGrotesk-latin.woff2") format("woff2");
+}
+
 /* Shared styles for the local Deep X pages (setup, settings, backup). */
 :root {
   --background-900: #f5f5f5;
@@ -58,7 +67,8 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 28px;
+  /* Same height as the strip that titlebar.js draws over the app. */
+  height: 36px;
   -webkit-app-region: drag;
   z-index: 10000;
 }
@@ -196,7 +206,16 @@ select {
 input:focus,
 select:focus {
   outline: none;
-  border-color: var(--line-30);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent);
+}
+
+button:focus-visible,
+a:focus-visible,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 .buttons {
@@ -242,6 +261,11 @@ button:disabled {
   line-height: 1.5;
   margin: 8px 0;
   min-height: 1em;
+}
+
+/* An empty message line leaves no gap above the buttons. */
+.message:empty {
+  display: none;
 }
 
 .message.error {

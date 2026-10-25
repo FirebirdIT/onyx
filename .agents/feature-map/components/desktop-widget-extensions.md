@@ -47,6 +47,16 @@ Hardening, Theming, Billing and Upgrade Plan, Service Accounts, Slack, Discord, 
 Extensions, LLM Gateway, Decision Models, Usage, Analytics, Query History, Tracing
 and Export Logs. The pages still open from their URL. Then the window opens
 `http://localhost:9999`. A remote server is a Settings option.
+
+The custom titlebar (`desktop/src/titlebar.js`) paints its 36px strip in the
+sidebar colour over the sidebar's width and the content colour over the rest,
+with no shadow, and repaints when the sidebar folds or the window resizes. The
+setup page uses the same height and a bundled Hanken Grotesk
+(`desktop/src/fonts/`, SIL OFL), so it looks the same offline. The backend gets
+`ONYX_VERSION` from the bundle version, which the app footer shows. In the web app
+the admin area is the one Settings place on this engine: a "You" group (General,
+Personalization, Account, Published Links; `web/src/app/admin/settings/`) comes
+before the app pages, and the footer link reads "Back to Chat".
 The app also checks for updates from the hub and makes encrypted backups of
 the engine database (`desktop/src-tauri/src/backup/`). Around the web app it
 is a small native shell: a custom

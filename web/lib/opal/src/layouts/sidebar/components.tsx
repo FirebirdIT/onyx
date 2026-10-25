@@ -363,7 +363,8 @@ function SidebarSection({
           <Disabled disabled={disabled}>
             <div className="opal-sidebar-section__header">
               <div className="opal-sidebar-section__title">
-                <Text font="secondary-body" color="text-02">
+                {/* text-03 keeps the 12px label above 4.5:1 on the sidebar. */}
+                <Text font="secondary-body" color="text-03">
                   {title}
                 </Text>
               </div>

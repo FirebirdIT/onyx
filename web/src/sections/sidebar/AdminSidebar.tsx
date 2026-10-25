@@ -14,7 +14,7 @@ import { useSettings } from "@/lib/settings/hooks";
 import { SidebarLayouts, useSidebarState } from "@opal/layouts";
 import { useUser } from "@/providers/UserProvider";
 import { InputTypeIn, SidebarTab, Tag, type TagProps } from "@opal/components";
-import { SvgSearch, SvgX } from "@opal/icons";
+import { SvgArrowLeft, SvgSearch, SvgX } from "@opal/icons";
 import { Disabled } from "@opal/core";
 import {
   useBillingInformation,
@@ -94,6 +94,7 @@ export default function AdminSidebar() {
 
   const sectionLabels = useMemo<Record<AdminNavSectionId, string>>(
     () => ({
+      you: t("adminNav.sections.you.label"),
       craft: t("adminNav.sections.craft.label"),
       agentsAndActions: t("adminNav.sections.agentsAndActions.label"),
       documentsAndKnowledge: t("adminNav.sections.documentsAndKnowledge.label"),
@@ -217,11 +218,13 @@ export default function AdminSidebar() {
       <SidebarLayouts.Footer>
         {!folded && <SidebarLayouts.Divider />}
         <SidebarTab
-          icon={SvgX}
+          icon={flags.localEngine ? SvgArrowLeft : SvgX}
           href={pathname?.startsWith("/admin/craft") ? "/craft/v1" : "/app"}
           variant="sidebar-light"
         >
-          {t("adminSidebar.exitAdminPanel.label")}
+          {flags.localEngine
+            ? t("adminSidebar.backToChat.label")
+            : t("adminSidebar.exitAdminPanel.label")}
         </SidebarTab>
         <AccountPopover />
       </SidebarLayouts.Footer>

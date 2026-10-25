@@ -5,6 +5,7 @@ import { Button } from "@opal/components";
 import { SettingsLayouts } from "@opal/layouts";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useSettings } from "@/lib/settings/hooks";
 
 import AgentsTable from "./AgentsPage/AgentsTable";
 
@@ -14,12 +15,15 @@ import AgentsTable from "./AgentsPage/AgentsTable";
 
 export default function AgentsPage() {
   const t = useTranslations("admin.agents");
+  const localEngine = useSettings().deepx_local_engine ?? false;
 
   return (
     <SettingsLayouts.Root>
       <SettingsLayouts.Header
         title={t("header.title")}
-        description={t("header.description")}
+        description={
+          localEngine ? t("header.localDescription") : t("header.description")
+        }
         icon={SvgOnyxOctagon}
         actions={[
           <Button

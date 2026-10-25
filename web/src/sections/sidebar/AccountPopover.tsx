@@ -37,6 +37,7 @@ import { Section } from "@/layouts/general-layouts";
 import { useAppPosition } from "@/lib/position/hooks";
 import useScreenSize from "@/hooks/useScreenSize";
 import { useSettings } from "@/lib/settings/hooks";
+import { ADMIN_ROUTES } from "@/lib/admin-routes";
 import UserAvatar from "@/refresh-components/avatars/UserAvatar";
 import SidebarTabSkeleton from "@/refresh-components/skeletons/SidebarTabSkeleton";
 import { useNotificationSummary } from "@/hooks/useNotifications";
@@ -117,7 +118,10 @@ function useSettingsItems({
           id: "user-settings",
           icon: SvgSliders,
           title: t("settings.label"),
-          href: "/app/settings",
+          // The Deep X desktop app keeps all settings in the admin area.
+          href: settings.deepx_local_engine
+            ? ADMIN_ROUTES.PERSONAL_GENERAL.path
+            : "/app/settings",
         },
         {
           kind: "custom",
