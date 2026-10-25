@@ -50,7 +50,7 @@ and Export Logs. The pages still open from their URL. Then the window opens
 
 The custom titlebar (`desktop/src/titlebar.js`) paints its 36px strip in the
 sidebar colour over the sidebar's width and the content colour over the rest,
-with no shadow, and repaints when the sidebar folds or the window resizes. The
+with no shadow, and repaints when the sidebar folds or the window resizes. It also moves the web app's toast stack below the strip, so no message is hidden under it. The
 setup page uses the same height and a bundled Hanken Grotesk
 (`desktop/src/fonts/`, SIL OFL), so it looks the same offline. The backend gets
 `ONYX_VERSION` from the bundle version, which the app footer shows. In the web app
