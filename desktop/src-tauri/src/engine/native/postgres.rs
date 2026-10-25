@@ -3,7 +3,7 @@
 use super::bundle::Bundle;
 use super::env::LOOPBACK;
 use super::process::{run_to_end, ServiceSpec};
-use crate::engine::env::POSTGRES_USER;
+use crate::engine::secrets::POSTGRES_USER;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -135,7 +135,8 @@ pub async fn dump(
 }
 
 /// Make the read-only role if it does not exist, as the backend migration
-/// does. A dump does not hold roles, so a restore needs this first.
+/// does. A dump does not hold roles, so a restore into a new database needs
+/// this first.
 pub async fn ensure_readonly_role(
     bundle: &Bundle,
     port: u16,

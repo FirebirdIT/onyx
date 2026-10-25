@@ -3,9 +3,7 @@
 // the framework's calling convention, not an oversight.
 #![allow(clippy::needless_pass_by_value)]
 
-use crate::config::{
-    get_config_dir, get_config_path, save_config, AppConfig, ConfigState, EngineMode,
-};
+use crate::config::{get_config_dir, get_config_path, save_config, AppConfig, ConfigState};
 use crate::window::{build_and_setup_window, is_externally_openable, open_in_default_browser};
 use serde::Serialize;
 use std::fs;
@@ -64,12 +62,11 @@ pub struct BootstrapState {
     config_exists: bool,
     setup_complete: bool,
     local_engine: bool,
-    engine_mode: EngineMode,
     stop_engine_on_quit: bool,
     hub_url: String,
     app_version: String,
-    /// True where the engine can run without Docker.
-    native_supported: bool,
+    /// True where the engine can run on this computer.
+    engine_supported: bool,
 }
 
 /// Get the config values that the setup and settings pages show.
@@ -87,11 +84,10 @@ pub fn get_bootstrap_state(
         config_exists,
         setup_complete: config.setup_complete,
         local_engine: config.local_engine,
-        engine_mode: config.engine_mode,
         stop_engine_on_quit: config.stop_engine_on_quit,
         hub_url: config.hub_url,
         app_version: app.package_info().version.to_string(),
-        native_supported: cfg!(target_os = "macos"),
+        engine_supported: crate::engine::is_supported(),
     }
 }
 

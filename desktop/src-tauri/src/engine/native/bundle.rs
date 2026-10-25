@@ -344,7 +344,7 @@ pub async fn ensure_bundle(
         return install_local_archive(bundles_dir, Path::new(&local)).await;
     }
     let platform =
-        current_platform().ok_or("The engine without Docker does not support this computer yet")?;
+        current_platform().ok_or("The Deep X engine does not support this computer yet")?;
     let release = match fetch_release(hub_url, platform).await {
         Ok(release) => release,
         Err(error) => {

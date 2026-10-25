@@ -1,26 +1,28 @@
 # Deep X Desktop
 
-The Deep X desktop app for macOS and Windows. It runs the Deep X engine on
-this computer with Docker, and it opens the engine at `http://localhost:3000`
-in a native window. It can also open a remote Deep X server.
+The Deep X desktop app. It runs the Deep X engine on this computer as normal
+processes, with no Docker, and it opens the engine at `http://localhost:9999`
+in a native window. It can also open a remote Deep X server. The engine runs on
+macOS only for now (published bundle: Apple silicon). On other computers, use
+a remote server.
 
 Built with [Tauri](https://tauri.app) v2.
 
 ## What the app does
 
 - **First-run setup** (`src/index.html`, `src/setup.js`):
-  1. Checks that the Docker CLI is installed and that the Docker engine runs.
-  2. Asks for the engine mode: **Lite** (default) or **Full**.
-  3. Connects Deep X Route: "Sign in with Deep X Route" (PKCE, only when
+  1. Connects Deep X Route: "Sign in with Deep X Route" (PKCE, only when
      `deepx_route_client_id` is set) or "paste API key". The app checks each
      key with `GET https://api.deepxroute.com/v1/key` and keeps it in the OS
      keychain (or in a 0600 file if there is no keychain).
-  4. Starts the engine and shows the progress, then opens the app.
-- **Engine** (`src-tauri/src/engine/`): writes the compose files, the nginx
-  files and a 0600 `.env` to the app data folder, then runs
-  `docker compose -p deepx ... up -d --wait`.
-- **Settings** (`⌘ ,`): engine mode, start, stop, restart, "stop the engine
-  when Deep X quits", Deep X Route key, and a remote server address.
+  2. Starts the engine and shows the progress, then opens the app.
+- **Engine** (`src-tauri/src/engine/native/`): downloads the engine bundle from
+  `{hub_url}/api/engine/native` and checks its sha256, then starts Postgres,
+  runs the migrations, and starts the code runner, the API server and the web
+  server. A crashed service restarts. See `native-engine/build-bundle.sh` for
+  the bundle.
+- **Settings** (`⌘ ,`): start, stop, restart, "stop the engine when Deep X
+  quits", Deep X Route key, and a remote server address.
 - **Updates**: on start and from **Help > Check for Updates…**. The feed is
   `{hub_url}/api/desktop/latest.json`.
 - **Backup and restore**: **File > Back Up Now…** and
@@ -30,29 +32,19 @@ Built with [Tauri](https://tauri.app) v2.
 
 ## Engine files
 
-The app writes these files on each engine start. The layout is the same as in
-the repo, because the base compose file mounts `../data/nginx`.
-
 ```
-<app data>/engine/
-├── secrets.json                       # made once, mode 0600
-├── engine-info.json                   # images of the last start (offline fallback)
-├── docker_compose/
-│   ├── docker-compose.yml             # deployment/docker_compose/docker-compose.yml
-│   ├── docker-compose.onyx-lite.yml   # Lite overlay (Lite mode only)
-│   ├── docker-compose.deepx.yml       # desktop overlay: nginx on 127.0.0.1:3000 only
-│   └── .env                           # mode 0600
-└── data/nginx/                        # deployment/data/nginx templates
+<app data>/
+├── engine/secrets.json        # database password and auth secret, made once, mode 0600
+└── engine-native/
+    ├── bundles/<version>/     # the unpacked engine bundle, and current.json
+    ├── postgres-data/         # the database
+    ├── code-runner/           # code runner jobs and files (temporary)
+    └── logs/                  # one log per service, and engine.log for start failures
 ```
 
-The compose and nginx files are part of the app binary (`include_str!`), so a
-change to them in the repo goes into the next app build.
-
-The `.env` file sets the engine images (from `GET {hub_url}/api/engine`, else
-the images of the last start, else `latest`), `PRODUCT_BRAND=deepx`,
-`AUTH_TYPE=basic`, the generated secrets, `DEEPX_ROUTE_API_KEY` and
-`DEEPX_PRESETS_URL={hub_url}/api/presets`. Files stay in Postgres
-(`FILE_STORE_BACKEND=postgres`) in both modes, so a backup holds the user files.
+Files stay in Postgres (`FILE_STORE_BACKEND=postgres`), so a backup holds the
+user files. Versions before 0.1.4 ran the engine in Docker; a config that still
+points to `http://localhost:3000` moves to `http://localhost:9999` when it loads.
 
 App data folder:
 
@@ -69,12 +61,11 @@ The config file is `config.json` in the config folder:
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `server_url` | `http://localhost:3000` | The address that the window opens. |
+| `server_url` | `http://localhost:9999` | The address that the window opens. |
 | `local_engine` | `true` | Start and stop the local engine. `false` for a remote server. |
-| `engine_mode` | `"lite"` | `"lite"` or `"full"`. |
 | `stop_engine_on_quit` | `true` | Stop the engine when the app quits. |
 | `setup_complete` | `false` | `true` after the first-run setup. |
-| `hub_url` | `https://deepx-hub.vercel.app` | The hub for engine images, updates and backups. |
+| `hub_url` | `https://deepx-hub.vercel.app` | The hub for the engine bundle, updates and backups. |
 | `deepx_route_client_id` | `""` | Public client ID for the Deep X Route sign-in. Empty shows only "paste API key". |
 
 Press `⌘ ,` (Settings) to change most values. To use a remote server, enter its
@@ -98,7 +89,6 @@ address in Settings. Then the app does not start the local engine.
 1. **Rust** (latest stable): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 2. **Bun** (1.3+): `curl -fsSL https://bun.sh/install | bash`
 3. **Xcode Command Line Tools** (macOS): `xcode-select --install`
-4. **Docker Desktop** to run the engine.
 
 ## Development
 
@@ -122,11 +112,11 @@ Tests and lints, from `desktop/src-tauri/`:
 cargo fmt --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test
-# Checks the written compose files with the real Docker CLI (no containers start):
-cargo test -- --ignored compose_config
 ```
 
-Do not run the engine in development while another stack uses port 3000.
+To test the engine with a local bundle, set `DEEPX_ENGINE_BUNDLE` to the
+`.tar.gz` that `native-engine/build-bundle.sh` makes. Do not run the engine in
+development while another program uses port 9999.
 
 ## Building
 

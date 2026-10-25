@@ -8,7 +8,6 @@
   // "setup" during the first run; "settings" when the settings page opened
   // the Deep X Route step.
   let routeReturn = "setup";
-  let dockerInstallUrl = "https://www.docker.com/products/docker-desktop/";
 
   function applySystemTheme() {
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -39,55 +38,21 @@
     window.location.href = bootstrap.server_url;
   }
 
-  // ---- Step 2: Docker (Docker modes only) ----------------------------
-  async function checkDocker() {
-    setMessage("dockerMessage", "Checking Docker");
-    $("dockerCheckBtn").disabled = true;
-    try {
-      const check = await invoke("engine_check_docker");
-      dockerInstallUrl = check.install_url || dockerInstallUrl;
-      $("dockerOpenBtn").style.display =
-        check.installed && !check.running ? "" : "none";
-      $("dockerGetBtn").style.display = check.installed ? "none" : "";
-      if (check.running && check.compose) {
-        setMessage("dockerMessage", check.message, "ok");
-        setTimeout(() => showRoute("setup"), 600);
-      } else {
-        setMessage("dockerMessage", check.message, "error");
-      }
-    } catch (error) {
-      setMessage("dockerMessage", errorText(error), "error");
-    } finally {
-      $("dockerCheckBtn").disabled = false;
+  // ---- First run -------------------------------------------------------
+  function beginSetup() {
+    if (!bootstrap.engine_supported) {
+      return showSettings(
+        "The Deep X engine does not run on this computer yet. Enter the address of a Deep X server."
+      );
     }
+    return showRoute("setup");
   }
 
-  // ---- Step 1: Mode ---------------------------------------------------
-  function showMode() {
-    $("nativeOption").style.display = bootstrap.native_supported ? "" : "none";
-    const mode =
-      bootstrap.engine_mode === "native" && !bootstrap.native_supported
-        ? "lite"
-        : bootstrap.engine_mode;
-    const radio = document.querySelector(`input[name="mode"][value="${mode}"]`);
-    if (radio) radio.checked = true;
-    show("mode", "Setup");
-  }
-
-  async function saveMode() {
-    const mode = document.querySelector('input[name="mode"]:checked').value;
-    await invoke("engine_set_mode", { mode });
-    bootstrap = await invoke("get_bootstrap_state");
-    if (mode === "native") return showRoute("setup");
-    show("docker", "Setup");
-    return checkDocker();
-  }
-
-  // ---- Step 3: Deep X Route --------------------------------------------
+  // ---- Step 1: Deep X Route --------------------------------------------
   async function showRoute(returnTo) {
     routeReturn = returnTo;
     $("routeStepLabel").textContent =
-      returnTo === "setup" ? "Step 3 of 4" : "Deep X Route";
+      returnTo === "setup" ? "Step 1 of 2" : "Deep X Route";
     $("routeSkipBtn").textContent =
       returnTo === "setup" ? "Skip for now" : "Back";
     $("keyInput").value = "";
@@ -204,8 +169,6 @@
 
   async function showSettings(message) {
     bootstrap = await invoke("get_bootstrap_state");
-    $("nativeSelectOption").hidden = !bootstrap.native_supported;
-    $("modeSelect").value = bootstrap.engine_mode;
     $("stopOnQuit").checked = bootstrap.stop_engine_on_quit;
     $("serverInput").value = bootstrap.local_engine ? "" : bootstrap.server_url;
     $("serverHint").textContent = bootstrap.local_engine
@@ -285,21 +248,11 @@
     }
     if (window.location.hash === "#settings") return showSettings();
     if (!bootstrap.local_engine) return openRemote();
-    if (!bootstrap.setup_complete) return showMode();
+    if (!bootstrap.setup_complete) return beginSetup();
     return startEngine();
   }
 
   function bind() {
-    $("dockerCheckBtn").addEventListener("click", checkDocker);
-    $("dockerOpenBtn").addEventListener("click", () =>
-      invoke("engine_open_docker").catch((e) =>
-        setMessage("dockerMessage", errorText(e), "error")
-      )
-    );
-    $("dockerGetBtn").addEventListener("click", () =>
-      invoke("open_in_browser", { url: dockerInstallUrl })
-    );
-    $("modeNextBtn").addEventListener("click", saveMode);
     $("keySaveBtn").addEventListener("click", saveKey);
     $("keyInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") saveKey();
@@ -313,14 +266,6 @@
     );
     $("startRetryBtn").addEventListener("click", startEngine);
     $("startSettingsBtn").addEventListener("click", () => showSettings());
-    $("modeSelect").addEventListener("change", async (e) => {
-      await invoke("engine_set_mode", { mode: e.target.value });
-      setMessage(
-        "settingsMessage",
-        "Mode saved. Select Restart to use it now.",
-        "ok"
-      );
-    });
     $("stopOnQuit").addEventListener("change", (e) =>
       invoke("engine_set_stop_on_quit", { enabled: e.target.checked })
     );
@@ -343,12 +288,12 @@
       await invoke("use_local_engine");
       bootstrap = await invoke("get_bootstrap_state");
       if (bootstrap.setup_complete) return startEngine();
-      return showMode();
+      return beginSetup();
     });
     $("openAppBtn").addEventListener("click", async () => {
       bootstrap = await invoke("get_bootstrap_state");
       if (!bootstrap.local_engine) return openRemote();
-      if (!bootstrap.setup_complete) return showMode();
+      if (!bootstrap.setup_complete) return beginSetup();
       return startEngine();
     });
   }

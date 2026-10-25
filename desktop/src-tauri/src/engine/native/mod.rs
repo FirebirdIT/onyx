@@ -7,9 +7,9 @@ pub mod env;
 pub mod postgres;
 pub mod process;
 
-use crate::config::{get_data_dir, AppConfig, EngineMode};
-use crate::engine::env::{load_or_create_secrets, EngineSecrets};
-use crate::engine::{emit_progress, engine_layout, EngineStatus, ServiceStatus};
+use crate::config::{get_data_dir, AppConfig};
+use crate::engine::secrets::{load_or_create_secrets, secrets_path, EngineSecrets};
+use crate::engine::{emit_progress, EngineStatus, ServiceStatus};
 use crate::route::keystore;
 use crate::secure_random::random_hex;
 use bundle::Bundle;
@@ -24,7 +24,6 @@ use tokio::sync::Mutex;
 const STOP_GRACE: Duration = Duration::from_secs(15);
 const READY_TIMEOUT: Duration = Duration::from_mins(5);
 const MIGRATION_TIMEOUT: Duration = Duration::from_mins(20);
-const DOCKER_DB_VOLUME: &str = "deepx_db_volume";
 
 /// Folders of the native engine, in the app data folder.
 pub struct NativeLayout {
@@ -173,90 +172,6 @@ async fn wait_http_ok(url: &str, timeout: Duration, what: &str) -> Result<(), St
     Err(format!("{what} did not start in time"))
 }
 
-/// True when this app profile used the Docker engine and its database
-/// volume exists.
-async fn docker_engine_has_data() -> bool {
-    let used_docker = engine_layout().is_ok_and(|layout| layout.compose_dir().exists());
-    if !used_docker {
-        return false;
-    }
-    let Some(docker) = crate::engine::docker::find_docker() else {
-        return false;
-    };
-    let mut command = crate::engine::docker::docker_command(&docker);
-    command.args([
-        "volume",
-        "ls",
-        "-q",
-        "--filter",
-        &format!("name={DOCKER_DB_VOLUME}"),
-    ]);
-    crate::engine::docker::output_text(command)
-        .await
-        .is_ok_and(|text| text.lines().any(|line| line.trim() == DOCKER_DB_VOLUME))
-}
-
-/// Copy the Docker engine database into the new native database.
-async fn import_docker_data(
-    app: &AppHandle,
-    bundle: &Bundle,
-    layout: &NativeLayout,
-    port: u16,
-    secrets: &EngineSecrets,
-) -> Result<(), String> {
-    let check = crate::engine::docker::check_docker().await;
-    if !check.running {
-        return Err(
-            "Your Docker engine has data. Open Docker Desktop once, so that Deep X can copy \
-             the data to the engine without Docker, and then start the engine again."
-                .to_string(),
-        );
-    }
-    emit_progress(app, "migrate", "Copying your data from the Docker engine");
-    let compose = crate::engine::compose_for(EngineMode::Lite)?;
-    let was_running = crate::engine::docker_status().await.is_ok_and(|status| {
-        status
-            .services
-            .iter()
-            .any(|s| s.service == "relational_db" && s.state == "running")
-    });
-    if !was_running {
-        compose
-            .run_capture(["up", "-d", "--wait", "relational_db"])
-            .await
-            .map_err(|e| format!("Failed to start the Docker database: {e}"))?;
-    }
-    let dump_path = layout.root.join("docker-import.dump");
-    let dumped = crate::backup::dump::dump_to_file(&compose, &dump_path).await;
-    // The Docker data stays as it is, so the user can switch back.
-    if !was_running {
-        let _ = compose.run_capture(["stop", "relational_db"]).await;
-    }
-    dumped?;
-    postgres::ensure_readonly_role(
-        bundle,
-        port,
-        &secrets.postgres_password,
-        env::READONLY_ROLE,
-        &env::readonly_password(secrets),
-        &layout.log("import"),
-    )
-    .await?;
-    let restored = postgres::restore(
-        bundle,
-        port,
-        &secrets.postgres_password,
-        &dump_path,
-        false,
-        &layout.log("import"),
-    )
-    .await;
-    let _ = std::fs::remove_file(&dump_path);
-    restored?;
-    emit_progress(app, "migrate", "Your data is copied");
-    Ok(())
-}
-
 fn python_spec(
     name: &'static str,
     bundle: &Bundle,
@@ -275,7 +190,7 @@ fn python_spec(
     }
 }
 
-/// Start Postgres, making and filling the database on the first start.
+/// Start Postgres, making the database on the first start.
 async fn start_database(
     app: &AppHandle,
     bundle: &Bundle,
@@ -304,14 +219,6 @@ async fn start_database(
     if let Err(error) = postgres::wait_ready(bundle, port, Duration::from_secs(60)).await {
         server.stop(STOP_GRACE).await;
         return Err(error);
-    }
-    if first_start && docker_engine_has_data().await {
-        if let Err(error) = import_docker_data(app, bundle, layout, port, secrets).await {
-            server.stop(STOP_GRACE).await;
-            // The next start makes the database again and copies the data again.
-            let _ = std::fs::remove_dir_all(&data);
-            return Err(error);
-        }
     }
     Ok(server)
 }
@@ -444,7 +351,7 @@ async fn start_engine(app: &AppHandle, config: &AppConfig) -> Result<(), String>
         .map_err(|e| format!("Failed to create the log folder: {e}"))?;
     emit_progress(app, "prepare", "Checking the engine version");
     let bundle = bundle::ensure_bundle(app, &config.hub_url, &layout.bundles_dir()).await?;
-    let secrets = load_or_create_secrets(&engine_layout()?.secrets_path())?;
+    let secrets = load_or_create_secrets(&secrets_path()?)?;
     let ports = Ports {
         postgres: free_port()?,
         api: free_port()?,
@@ -567,15 +474,30 @@ pub async fn restore_database(app: &AppHandle, source: &Path) -> Result<(), Stri
         emit_progress(app, "restore", &format!("Stopping {}", service.name));
         service.stop(STOP_GRACE).await;
     }
-    let restored = postgres::restore(
+    // A backup can come from another computer, and a dump has no roles.
+    let restored = match postgres::ensure_readonly_role(
         &engine.bundle,
         engine.ports.postgres,
         &engine.secrets.postgres_password,
-        source,
-        true,
+        env::READONLY_ROLE,
+        &env::readonly_password(&engine.secrets),
         &layout.log("pg_restore"),
     )
-    .await;
+    .await
+    {
+        Ok(()) => {
+            postgres::restore(
+                &engine.bundle,
+                engine.ports.postgres,
+                &engine.secrets.postgres_password,
+                source,
+                true,
+                &layout.log("pg_restore"),
+            )
+            .await
+        }
+        Err(error) => Err(error),
+    };
     database.stop(STOP_GRACE).await;
     restored
 }
