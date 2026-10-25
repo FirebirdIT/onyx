@@ -115,6 +115,12 @@
         bottom: 0 !important;
       }
 
+      /* Toasts sit near the top of the viewport, which the titlebar covers.
+         Start the stack below it so a message is never hidden. */
+      [data-testid="toast-container"] {
+        top: calc(var(--onyx-desktop-titlebar-height) + 0.5rem) !important;
+      }
+
       #${TITLEBAR_ID} {
         cursor: default !important;
         -webkit-user-select: none !important;
