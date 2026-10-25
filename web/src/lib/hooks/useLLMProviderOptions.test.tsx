@@ -8,15 +8,16 @@ jest.mock("swr", () => ({
       { name: "typesafe", known_models: [] },
       { name: "zoom_ai", known_models: [] },
       { name: "openai", known_models: [] },
+      { name: "deepx_route", known_models: [] },
     ],
     error: undefined,
     mutate: jest.fn(),
   }),
 }));
 
-it("offers only chat providers during onboarding", () => {
+it("offers only chat providers, with Deep X Route first", () => {
   const { result } = renderHook(() => useLLMProviderOptions());
   expect(
     result.current.llmProviderOptions?.map((provider) => provider.name)
-  ).toEqual(["openai"]);
+  ).toEqual(["deepx_route", "openai"]);
 });

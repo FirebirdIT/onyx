@@ -25,6 +25,9 @@ export function hasPermission(
 export function getFirstPermittedAdminRoute(permissions: string[]): string {
   for (const route of Object.values(ADMIN_ROUTES)) {
     if (!route.sidebarLabel) continue;
+    // The personal pages exist only in the Deep X desktop app, which links
+    // to them directly; a server's Admin Panel never opens on them.
+    if (route.section === ADMIN_ROUTES.PERSONAL_GENERAL.section) continue;
     if (
       permissions.includes(Permission.FULL_ADMIN_PANEL_ACCESS) ||
       permissions.includes(route.requiredPermission)

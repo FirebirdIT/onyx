@@ -1599,7 +1599,8 @@
       },
       "header": {
         "description": "Customize AI behavior and knowledge with agents. Manage agents in your organization.",
-        "title": "Agents"
+        "title": "Agents",
+        "localDescription": "Make agents with their own instructions, tools and knowledge."
       },
       "modals": {
         "accessNote": {
@@ -2314,7 +2315,8 @@
         }
       },
       "header": {
-        "description": "Organization-wide chat settings and defaults. Users can override some of these in their personal settings."
+        "description": "Organization-wide chat settings and defaults. Users can override some of these in their personal settings.",
+        "localDescription": "Default chat settings for Deep X on this computer."
       },
       "mcpServer": {
         "authTooltip": "Authenticate this MCP server before enabling its tools.",
@@ -16020,6 +16022,16 @@
         },
         "title": "Let's take a moment to get you set up."
       }
+    },
+    "localFirstRun": {
+      "title": "Connect Deep X Route to start chatting",
+      "description": "Deep X Route gives Deep X its AI models. Enter your Deep X Route API key to start.",
+      "connect": {
+        "label": "Connect Deep X Route"
+      },
+      "otherProviders": {
+        "label": "Use another provider"
+      }
     }
   },
   "opal": {
@@ -16785,6 +16797,18 @@
         },
         "webSearch": {
           "label": "Web Search"
+        },
+        "personalGeneral": {
+          "label": "General"
+        },
+        "personalization": {
+          "label": "Personalization"
+        },
+        "account": {
+          "label": "Account"
+        },
+        "publishedLinks": {
+          "label": "Published Links"
         }
       },
       "sections": {
@@ -16808,6 +16832,9 @@
         },
         "usage": {
           "label": "Usage"
+        },
+        "you": {
+          "label": "You"
         }
       }
     },
@@ -16820,6 +16847,9 @@
       },
       "searchInput": {
         "placeholder": "Search..."
+      },
+      "backToChat": {
+        "label": "Back to Chat"
       }
     },
     "appSidebar": {
@@ -16863,6 +16893,9 @@
       },
       "plugins": {
         "label": "Plugins"
+      },
+      "settings": {
+        "label": "Settings"
       }
     },
     "chatButton": {

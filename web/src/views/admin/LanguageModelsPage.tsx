@@ -474,7 +474,9 @@ export default function LanguageModelsPage() {
           appName: settings.appName,
         }),
         emphasis: true,
+        // Deep X Route is the product's own model gateway, so it leads.
         providerNames: [
+          LLMProviderName.DEEPX_ROUTE,
           LLMProviderName.OPENAI,
           LLMProviderName.ANTHROPIC,
           LLMProviderName.VERTEX_AI,
@@ -491,7 +493,6 @@ export default function LanguageModelsPage() {
           LLMProviderName.PORTKEY,
           LLMProviderName.VERCEL_AI_GATEWAY,
           LLMProviderName.NEBIUS_TOKENFACTORY,
-          LLMProviderName.DEEPX_ROUTE,
           LLMProviderName.BIFROST,
         ],
       },

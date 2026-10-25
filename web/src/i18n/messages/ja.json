@@ -1599,7 +1599,8 @@
       },
       "header": {
         "description": "エージェントで AI の動作と知識をカスタマイズします。組織内のエージェントを管理します。",
-        "title": "エージェント"
+        "title": "エージェント",
+        "localDescription": "独自の指示、ツール、ナレッジを持つエージェントを作成します。"
       },
       "modals": {
         "accessNote": {
@@ -2314,7 +2315,8 @@
         }
       },
       "header": {
-        "description": "組織全体のチャット設定と既定値です。ユーザーは一部を個人設定で変更できます。"
+        "description": "組織全体のチャット設定と既定値です。ユーザーは一部を個人設定で変更できます。",
+        "localDescription": "このコンピューター上の Deep X のデフォルトのチャット設定です。"
       },
       "mcpServer": {
         "authTooltip": "この MCP サーバーのツールを有効にする前に、認証してください。",
@@ -16020,6 +16022,16 @@
         },
         "title": "少しだけお時間をいただき、セットアップを行いましょう。"
       }
+    },
+    "localFirstRun": {
+      "title": "Deep X Route を接続してチャットを始めましょう",
+      "description": "Deep X Route は Deep X の AI モデルを提供します。開始するには Deep X Route の API キーを入力してください。",
+      "connect": {
+        "label": "Deep X Route を接続"
+      },
+      "otherProviders": {
+        "label": "別のプロバイダーを使用"
+      }
     }
   },
   "opal": {
@@ -16785,6 +16797,18 @@
         },
         "webSearch": {
           "label": "Web 検索"
+        },
+        "personalGeneral": {
+          "label": "一般"
+        },
+        "personalization": {
+          "label": "パーソナライズ"
+        },
+        "account": {
+          "label": "アカウント"
+        },
+        "publishedLinks": {
+          "label": "公開リンク"
         }
       },
       "sections": {
@@ -16808,6 +16832,9 @@
         },
         "usage": {
           "label": "使用状況"
+        },
+        "you": {
+          "label": "あなた"
         }
       }
     },
@@ -16820,6 +16847,9 @@
       },
       "searchInput": {
         "placeholder": "検索..."
+      },
+      "backToChat": {
+        "label": "チャットに戻る"
       }
     },
     "appSidebar": {
@@ -16863,6 +16893,9 @@
       },
       "plugins": {
         "label": "プラグイン"
+      },
+      "settings": {
+        "label": "設定"
       }
     },
     "chatButton": {

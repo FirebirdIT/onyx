@@ -1599,7 +1599,8 @@
       },
       "header": {
         "description": "用智能体自定义 AI 的行为和知识。管理您组织中的智能体。",
-        "title": "智能体"
+        "title": "智能体",
+        "localDescription": "创建拥有自己的指令、工具和知识的智能体。"
       },
       "modals": {
         "accessNote": {
@@ -2314,7 +2315,8 @@
         }
       },
       "header": {
-        "description": "组织范围的对话设置和默认值。用户可以在个人设置中覆盖其中部分项。"
+        "description": "组织范围的对话设置和默认值。用户可以在个人设置中覆盖其中部分项。",
+        "localDescription": "此电脑上 Deep X 的默认聊天设置。"
       },
       "mcpServer": {
         "authTooltip": "启用此 MCP 服务器的工具前，请先完成身份验证。",
@@ -16020,6 +16022,16 @@
         },
         "title": "花点时间来完成设置吧。"
       }
+    },
+    "localFirstRun": {
+      "title": "连接 Deep X Route 即可开始聊天",
+      "description": "Deep X Route 为 Deep X 提供 AI 模型。输入您的 Deep X Route API 密钥即可开始。",
+      "connect": {
+        "label": "连接 Deep X Route"
+      },
+      "otherProviders": {
+        "label": "使用其他提供商"
+      }
     }
   },
   "opal": {
@@ -16785,6 +16797,18 @@
         },
         "webSearch": {
           "label": "网页搜索"
+        },
+        "personalGeneral": {
+          "label": "通用"
+        },
+        "personalization": {
+          "label": "个性化"
+        },
+        "account": {
+          "label": "账户"
+        },
+        "publishedLinks": {
+          "label": "已发布链接"
         }
       },
       "sections": {
@@ -16808,6 +16832,9 @@
         },
         "usage": {
           "label": "用量"
+        },
+        "you": {
+          "label": "您"
         }
       }
     },
@@ -16820,6 +16847,9 @@
       },
       "searchInput": {
         "placeholder": "搜索…"
+      },
+      "backToChat": {
+        "label": "返回聊天"
       }
     },
     "appSidebar": {
@@ -16863,6 +16893,9 @@
       },
       "plugins": {
         "label": "插件"
+      },
+      "settings": {
+        "label": "设置"
       }
     },
     "chatButton": {

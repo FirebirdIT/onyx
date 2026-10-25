@@ -76,6 +76,7 @@ import { getProjectTokenCount } from "@/lib/projects/svc";
 import { cn } from "@opal/utils";
 import Suggestions from "@/sections/Suggestions";
 import OnboardingFlow from "@/sections/onboarding/OnboardingFlow";
+import LocalFirstRun from "@/sections/onboarding/LocalFirstRun";
 import { OnboardingStep } from "@/interfaces/onboarding";
 import { useShowOnboarding } from "@/hooks/useShowOnboarding";
 import { SvgChevronDown, SvgFileText } from "@opal/icons";
@@ -169,7 +170,11 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     currentChatSessionId,
     isLoading: isLoadingChatSessions,
   } = useChatSessions();
-  const { vectorDbEnabled, disable_default_assistant } = useSettings();
+  const { vectorDbEnabled, disable_default_assistant, deepx_local_engine } =
+    useSettings();
+  // One person runs the Deep X desktop engine: a single first-run card
+  // replaces the team onboarding (name step and provider grid).
+  const localEngine = deepx_local_engine ?? false;
 
   const {
     currentMessageFiles,
@@ -769,9 +774,16 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     (state.phase === "idle" || state.phase === "classifying");
 
   const onboardingVisible =
+    !localEngine &&
     isWelcomeFocus &&
     (showOnboarding || !user?.personalization?.name) &&
     !onboardingDismissed;
+
+  const localFirstRunVisible =
+    localEngine &&
+    isWelcomeFocus &&
+    !llmManager.isLoadingProviders &&
+    !llmManager.hasAnyProvider;
 
   const gridStyle = {
     // minmax(0, 1fr) (instead of "1fr") lets the single column shrink to the
@@ -975,8 +987,11 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                       justifyContent="between"
                       alignItems="end"
                       className={cn(
+                        // Same width rule as the composer below, so the
+                        // greeting, the first-run card and the input share
+                        // one left edge at every window width.
                         !fullWidthActive &&
-                          "max-w-(--app-page-main-content-width)"
+                          "md:max-w-(--app-page-main-content-width)"
                       )}
                     >
                       <WelcomeMessage
@@ -1028,6 +1043,12 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           aria-label={t("scrollToBottomButton.label")}
                           prominence="secondary"
                         />
+                      </div>
+                    )}
+
+                    {localFirstRunVisible && (
+                      <div className="mb-2">
+                        <LocalFirstRun />
                       </div>
                     )}
 
@@ -1106,7 +1127,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                         disabled={
                           (!llmManager.isLoadingProviders &&
                             llmManager.hasAnyProvider === false) ||
-                          (showOnboarding &&
+                          (!localEngine &&
+                            showOnboarding &&
                             !isLoadingOnboarding &&
                             onboardingState.currentStep !==
                               OnboardingStep.Complete)

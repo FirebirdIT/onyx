@@ -18,6 +18,10 @@ export type { FeatureFlags } from "@/lib/admin-routes";
  * `sidebar.adminNav.items.<id>.label` message, resolved in `AdminSidebar`.
  */
 export type AdminNavItemId =
+  | "personalGeneral"
+  | "personalization"
+  | "account"
+  | "publishedLinks"
   | "languageModels"
   | "webSearch"
   | "imageGeneration"
@@ -61,6 +65,7 @@ export type AdminNavItemId =
  * `sidebar.adminNav.sections.<id>.label` message.
  */
 export type AdminNavSectionId =
+  | "you"
   | "craft"
   | "agentsAndActions"
   | "documentsAndKnowledge"
@@ -77,6 +82,10 @@ export const NAV_ITEM_IDS: Record<
   keyof typeof ADMIN_ROUTES,
   AdminNavItemId | null
 > = {
+  PERSONAL_GENERAL: "personalGeneral",
+  PERSONALIZATION: "personalization",
+  ACCOUNT: "account",
+  PUBLISHED_LINKS: "publishedLinks",
   LLM_MODELS: "languageModels",
   DECISION_MODELS: "decisionModels",
   WEB_SEARCH: "webSearch",
@@ -170,6 +179,7 @@ const NAV_SECTION_IDS: readonly (readonly [
   section: string,
   id: AdminNavSectionId,
 ])[] = [
+  ["You", "you"],
   ["Craft", "craft"],
   ["Agents & Actions", "agentsAndActions"],
   ["Documents & Knowledge", "documentsAndKnowledge"],

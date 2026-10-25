@@ -1963,6 +1963,8 @@ function AccountsAccessSettings() {
   const t = useTranslations("settings");
   const { user, authTypeMetadata, permissions } = useUser();
   const isMultiTenant = useIsMultiTenant();
+  // One person runs the Deep X desktop engine: no API tokens or connected apps.
+  const localEngine = useSettings().deepx_local_engine ?? false;
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // TODO(auth-refresh): only passwordMinLength is enforced here; the remaining
@@ -2016,7 +2018,9 @@ function AccountsAccessSettings() {
 
   // Hide the section entirely if user has no permission AND no existing tokens
   const showTokensSection =
-    isMultiTenant !== null && (isLoading || canCreatePAT || pats.length > 0);
+    !localEngine &&
+    isMultiTenant !== null &&
+    (isLoading || canCreatePAT || pats.length > 0);
 
   const { data: allScopeOptions = [], error: scopeOptionsError } = useSWR<
     PatScopeOption[]
@@ -2474,7 +2478,7 @@ function AccountsAccessSettings() {
             )}
           </Section>
         )}
-        <OAuthProviderConnections />
+        {!localEngine && <OAuthProviderConnections />}
       </Section>
     </>
   );

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useSettings } from "@/lib/settings/hooks";
 import { OverflowText, Table, type TableColumn } from "@opal/components";
 import { Content, IllustrationContent, toast } from "@opal/layouts";
 import SvgNoResult from "@opal/illustrations/no-result";
@@ -70,6 +71,8 @@ export default function AgentsTable() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { agents, isLoading, refresh } = useAdminAgents();
+  // One person runs the Deep X desktop engine: no owners or sharing to show.
+  const localEngine = useSettings().deepx_local_engine ?? false;
 
   const columns = useMemo((): TableColumn<Agent>[] => {
     function renderCreatedByColumn(
@@ -119,7 +122,7 @@ export default function AgentsTable() {
       );
     }
 
-    return [
+    const all: TableColumn<Agent>[] = [
       {
         kind: "qualifier",
         content: "icon",
@@ -171,7 +174,16 @@ export default function AgentsTable() {
         cell: (row) => <AgentRowActions agent={row} onMutate={refresh} />,
       },
     ];
-  }, [refresh, t]);
+    return localEngine
+      ? all.filter(
+          (column) =>
+            !(
+              column.kind === "data" &&
+              (column.field === "owner" || column.field === "is_public")
+            )
+        )
+      : all;
+  }, [refresh, t, localEngine]);
 
   const nonBuiltinAgents = useMemo(
     () => agents.filter((p) => !p.builtin_persona).sort(compareAgentOrder),
@@ -225,9 +237,11 @@ export default function AgentsTable() {
           placeholder={t("search.placeholder")}
           searchIcon
         />
-        <Section gap={1} flexDirection="row" justifyContent="start">
-          {filterBar}
-        </Section>
+        {!localEngine && (
+          <Section gap={1} flexDirection="row" justifyContent="start">
+            {filterBar}
+          </Section>
+        )}
       </Section>
       <Table
         items={filteredAgents}

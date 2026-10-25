@@ -39,6 +39,16 @@ DOCX modal previews share the detached, sanitized renderer and page styles in `w
 The renderer owns HTML sanitization; callers receive only sanitized document nodes.
 Superseded document loads cannot replace the current modal document.
 
+
+**Deep X desktop engine (`deepx_local_engine`).** The chat page drops the team
+onboarding (name step and provider grid). While no model is connected it shows
+one card, `web/src/sections/onboarding/LocalFirstRun.tsx`: "Connect Deep X
+Route" opens the Deep X Route form, and "Use another provider" opens Language
+Models. Settings live in the admin area: `/app/settings/*`
+(`web/src/app/app/settings/layout.tsx`) redirects to `/admin/settings/*`, and the
+sidebar link and the account menu say "Settings". The greeting row uses the
+composer's width rule, so the greeting, the card and the input share one edge.
+
 ## 2. Surfaces
 
 ### Routes (`web/src/app/app/`)

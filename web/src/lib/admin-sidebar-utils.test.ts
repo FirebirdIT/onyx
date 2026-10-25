@@ -129,7 +129,7 @@ test("hides Users when one person runs the Deep X desktop engine", () => {
   expect(links(true)).not.toContain(ADMIN_ROUTES.USERS.path);
 });
 
-test("the Deep X desktop engine shows only the pages one person needs", () => {
+test("the Deep X desktop engine shows personal settings first, then only the pages one person needs", () => {
   const lite = { ...flags, localEngine: true, vectorDbEnabled: false };
   const nameIds = buildItems(
     [Permission.FULL_ADMIN_PANEL_ACCESS],
@@ -137,6 +137,10 @@ test("the Deep X desktop engine shows only the pages one person needs", () => {
     null
   ).map((item) => item.nameId);
   expect(nameIds).toEqual([
+    "personalGeneral",
+    "personalization",
+    "account",
+    "publishedLinks",
     "languageModels",
     "webSearch",
     "imageGeneration",
@@ -146,4 +150,14 @@ test("the Deep X desktop engine shows only the pages one person needs", () => {
     "agents",
     "plugins",
   ]);
+});
+
+test("personal settings pages stay out of the admin panel of a server", () => {
+  const links = buildItems(
+    [Permission.FULL_ADMIN_PANEL_ACCESS],
+    flags,
+    null
+  ).map((item) => item.link);
+  expect(links).not.toContain(ADMIN_ROUTES.PERSONAL_GENERAL.path);
+  expect(links).not.toContain(ADMIN_ROUTES.PUBLISHED_LINKS.path);
 });

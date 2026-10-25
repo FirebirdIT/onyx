@@ -76,6 +76,11 @@ traces of every model call, tagged by what the call was for.
 
 ---
 
+
+**Deep X Route first.** `useLLMProviderOptions` sorts Deep X Route to the top of
+the onboarding list, and the admin Language Models page
+(`web/src/views/admin/LanguageModelsPage.tsx`) lists it first in "Add Provider".
+
 ## 2. Surfaces
 
 ### HTTP endpoints (`server/manage/llm/api.py`)
