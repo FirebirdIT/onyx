@@ -205,25 +205,13 @@ async fn download(app: &AppHandle, hub: &HubBackup<'_>, path: &Path) -> Result<(
     Ok(())
 }
 
-#[cfg(unix)]
 async fn dump_database(dump_path: &Path) -> Result<(), String> {
     engine::native::dump_database(dump_path).await
 }
 
-#[cfg(unix)]
 async fn restore_database(app: &AppHandle, dump_path: &Path) -> Result<(), String> {
     progress(app, "Restoring the database");
     engine::native::restore_database(app, dump_path).await
-}
-
-#[cfg(not(unix))]
-async fn dump_database(_dump_path: &Path) -> Result<(), String> {
-    Err("Backups need the engine, which does not run on this computer yet.".to_string())
-}
-
-#[cfg(not(unix))]
-async fn restore_database(_app: &AppHandle, _dump_path: &Path) -> Result<(), String> {
-    Err("Backups need the engine, which does not run on this computer yet.".to_string())
 }
 
 async fn restore_flow(app: &AppHandle, email: String, passphrase: String) -> Result<(), String> {

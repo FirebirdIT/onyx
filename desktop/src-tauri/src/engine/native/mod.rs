@@ -4,6 +4,8 @@
 
 pub mod bundle;
 pub mod env;
+#[cfg(windows)]
+mod job;
 pub mod postgres;
 pub mod process;
 
@@ -13,7 +15,7 @@ use crate::engine::{emit_progress, EngineStatus, ServiceStatus};
 use crate::route::keystore;
 use crate::secure_random::random_hex;
 use bundle::Bundle;
-use env::{free_port, NativeInput, Ports, LOOPBACK, NATIVE_WEB_PORT};
+use env::{free_port, NativeInput, Ports, HAS_CODE_RUNNER, LOOPBACK, NATIVE_WEB_PORT};
 use process::{run_to_end, ServiceSpec, ServiceState, Supervised};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -28,11 +30,12 @@ const MIGRATION_TIMEOUT: Duration = Duration::from_mins(20);
 /// Folders of the native engine, in the app data folder.
 pub struct NativeLayout {
     root: PathBuf,
+    bundles: PathBuf,
 }
 
 impl NativeLayout {
     pub fn bundles_dir(&self) -> PathBuf {
-        self.root.join("bundles")
+        self.bundles.clone()
     }
     pub fn pg_data(&self) -> PathBuf {
         self.root.join("postgres-data")
@@ -49,11 +52,25 @@ impl NativeLayout {
 }
 
 pub fn native_layout() -> Result<NativeLayout, String> {
-    get_data_dir()
-        .map(|dir| NativeLayout {
-            root: dir.join("engine-native"),
-        })
-        .ok_or_else(|| "Could not find the app data folder".to_string())
+    let root = get_data_dir()
+        .map(|dir| dir.join("engine-native"))
+        .ok_or_else(|| "Could not find the app data folder".to_string())?;
+    let bundles = windows_bundles_dir().unwrap_or_else(|| root.join("bundles"));
+    Ok(NativeLayout { root, bundles })
+}
+
+/// On Windows the bundles go to a short local folder. Python and Node need
+/// every path under 260 characters (Windows does not allow longer ones by
+/// default), and the bundle has paths of about 150 characters. A local
+/// folder also keeps the bundle out of a roaming profile.
+#[cfg(windows)]
+fn windows_bundles_dir() -> Option<PathBuf> {
+    directories::BaseDirs::new().map(|dirs| dirs.data_local_dir().join("deepx").join("engine"))
+}
+
+#[cfg(not(windows))]
+const fn windows_bundles_dir() -> Option<PathBuf> {
+    None
 }
 
 /// The running engine. Services are in start order.
@@ -72,6 +89,7 @@ fn running() -> &'static Mutex<Option<Running>> {
 /// Process ids whose executable is in `bundles_dir`, from `lsof -Fpn -d txt`
 /// output ("p<pid>" lines, each followed by "n<path>" lines). A process can
 /// change its title (Next.js shows "next-server"), but not its executable.
+#[cfg(unix)]
 fn bundle_pids(lsof_output: &str, bundles_dir: &str) -> Vec<u32> {
     let mut pids = Vec::new();
     let mut current: Option<u32> = None;
@@ -88,6 +106,7 @@ fn bundle_pids(lsof_output: &str, bundles_dir: &str) -> Vec<u32> {
 }
 
 /// The process groups of `pids`, from `ps -axo pid=,pgid=` output.
+#[cfg(unix)]
 fn groups_of(ps_output: &str, pids: &[u32]) -> Vec<u32> {
     let mut groups: Vec<u32> = ps_output
         .lines()
@@ -103,6 +122,7 @@ fn groups_of(ps_output: &str, pids: &[u32]) -> Vec<u32> {
     groups
 }
 
+#[cfg(unix)]
 async fn command_stdout(program: &str, args: &[&str]) -> String {
     tokio::process::Command::new(program)
         .args(args)
@@ -115,6 +135,7 @@ async fn command_stdout(program: &str, args: &[&str]) -> String {
 /// Stop engine processes that an earlier app run left behind, for example
 /// after a crash. Only processes whose executable is in our bundle folder
 /// are stopped.
+#[cfg(unix)]
 async fn stop_leftovers(layout: &NativeLayout) {
     // lsof shows the real path, and the app folder can be under /tmp, which
     // is /private/tmp.
@@ -144,6 +165,12 @@ async fn stop_leftovers(layout: &NativeLayout) {
         }
     }
 }
+
+/// On Windows each service runs in a job that ends its processes when the
+/// app ends, even after a crash, so nothing is left behind.
+#[cfg(windows)]
+#[allow(clippy::unused_async)]
+async fn stop_leftovers(_layout: &NativeLayout) {}
 
 async fn port_in_use(port: u16) -> bool {
     let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
@@ -187,6 +214,7 @@ fn python_spec(
         env,
         log,
         stop_signal: "TERM",
+        signal_with: None,
     }
 }
 
@@ -231,14 +259,16 @@ async fn start_services(
 ) -> Result<Vec<Supervised>, String> {
     let mut services = Vec::new();
     let result = async {
-        emit_progress(app, "start", "Starting the code runner");
-        services.push(Supervised::start(python_spec(
-            "code_runner",
-            bundle,
-            &["-m", "onyx.deepx.code_runner"],
-            env::runner_env(input, &layout.runner_dir()),
-            layout.log("code_runner"),
-        ))?);
+        if HAS_CODE_RUNNER {
+            emit_progress(app, "start", "Starting the code runner");
+            services.push(Supervised::start(python_spec(
+                "code_runner",
+                bundle,
+                &["-m", "onyx.deepx.code_runner"],
+                env::runner_env(input, &layout.runner_dir()),
+                layout.log("code_runner"),
+            ))?);
+        }
 
         emit_progress(app, "start", "Updating the database");
         let backend_env = env::backend_env(input);
@@ -284,6 +314,7 @@ async fn start_services(
             env: env::web_env(input),
             log: layout.log("web_server"),
             stop_signal: "TERM",
+            signal_with: None,
         })?);
 
         emit_progress(app, "start", "Waiting for the engine to be ready");
@@ -502,7 +533,7 @@ pub async fn restore_database(app: &AppHandle, source: &Path) -> Result<(), Stri
     restored
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
 

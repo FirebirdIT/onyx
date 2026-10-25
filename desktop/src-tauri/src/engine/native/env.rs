@@ -9,6 +9,11 @@ use std::path::Path;
 pub const NATIVE_WEB_PORT: u16 = 9999;
 pub const LOOPBACK: &str = "127.0.0.1";
 
+/// The code runner runs chat code inside sandbox-runtime, which supports only
+/// macOS and Linux. Windows has no code runner (and so no code tools) until it
+/// has a sandbox: model-written code never runs without one.
+pub const HAS_CODE_RUNNER: bool = cfg!(unix);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ports {
     pub postgres: u16,
@@ -52,6 +57,13 @@ fn pairs(items: &[(&str, &str)]) -> Env {
 pub fn backend_env(input: &NativeInput<'_>) -> Env {
     let hub = input.hub_url.trim_end_matches('/');
     let backend = input.bundle.backend_dir();
+    // Empty, not unset: the backend has a default address, and an empty one
+    // hides the code tools.
+    let runner_url = if HAS_CODE_RUNNER {
+        format!("http://{LOOPBACK}:{}", input.ports.runner)
+    } else {
+        String::new()
+    };
     let mut env = pairs(&[
         ("POSTGRES_HOST", LOOPBACK),
         ("POSTGRES_PORT", &input.ports.postgres.to_string()),
@@ -73,10 +85,7 @@ pub fn backend_env(input: &NativeInput<'_>) -> Env {
         ("DEEPX_PRESETS_URL", &format!("{hub}/api/presets")),
         ("DEEPX_HUB_URL", hub),
         ("DEEPX_LOCAL_ENGINE", "true"),
-        (
-            "CODE_INTERPRETER_BASE_URL",
-            &format!("http://{LOOPBACK}:{}", input.ports.runner),
-        ),
+        ("CODE_INTERPRETER_BASE_URL", &runner_url),
         ("CODE_INTERPRETER_API_TOKEN", input.runner_token),
         ("PYTHONPATH", &backend.to_string_lossy()),
         ("PYTHONDONTWRITEBYTECODE", "1"),
@@ -137,8 +146,13 @@ fn shell_quote(value: &str) -> String {
 }
 
 fn path_with(dir: &Path) -> String {
-    let current = std::env::var("PATH").unwrap_or_else(|_| "/usr/bin:/bin".to_string());
-    format!("{}:{current}", dir.to_string_lossy())
+    let current = std::env::var_os("PATH").unwrap_or_else(|| "/usr/bin:/bin".into());
+    let dirs = std::iter::once(dir.to_path_buf()).chain(std::env::split_paths(&current));
+    // A folder with the separator in its name cannot be added; keep the PATH.
+    std::env::join_paths(dirs).map_or_else(
+        |_| current.to_string_lossy().to_string(),
+        |joined| joined.to_string_lossy().to_string(),
+    )
 }
 
 /// A free TCP port on the loopback address.
@@ -203,13 +217,18 @@ mod tests {
         assert_eq!(env["DB_READONLY_PASSWORD"], readonly_password(&secrets));
         assert_eq!(env["DB_READONLY_PASSWORD"].len(), 32);
         assert_ne!(env["DB_READONLY_PASSWORD"], "password");
-        assert_eq!(env["CODE_INTERPRETER_BASE_URL"], "http://127.0.0.1:5003");
+        let runner_url = if HAS_CODE_RUNNER {
+            "http://127.0.0.1:5003"
+        } else {
+            ""
+        };
+        assert_eq!(env["CODE_INTERPRETER_BASE_URL"], runner_url);
         assert_eq!(env["CODE_INTERPRETER_API_TOKEN"], "tok");
         assert_eq!(env["DISABLE_VECTOR_DB"], "true");
         assert_eq!(env["DEEPX_PRESETS_URL"], "https://hub.example/api/presets");
         assert_eq!(env["DEEPX_ROUTE_API_KEY"], "dxr-key");
         assert_eq!(env["WEB_DOMAIN"], "http://localhost:9999");
-        assert_eq!(env["PYTHONPATH"], "/b/backend");
+        assert_eq!(env["PYTHONPATH"], bundle.backend_dir().to_string_lossy());
         assert_eq!(env["ONYX_VERSION"], "0.2.0");
 
         let runner = map(runner_env(&input, Path::new("/data/runner")));
@@ -217,9 +236,11 @@ mod tests {
         assert_eq!(runner["DEEPX_CODE_RUNNER_PORT"], "5003");
         assert_eq!(
             runner["DEEPX_CODE_RUNNER_PYTHON"],
-            "/b/jobpython/bin/python3"
+            bundle.job_python().to_string_lossy()
         );
-        assert!(runner["PATH"].starts_with("/b/node/bin:"));
+        let separator = if cfg!(windows) { ';' } else { ':' };
+        let node_dir = bundle.node_bin_dir().to_string_lossy().to_string();
+        assert!(runner["PATH"].starts_with(&format!("{node_dir}{separator}")));
 
         let web = map(web_env(&input));
         assert_eq!(web["PORT"], "9999");
@@ -241,6 +262,7 @@ mod tests {
         assert!(!map(backend_env(&input)).contains_key("DEEPX_ROUTE_API_KEY"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn srt_command_survives_spaces_and_quotes() {
         assert_eq!(shell_quote("/a b/node"), "'/a b/node'");
