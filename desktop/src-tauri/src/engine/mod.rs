@@ -8,6 +8,8 @@ pub mod env;
 pub mod files;
 pub mod hub;
 pub mod images;
+#[cfg(unix)]
+pub mod native;
 
 use crate::config::{get_data_dir, AppConfig, EngineMode};
 use crate::route::keystore;
@@ -126,6 +128,17 @@ fn is_running(services: &[ServiceStatus]) -> bool {
 }
 
 pub async fn status() -> Result<EngineStatus, String> {
+    #[cfg(unix)]
+    {
+        let native = native::status().await;
+        if !native.services.is_empty() {
+            return Ok(native);
+        }
+    }
+    docker_status().await
+}
+
+pub async fn docker_status() -> Result<EngineStatus, String> {
     let compose = compose_for(EngineMode::Full)?;
     let text = compose
         .run_capture(["--profile", "*", "ps", "--format", "json"])
@@ -140,7 +153,7 @@ pub async fn status() -> Result<EngineStatus, String> {
 /// Something that is not our engine answers on the engine port.
 async fn port_taken_by_other() -> bool {
     // Our own nginx holds the port while it runs.
-    let ours = status().await.is_ok_and(|s| {
+    let ours = docker_status().await.is_ok_and(|s| {
         s.services
             .iter()
             .any(|service| service.service == "nginx" && service.state == "running")
@@ -156,6 +169,9 @@ async fn port_taken_by_other() -> bool {
 
 /// Start the engine and wait until all services are healthy.
 pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
+    if config.engine_mode == EngineMode::Native {
+        return start_native(app, config).await;
+    }
     emit_progress(app, "check", "Checking Docker");
     let check = docker::check_docker().await;
     if !(check.running && check.compose) {
@@ -192,6 +208,16 @@ pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(unix)]
+async fn start_native(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
+    native::start(app, config).await
+}
+
+#[cfg(not(unix))]
+async fn start_native(_app: &AppHandle, _config: &AppConfig) -> Result<(), String> {
+    Err("The engine without Docker does not support this computer yet. Select Lite.".to_string())
+}
+
 /// Remove engine images of earlier versions. A failure only shows a note,
 /// because the engine runs without this step.
 async fn remove_old_images(app: &AppHandle, current: &hub::EngineImages) {
@@ -210,8 +236,14 @@ async fn remove_old_images(app: &AppHandle, current: &hub::EngineImages) {
     }
 }
 
-/// Stop every engine service, in all modes. The data volumes stay.
+/// Stop every engine service, in all modes. The data stays.
 pub async fn stop(app: &AppHandle) -> Result<(), String> {
+    #[cfg(unix)]
+    native::stop(app).await?;
+    // Nothing runs in Docker when Docker is missing or not running.
+    if find_docker().is_none() || !docker::check_docker().await.running {
+        return Ok(());
+    }
     let compose = compose_for(EngineMode::Full)?;
     let handle = app.clone();
     compose
@@ -223,6 +255,8 @@ pub async fn stop(app: &AppHandle) -> Result<(), String> {
 
 /// Stop the engine before the app exits. Blocks for at most `timeout`.
 pub fn stop_blocking(timeout: Duration) {
+    #[cfg(unix)]
+    native::stop_blocking(timeout.min(Duration::from_secs(20)));
     let Ok(compose) = compose_for(EngineMode::Full) else {
         return;
     };

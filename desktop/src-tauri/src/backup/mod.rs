@@ -158,7 +158,7 @@ async fn backup_flow(
     let sealed_path = work.path("engine.dxb");
 
     progress(app, "Exporting the database");
-    dump::dump_to_file(&engine::compose_for(config.engine_mode)?, &dump_path).await?;
+    dump_database(config.engine_mode, &dump_path).await?;
     progress(app, "Encrypting");
     let keys = std::sync::Arc::new(keys);
     let (source, target, sealing_keys) = (dump_path.clone(), sealed_path.clone(), keys.clone());
@@ -206,11 +206,24 @@ async fn download(app: &AppHandle, hub: &HubBackup<'_>, path: &Path) -> Result<(
     Ok(())
 }
 
+async fn dump_database(mode: EngineMode, dump_path: &Path) -> Result<(), String> {
+    #[cfg(unix)]
+    if mode == EngineMode::Native {
+        return engine::native::dump_database(dump_path).await;
+    }
+    dump::dump_to_file(&engine::compose_for(mode)?, dump_path).await
+}
+
 async fn restore_database(
     app: &AppHandle,
     mode: EngineMode,
     dump_path: &Path,
 ) -> Result<(), String> {
+    #[cfg(unix)]
+    if mode == EngineMode::Native {
+        progress(app, "Restoring the database");
+        return engine::native::restore_database(app, dump_path).await;
+    }
     progress(app, "Stopping the API services");
     let all = engine::compose_for(EngineMode::Full)?;
     all.run_capture([

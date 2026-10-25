@@ -92,7 +92,7 @@ impl EngineLayout {
     pub fn compose_files(&self, mode: EngineMode) -> Vec<PathBuf> {
         let dir = self.compose_dir();
         let mut files = vec![dir.join(BASE_COMPOSE)];
-        if mode == EngineMode::Lite {
+        if mode != EngineMode::Full {
             files.push(dir.join(LITE_COMPOSE));
         }
         files.push(dir.join(DEEPX_COMPOSE));
