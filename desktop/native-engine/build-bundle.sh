@@ -72,8 +72,15 @@ for package in lock.get("package", []):
         print(package["name"])
 PY
 }
+# Native packages that may build here: checked to link only macOS system
+# libraries (otool -L shows /usr/lib/libSystem.B.dylib only).
+#   chonkie: Cython, publishes Intel macOS wheels only.
+BUILD_ALLOWED=" chonkie "
 NO_BUILD_ARGS=()
-while read -r name; do NO_BUILD_ARGS+=(--only-binary "$name"); done < <(native_packages)
+while read -r name; do
+  case "$BUILD_ALLOWED" in *" $name "*) continue ;; esac
+  NO_BUILD_ARGS+=(--only-binary "$name")
+done < <(native_packages)
 
 copy_python() {
   local target="$1" src
@@ -89,9 +96,9 @@ copy_python "$BUNDLE/python"
 # Export from uv.lock: it has the hashes of the wheels for every platform.
 EXCLUDE=()
 [ "$PLATFORM" = "darwin-x86_64" ] && EXCLUDE=(--no-emit-package cryptography --no-emit-package pyopenssl)
-uv export --frozen --no-emit-project --no-default-groups --group backend -q "${EXCLUDE[@]}" \
+uv export --frozen --no-emit-project --no-default-groups --group backend -q ${EXCLUDE[@]+"${EXCLUDE[@]}"} \
   --project "$REPO" -o "$STAGE/backend-requirements.txt"
-uv pip install -q --no-config "${NO_BUILD_ARGS[@]}" --python "$BUNDLE/python/bin/python3" \
+uv pip install -q --no-config ${NO_BUILD_ARGS[@]+"${NO_BUILD_ARGS[@]}"} --python "$BUNDLE/python/bin/python3" \
   --no-deps --require-hashes -r "$STAGE/backend-requirements.txt"
 if [ "$PLATFORM" = "darwin-x86_64" ]; then
   uv pip install -q --no-config --no-build --python "$BUNDLE/python/bin/python3" \
