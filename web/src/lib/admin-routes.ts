@@ -101,6 +101,11 @@ export interface AdminRouteEntry {
   beta?: boolean;
 }
 
+/** Hides a team or hosted-service page in the one-person Deep X desktop app. */
+function notLocal(flags: FeatureFlags): boolean {
+  return !flags.localEngine;
+}
+
 export const ADMIN_ROUTES = {
   // ── System Configuration (unlabeled section) ──────────────────────
   LLM_MODELS: {
@@ -121,7 +126,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.MANAGE_LLMS,
     section: "",
     requiredTier: null,
-    visibleWhen: null,
+    visibleWhen: notLocal,
     beta: true,
   },
   WEB_SEARCH: {
@@ -182,7 +187,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: null,
+    visibleWhen: notLocal,
     unlockedWhen: (f: FeatureFlags) => f.llmGatewayAvailable,
   },
   // ── Craft ─────────────────────────────────────────────────────────
@@ -225,7 +230,7 @@ export const ADMIN_ROUTES = {
     section: "",
     requiredTier: Tier.ENTERPRISE,
     visibleWhen: (f: FeatureFlags) =>
-      !f.enableCloud && f.customAnalyticsEnabled,
+      !f.localEngine && !f.enableCloud && f.customAnalyticsEnabled,
   },
 
   // ── Agents & Actions ──────────────────────────────────────────────
@@ -360,7 +365,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.MANAGE_SERVICE_ACCOUNT_API_KEYS,
     section: "Integrations",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   SLACK_BOTS: {
     path: "/admin/bots",
@@ -370,7 +375,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.MANAGE_BOTS,
     section: "Integrations",
     requiredTier: null,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   DISCORD_BOTS: {
     path: "/admin/discord-bot",
@@ -380,7 +385,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.MANAGE_BOTS,
     section: "Integrations",
     requiredTier: null,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   HOOKS: {
     path: "/admin/hooks",
@@ -390,7 +395,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Integrations",
     requiredTier: Tier.ENTERPRISE,
-    visibleWhen: (f: FeatureFlags) => f.hooksEnabled,
+    visibleWhen: (f: FeatureFlags) => !f.localEngine && f.hooksEnabled,
   },
 
   // ── Permissions ───────────────────────────────────────────────────
@@ -402,7 +407,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Permissions",
     requiredTier: null,
-    visibleWhen: (f: FeatureFlags) => !f.localEngine,
+    visibleWhen: notLocal,
   },
   GROUPS: {
     path: "/admin/groups",
@@ -412,7 +417,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.MANAGE_USER_GROUPS,
     section: "Permissions",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   SCIM: {
     path: "/admin/scim",
@@ -422,7 +427,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Permissions",
     requiredTier: Tier.ENTERPRISE,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   OAUTH_TEST: {
     path: "/admin/oauth-test",
@@ -445,7 +450,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Organization",
     requiredTier: null,
-    visibleWhen: (f: FeatureFlags) => f.hasSubscription,
+    visibleWhen: (f: FeatureFlags) => !f.localEngine && f.hasSubscription,
   },
   THEME: {
     path: "/admin/theme",
@@ -455,7 +460,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Organization",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   SECURITY_HARDENING: {
     path: "/admin/security",
@@ -465,7 +470,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Organization",
     requiredTier: null,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   // Business tier gates having *multiple* providers, inside the page itself,
   // not reaching it.
@@ -477,7 +482,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Organization",
     requiredTier: null,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
 
   // ── Usage ─────────────────────────────────────────────────────────
@@ -489,7 +494,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Usage",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   WORKSPACE_ANALYTICS: {
     path: "/admin/performance/analytics",
@@ -499,7 +504,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Usage",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: null,
+    visibleWhen: notLocal,
   },
   QUERY_HISTORY: {
     path: "/admin/performance/query-history",
@@ -509,7 +514,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.READ_QUERY_HISTORY,
     section: "Usage",
     requiredTier: Tier.BUSINESS,
-    visibleWhen: (f: FeatureFlags) => f.queryHistoryEnabled,
+    visibleWhen: (f: FeatureFlags) => !f.localEngine && f.queryHistoryEnabled,
   },
   // Tracing config is not supported on multi-tenant cloud.
   TRACING: {
@@ -520,7 +525,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Usage",
     requiredTier: null,
-    visibleWhen: (f: FeatureFlags) => !f.enableCloud,
+    visibleWhen: (f: FeatureFlags) => !f.localEngine && !f.enableCloud,
   },
   // Log export reads container-local files; not applicable on multi-tenant cloud.
   EXPORT_LOGS: {
@@ -531,7 +536,7 @@ export const ADMIN_ROUTES = {
     requiredPermission: Permission.FULL_ADMIN_PANEL_ACCESS,
     section: "Usage",
     requiredTier: Tier.ENTERPRISE,
-    visibleWhen: (f: FeatureFlags) => !f.enableCloud,
+    visibleWhen: (f: FeatureFlags) => !f.localEngine && !f.enableCloud,
   },
 
   // ── Other (admin-only) ────────────────────────────────────────────

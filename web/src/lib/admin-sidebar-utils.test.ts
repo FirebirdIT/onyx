@@ -128,3 +128,22 @@ test("hides Users when one person runs the Deep X desktop engine", () => {
   expect(links(false)).toContain(ADMIN_ROUTES.USERS.path);
   expect(links(true)).not.toContain(ADMIN_ROUTES.USERS.path);
 });
+
+test("the Deep X desktop engine shows only the pages one person needs", () => {
+  const lite = { ...flags, localEngine: true, vectorDbEnabled: false };
+  const nameIds = buildItems(
+    [Permission.FULL_ADMIN_PANEL_ACCESS],
+    lite,
+    null
+  ).map((item) => item.nameId);
+  expect(nameIds).toEqual([
+    "languageModels",
+    "webSearch",
+    "imageGeneration",
+    "voice",
+    "codeInterpreter",
+    "chatPreferences",
+    "agents",
+    "plugins",
+  ]);
+});
