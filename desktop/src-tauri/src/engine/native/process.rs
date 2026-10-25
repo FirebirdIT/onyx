@@ -31,6 +31,7 @@ pub struct ServiceSpec {
     /// Windows has no signals. There, a clean stop runs
     /// `<signal_with> kill <stop_signal> <pid>` (Postgres `pg_ctl`). Without
     /// it, a clean stop on Windows ends the processes.
+    #[cfg_attr(not(windows), expect(dead_code, reason = "read only on Windows"))]
     pub signal_with: Option<PathBuf>,
 }
 
