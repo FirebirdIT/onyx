@@ -768,6 +768,9 @@
       },
       "publishWebPage": {
         "label": "Publicar página da web"
+      },
+      "readSkill": {
+        "label": "Ler habilidade"
       }
     },
     "toolsPopover": {
@@ -16470,6 +16473,9 @@
         },
         "publishedLinks": {
           "label": "Links publicados"
+        },
+        "skills": {
+          "label": "Habilidades"
         }
       }
     },
@@ -16809,6 +16815,9 @@
         },
         "publishedLinks": {
           "label": "Links publicados"
+        },
+        "skills": {
+          "label": "Habilidades"
         }
       },
       "sections": {
@@ -17052,7 +17061,8 @@
           "placeholder": "Dê um nome à sua habilidade",
           "title": "Nome"
         },
-        "title": "Detalhes"
+        "title": "Detalhes",
+        "chatDescription": "Defina quando e como o chat deve usar esta habilidade."
       },
       "files": {
         "busyLabel": "Enviando...",
@@ -17098,7 +17108,8 @@
         "description": "Escreva o comportamento e o fluxo de trabalho que esta habilidade adiciona ao Craft.",
         "emptyFallback": "Ainda não há instruções.",
         "placeholder": "Escreva as instruções da habilidade.",
-        "title": "Instruções"
+        "title": "Instruções",
+        "chatDescription": "Escreva o comportamento e o fluxo de trabalho que esta habilidade adiciona ao chat."
       },
       "loadError": {
         "description": "Esta habilidade pode não existir, ser integrada ou não ser editável pela sua conta.",
@@ -17399,7 +17410,8 @@
       },
       "header": {
         "description": "Pacotes de capacidades que seu agente do Craft pode usar. Esta página mostra habilidades integradas, habilidades compartilhadas com você e suas habilidades pessoais.",
-        "title": "Habilidades"
+        "title": "Habilidades",
+        "chatDescription": "Instruções que o chat segue para um tipo de tarefa. Esta página mostra habilidades integradas, habilidades compartilhadas com você e suas próprias habilidades. Ative uma habilidade para que o chat possa usá-la."
       },
       "loadError": {
         "description": "Verifique o console para mais detalhes e tente atualizar a página.",

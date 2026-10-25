@@ -60,7 +60,8 @@ composer's width rule, so the greeting, the card and the input share one edge.
 | `/app/plugins` | `plugins/page.tsx` | Member directory for approved workspace plugins and personal connections. See [[mcp-and-custom-tools]]. |
 | `/app/plugins/oauth/complete` | `plugins/oauth/complete/page.tsx` | Verifies the saved member connection against the originating roster before notifying the opener or the attempt's `BroadcastChannel`. Uncorrelated visits do not fetch. Craft authorizations return to the Craft Plugins directory. |
 | `/app/shared/[chatId]` | `shared/[chatId]/page.tsx` → `SharedChatDisplay.tsx` | Public, read-only. Server-fetches with `fetchSS("/chat/get-chat-session/{id}?is_shared=True")` (`shared/[chatId]/page.tsx:getSharedChat`) and renders `SharedChatDisplay`. Still requires `requireAuth()`; "shared" means shareable, not unauthenticated. |
-| `/app/settings/*` | `settings/{accounts-access,chat-preferences,connectors,general,llm-gateway,usage}/` | Per-user settings pages, not part of the turn loop. |
+| `/app/settings/*` | `settings/{accounts-access,chat-preferences,connectors,general,llm-gateway,usage,published-links}/` | Per-user settings pages, not part of the turn loop. |
+| `/app/settings/skills`, `/app/settings/skills/new`, `/app/settings/skills/edit/[id]` | `web/src/app/app/settings/skills/` | The skills library and editor for chat (`SkillsPage` and `SkillEditorPage` with `library="userSettings"`). The settings layout shows them as full pages without the tab list. See [[skills]]. |
 
 `layout.tsx` (`app/app/layout.tsx:Layout`) wraps every `/app/*` route with `ProjectsProvider`,
 `VoiceModeProvider`, `AppSidebar`, and `AppChrome`, and calls `requireAuth()` server-side.

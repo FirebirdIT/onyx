@@ -768,6 +768,9 @@
       },
       "publishWebPage": {
         "label": "Publicar página web"
+      },
+      "readSkill": {
+        "label": "Leer habilidad"
       }
     },
     "toolsPopover": {
@@ -16470,6 +16473,9 @@
         },
         "publishedLinks": {
           "label": "Enlaces publicados"
+        },
+        "skills": {
+          "label": "Habilidades"
         }
       }
     },
@@ -16809,6 +16815,9 @@
         },
         "publishedLinks": {
           "label": "Enlaces publicados"
+        },
+        "skills": {
+          "label": "Habilidades"
         }
       },
       "sections": {
@@ -17052,7 +17061,8 @@
           "placeholder": "Nombra tu habilidad",
           "title": "Nombre"
         },
-        "title": "Detalles"
+        "title": "Detalles",
+        "chatDescription": "Define cuándo y cómo el chat debe usar esta habilidad."
       },
       "files": {
         "busyLabel": "Subiendo...",
@@ -17098,7 +17108,8 @@
         "description": "Escribe el comportamiento y el flujo de trabajo que esta habilidad agrega a Craft.",
         "emptyFallback": "Aún no hay instrucciones.",
         "placeholder": "Escribe las instrucciones de la habilidad.",
-        "title": "Instrucciones"
+        "title": "Instrucciones",
+        "chatDescription": "Escribe el comportamiento y el flujo de trabajo que esta habilidad agrega al chat."
       },
       "loadError": {
         "description": "Es posible que esta habilidad no exista, sea integrada o no pueda editarse con tu cuenta.",
@@ -17399,7 +17410,8 @@
       },
       "header": {
         "description": "Paquetes de capacidades que tu agente de Craft puede utilizar. Esta página muestra las habilidades integradas, las compartidas contigo y tus habilidades personales.",
-        "title": "Habilidades"
+        "title": "Habilidades",
+        "chatDescription": "Instrucciones que el chat sigue para un tipo de tarea. Esta página muestra las habilidades integradas, las compartidas contigo y tus propias habilidades. Activa una habilidad para que el chat pueda usarla."
       },
       "loadError": {
         "description": "Revisa la consola para más detalles e intenta actualizar la página.",

@@ -470,6 +470,21 @@ describe("SkillEditorPage", () => {
     );
   });
 
+  it("returns settings skill creation to the settings library with chat copy", async () => {
+    const user = setupUser();
+
+    render(<SkillEditorPage library="userSettings" />);
+    expect(
+      screen.getByText("Define when and how chat should use this skill.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Define when and how Craft should use this skill.")
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(mockRouterPush).toHaveBeenCalledWith("/app/settings/skills");
+  });
+
   it("keeps sharing in the header without a management section", () => {
     const skill = existingSkill({
       is_personal: false,

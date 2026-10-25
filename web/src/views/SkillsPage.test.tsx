@@ -7,7 +7,7 @@ import {
   waitFor,
 } from "@tests/setup/test-utils";
 import SkillsPage from "@/views/SkillsPage";
-import type { CustomSkill, SkillsList } from "@/lib/skills/types";
+import type { BuiltinSkill, CustomSkill, SkillsList } from "@/lib/skills/types";
 
 const mockSetSkillEnabled = jest.fn();
 const mockDeleteUserSkill = jest.fn();
@@ -643,5 +643,59 @@ describe("SkillsPage preference toggles", () => {
     expect(
       screen.getByRole("switch", { name: "other-skill" })
     ).toBeInTheDocument();
+  });
+});
+
+describe("SkillsPage in the chat settings library", () => {
+  function builtinSkill(id: string, name: string): BuiltinSkill {
+    return {
+      ...customSkill(id, name),
+      source: "builtin",
+      is_available: true,
+      enabled: true,
+    };
+  }
+
+  beforeEach(() => {
+    mockUseUserSkills.mockImplementation(() => ({
+      data: {
+        builtins: [builtinSkill("pptx-id", "pptx")],
+        customs: [customSkill("custom-id", "brand-voice")],
+      },
+      error: undefined,
+      isLoading: false,
+      refresh: mockRefresh,
+    }));
+    mockRouterPush.mockReset();
+    mockSearchParamsGet.mockReset();
+    mockSearchParamsGet.mockReturnValue(null);
+    mockStageSkillCreationDraft.mockReset();
+    mockStageSkillCreationDraft.mockReturnValue("draft-id");
+  });
+
+  it("shows built-in and custom skills with chat copy instead of Craft copy", () => {
+    render(<SkillsPage library="userSettings" />);
+
+    expect(screen.getByRole("switch", { name: "pptx" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("switch", { name: "brand-voice" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Instructions that chat follows for a type of task/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Craft agent/)).not.toBeInTheDocument();
+  });
+
+  it("routes create and upload to the settings editor", async () => {
+    const user = setupUser();
+    render(<SkillsPage library="localSettings" />);
+
+    await user.click(screen.getByRole("button", { name: "Create skill" }));
+    await user.click(screen.getAllByText("Upload a skill")[0]!);
+    await user.click(screen.getByRole("button", { name: "Continue upload" }));
+
+    expect(mockRouterPush).toHaveBeenCalledWith(
+      "/admin/settings/skills/new?draft=draft-id"
+    );
   });
 });

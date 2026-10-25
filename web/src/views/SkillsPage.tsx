@@ -48,12 +48,19 @@ import {
   setSkillEnabled,
 } from "@/lib/skills/api";
 import { useSettings } from "@/lib/settings/hooks";
+import { SKILL_LIBRARY_ROUTES, type SkillLibraryId } from "@/lib/skills/routes";
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-export default function SkillsPage() {
+interface SkillsPageProps {
+  /** Which library this page serves. Defaults to Craft. */
+  library?: SkillLibraryId;
+}
+
+export default function SkillsPage({ library = "craft" }: SkillsPageProps) {
+  const routes = SKILL_LIBRARY_ROUTES[library];
   const t = useTranslations("skills");
   const { appName } = useSettings();
   const router = useRouter();
@@ -131,7 +138,7 @@ export default function SkillsPage() {
   }
 
   function handleEdit(item: CustomSkillCardItem) {
-    router.push(`/craft/v1/skills/edit/${item.id}`);
+    router.push(routes.edit(item.id));
   }
 
   async function updateSkillEnabled(
@@ -343,7 +350,11 @@ export default function SkillsPage() {
       <SettingsLayouts.Header
         icon={SvgBlocks}
         title={t("page.header.title")}
-        description={t("page.header.description")}
+        description={
+          routes.context === "chat"
+            ? t("page.header.chatDescription")
+            : t("page.header.description")
+        }
         actions={[
           <Dropdown
             key="primary"
@@ -366,7 +377,7 @@ export default function SkillsPage() {
                   description: t("page.createMenu.scratch.description", {
                     appName,
                   }),
-                  onSelect: () => router.push("/craft/v1/skills/new"),
+                  onSelect: () => router.push(routes.create),
                 },
                 {
                   kind: "action",
@@ -407,7 +418,7 @@ export default function SkillsPage() {
               appName: focusedAppName,
             })}
             rightChildren={
-              <Button prominence="secondary" href="/craft/v1/skills">
+              <Button prominence="secondary" href={routes.library}>
                 {t("page.focusedApp.showAll.label")}
               </Button>
             }
@@ -496,7 +507,7 @@ export default function SkillsPage() {
         onContinue={(draft) => {
           const draftId = stageSkillCreationDraft(draft);
           setCreateOpen(false);
-          router.push(`/craft/v1/skills/new?draft=${draftId}`);
+          router.push(routes.createFromDraft(draftId));
         }}
       />
 

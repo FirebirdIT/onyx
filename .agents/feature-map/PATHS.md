@@ -61,6 +61,7 @@ here. Read the component that documents the setting in its env table.
 | `backend/onyx/tools/tool_implementations/file_reader/` | file-store-and-user-files |
 | `backend/onyx/tools/tool_implementations/publish_html/` | file-store-and-user-files, tools-framework |
 | `backend/onyx/tools/tool_implementations/office/` | tools-framework |
+| `backend/onyx/tools/tool_implementations/skills/` | skills, tools-framework |
 | `backend/onyx/tools/tool_implementations/coding_agent/`, `backend/onyx/coding_agent/` | craft-sessions, tools-framework |
 | `backend/onyx/tools/fake_tools/`, `backend/onyx/deep_research/` | tools-framework |
 
@@ -227,6 +228,7 @@ so verify the callers rather than a single component.
 | `web/src/views/admin/DecisionModelSetting.tsx`, `backend/onyx/llm/decisions/` | llm-providers |
 | `web/src/sections/modals/languageModels/DecisionProviderModal.tsx` | llm-providers |
 | `web/src/lib/publishedArtifacts/`, `web/src/sections/modals/PublishArtifactModal.tsx`, `web/src/app/app/settings/published-links/` | file-store-and-user-files |
+| `web/src/views/SkillsPage.tsx`, `web/src/views/SkillEditorPage.tsx`, `web/src/lib/skills/`, `web/src/app/app/settings/skills/`, `web/src/app/admin/settings/skills/` | skills |
 | `web/src/app/admin/plugins/`, `web/src/app/admin/mcp-actions/`, `admin/openapi-actions/` | mcp-and-custom-tools |
 | `web/src/sections/plugins/`, `web/src/lib/plugins/`, `web/src/sections/actions/modals/MCPPluginSetupModal.tsx` | mcp-and-custom-tools |
 | `web/src/sections/actions/`, `web/src/lib/mcp/`, `web/src/app/mcp/oauth/` | mcp-and-custom-tools |

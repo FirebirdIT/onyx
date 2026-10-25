@@ -57,7 +57,7 @@ settings and backup pages copy the web app token values into `src/style.css`
 and use the login page's card, logo mark, field and button styles. The backend gets
 `ONYX_VERSION` from the bundle version, which the app footer shows. In the web app
 the admin area is the one Settings place on this engine: a "You" group (General,
-Personalization, Account, Published Links; `web/src/app/admin/settings/`) comes
+Personalization, Account, Published Links, Skills; `web/src/app/admin/settings/`) comes
 before the app pages, and the footer link reads "Back to Chat".
 The app also checks for updates from the hub and makes encrypted backups of
 the engine database (`desktop/src-tauri/src/backup/`). Around the web app it
