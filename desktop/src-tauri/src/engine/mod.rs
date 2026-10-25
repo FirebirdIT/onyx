@@ -1,8 +1,7 @@
 //! The local Deep X engine. It runs as processes on this computer, with no
-//! Docker (see `native/`). Only macOS has engine bundles for now.
+//! Docker (see `native/`). macOS and 64-bit Intel Windows have engine bundles.
 
 pub mod commands;
-#[cfg(unix)]
 pub mod native;
 pub mod secrets;
 
@@ -47,44 +46,28 @@ pub struct EngineStatus {
 
 /// True when this computer can run the engine.
 pub const fn is_supported() -> bool {
-    cfg!(target_os = "macos")
+    native::bundle::current_platform().is_some()
 }
 
 /// Start the engine and wait until it answers.
 pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
-    #[cfg(unix)]
     if is_supported() {
         return native::start(app, config).await;
     }
-    let _ = (app, config);
     Err(UNSUPPORTED.to_string())
 }
 
 /// Stop every engine process. The data stays.
 pub async fn stop(app: &AppHandle) -> Result<(), String> {
-    #[cfg(unix)]
-    return native::stop(app).await;
-    #[cfg(not(unix))]
-    {
-        let _ = app;
-        Ok(())
-    }
+    native::stop(app).await
 }
 
+#[allow(clippy::unnecessary_wraps)]
 pub async fn status() -> Result<EngineStatus, String> {
-    #[cfg(unix)]
-    return Ok(native::status().await);
-    #[cfg(not(unix))]
-    Ok(EngineStatus {
-        running: false,
-        services: Vec::new(),
-    })
+    Ok(native::status().await)
 }
 
 /// Stop the engine before the app exits. Blocks for at most `timeout`.
 pub fn stop_blocking(timeout: Duration) {
-    #[cfg(unix)]
     native::stop_blocking(timeout);
-    #[cfg(not(unix))]
-    let _ = timeout;
 }
