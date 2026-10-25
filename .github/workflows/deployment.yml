@@ -8,6 +8,8 @@ on:
       - "!deepx-v*"
       # Deep X desktop tags build in deepx-desktop-release.yml.
       - "!desktop-v*"
+      # Deep X native engine tags build in deepx-native-engine.yml.
+      - "!native-v*"
   workflow_dispatch:
 
 # Set restrictive default permissions for all jobs. Jobs that need more permissions
