@@ -174,6 +174,7 @@ so verify the callers rather than a single component.
 | `backend/onyx/voice/`, `server/manage/voice/`, `db/voice.py` | voice |
 | `backend/onyx/image_gen/`, `server/features/image_generation/`, `server/manage/image_generation/`, `db/image_generation.py` | image-generation |
 | `backend/onyx/db/code_interpreter.py`, `server/manage/code_interpreter/` | code-execution |
+| `backend/onyx/deepx/code_runner/` | code-execution |
 | `backend/onyx/llm/`, `server/manage/llm/`, `db/llm.py` | llm-providers |
 | `backend/onyx/deepx/` | llm-providers, image-generation, agents-personas |
 

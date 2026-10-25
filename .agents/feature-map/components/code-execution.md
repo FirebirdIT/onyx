@@ -126,6 +126,24 @@ not an application-level control enforced by `PythonTool`, `BashTool`, or
 `CodeInterpreterClient`. Nothing in `backend/onyx` verifies that the service actually
 sandboxes execution; Onyx trusts the URL configured in `CODE_INTERPRETER_BASE_URL`.
 
+**Deep X local code runner.** `backend/onyx/deepx/code_runner/` is one implementation of that
+service, for the Deep X desktop engine with no Docker (`python -m onyx.deepx.code_runner`).
+It serves the API at level `0.4.0` (`config.py:API_VERSION`), so sessions and `bash` work.
+The backend does not use it unless `CODE_INTERPRETER_BASE_URL` points to it. Each job runs
+inside Anthropic's sandbox-runtime (`srt`, set by `DEEPX_CODE_RUNNER_SRT_COMMAND`):
+- **Files:** a job cannot read under `DEEPX_CODE_RUNNER_DENY_READ` (the home folder by
+  default). The exceptions are its own job folder and the job Python's folders
+  (`sandbox.py:python_roots`). It can write only to its job folders, and its temp folder
+  is a short `/tmp/deepx-job-*` folder, because `srt` puts its proxy socket there.
+- **Network:** a job has no network.
+- **Limits:** `run_in_sandbox` enforces the time limit, and `_watch_memory` stops the
+  job's process group when its RSS goes over `DEEPX_CODE_RUNNER_MAX_MEMORY_MB`.
+- **Output files:** `workspace.py:collect_outputs` returns only new or changed regular
+  files, and skips symlinks, so a job cannot use a link to copy out a user file.
+
+The runner builds the matplotlib font cache once, at startup, and copies it into each job.
+It does not support Windows yet.
+
 ### 4.2 `run_python`: call chain
 
 ```
@@ -337,6 +355,7 @@ cd backend && uv run pytest tests/unit/onyx/tools/tool_implementations/bash/test
 cd backend && uv run pytest tests/unit/onyx/tools/test_coding_agent_repo_setup.py
 
 # External dependency unit: talks to a real/near-real Code Interpreter service
+# (test_code_runner.py runs the Deep X runner; set DEEPX_TEST_SRT_COMMAND and DEEPX_TEST_JOB_PYTHON)
 cd backend && uv run pytest tests/external_dependency_unit/tools/test_python_tool.py
 cd backend && uv run pytest tests/external_dependency_unit/tools/test_python_tool_server_enabled.py
 
