@@ -1,0 +1,7 @@
+# Packages that the Intel (x86_64) bundle installs in place of the uv.lock versions.
+# cryptography 49 and newer publish no Intel macOS wheels, so the Intel bundle uses
+# 48.0.1 (universal2), and pyOpenSSL 26.2.0, the newest that accepts it.
+cryptography==48.0.1 \
+    --hash=sha256:3e4a1a3232eef2e6c732827d5722db29a0cc8b27af2a4d865b094cf954be9ca1
+pyopenssl==26.2.0 \
+    --hash=sha256:4f9d971bc5298b8bc1fab282803da04bf000c755d4ad9d99b52de2569ca19a70

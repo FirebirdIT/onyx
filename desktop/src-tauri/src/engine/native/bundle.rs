@@ -128,10 +128,12 @@ fn is_sha256_hex(value: &str) -> bool {
 pub fn parse_release(body: &str, platform: &str) -> Result<Release, String> {
     let parsed: HubNativeResponse =
         serde_json::from_str(body).map_err(|e| format!("Hub engine answer is not valid: {e}"))?;
-    let entry = parsed
-        .platforms
-        .get(platform)
-        .ok_or_else(|| format!("The hub has no native engine for {platform}"))?;
+    let entry = parsed.platforms.get(platform).ok_or_else(|| {
+        format!(
+            "Deep X has no engine for this computer ({platform}) yet. \
+                 Use a Deep X server: enter its address in Settings."
+        )
+    })?;
     if !is_valid_version(&parsed.version)
         || !entry.url.starts_with("https://")
         || !is_sha256_hex(&entry.sha256)
