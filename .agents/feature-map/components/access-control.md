@@ -64,7 +64,7 @@ and §9).
 |---|---|
 | `web/src/app/admin/groups/`, `admin/groups2/` | User group management (create, rename, membership, agents). Two generations of the same UI coexist; both call the same backend. |
 | `web/src/app/admin/documents/sets` | Document set management. |
-| `web/src/app/admin/users/` | User list, role assignment. The sidebar hides it when `/api/settings` returns `deepx_local_engine` true (`DEEPX_LOCAL_ENGINE`, set by the Deep X desktop app), because one person uses that engine. |
+| `web/src/app/admin/users/` | User list, role assignment. The sidebar hides it when `/api/settings` returns `deepx_local_engine` true (`DEEPX_LOCAL_ENGINE`, set by the Deep X desktop app), because one person uses that engine. Groups, SCIM and SSO Providers are hidden the same way. |
 | `web/src/views/admin/ScimPage/` | SCIM provisioning config (`ScimSyncCard.tsx`, `svc.ts`). |
 
 ### Backend endpoints

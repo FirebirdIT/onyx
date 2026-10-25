@@ -29,7 +29,11 @@ with `docker compose -p deepx` (`desktop/src-tauri/src/engine/`). After a
 successful start it removes `ghcr.io/firebirdit/deepx-*` images that the current
 engine does not use (`engine/images.rs:remove_old_engine_images`). It never
 removes other Docker images. The engine `.env` sets `DEEPX_LOCAL_ENGINE=true`, so
-the web app hides team pages such as Users. Then the window opens `http://localhost:3000`. A remote server is a Settings option.
+the web app hides admin pages that one person does not need
+(`notLocal` in `web/src/lib/admin-routes.ts`): Users, Groups, SCIM, SSO, Security &
+Hardening, Theming, Billing and Upgrade Plan, Service Accounts, Slack, Discord, Hook
+Extensions, LLM Gateway, Decision Models, Usage, Analytics, Query History, Tracing
+and Export Logs. The pages still open from their URL. Then the window opens `http://localhost:3000`. A remote server is a Settings option.
 The app also checks for updates from the hub and makes encrypted backups of
 the engine database (`desktop/src-tauri/src/backup/`). Around the web app it
 is a small native shell: a custom
