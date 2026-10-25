@@ -7,36 +7,55 @@
   src: url("fonts/HankenGrotesk-latin.woff2") format("woff2");
 }
 
-/* Shared styles for the local Deep X pages (setup, settings, backup). */
+/* Shared styles for the local Deep X pages (setup, settings, backup). The
+   values copy the web app tokens (web/lib/shared/tokens, src/app/css/brand.css)
+   so these pages look like the app's login page. */
 :root {
-  --background-900: #f5f5f5;
-  --background-800: #ffffff;
-  --text-05: rgba(0, 0, 0, 0.95);
-  --text-03: rgba(0, 0, 0, 0.6);
-  --line-10: rgba(0, 0, 0, 0.1);
-  --line-15: rgba(0, 0, 0, 0.15);
-  --line-30: rgba(0, 0, 0, 0.3);
-  --brand: #0a4d6b;
-  --brand-hover: #083d55;
-  --danger: #dc2626;
-  --ok: #15803d;
+  --background-page: #fafafa; /* background-neutral-01 */
+  --background-card: #ffffff; /* background-neutral-00 */
+  --background-tint-01: #fafafa;
+  --background-tint-02: #f0f0f1;
+  --background-disabled: #cccccc; /* background-neutral-04 */
+  --border-01: #e6e6e6;
+  --border-02: #cccccc;
+  --text-05: #000000e5;
+  --text-04: #000000bf;
+  --text-03: #0000008c;
+  --text-02: #00000073;
+  --text-inverted-05: #fffffff2;
+  --text-inverted-04: #ffffffd9;
+  --primary-04: #1f6f94;
+  --primary-05: #0a4d6b;
+  --primary-06: #083d55;
+  --error: #dc2626;
+  --success: #00a43f;
+  --shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --font:
     "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
 }
 
 .dark {
-  --background-900: #1a1a1a;
-  --background-800: #262626;
-  --text-05: rgba(255, 255, 255, 0.95);
-  --text-03: rgba(255, 255, 255, 0.6);
-  --line-10: rgba(255, 255, 255, 0.08);
-  --line-15: rgba(255, 255, 255, 0.12);
-  --line-30: rgba(255, 255, 255, 0.25);
-  --brand: #2a8bb5;
-  --brand-hover: #3a9bc5;
-  --danger: #f87171;
-  --ok: #4ade80;
+  --background-page: #19191e; /* background-tint-01 */
+  --background-card: #000000;
+  --background-tint-01: #19191e;
+  --background-tint-02: #26262b;
+  --background-disabled: #404040;
+  --border-01: #333333;
+  --border-02: #555555;
+  --text-05: #fffffff2;
+  --text-04: #ffffffd9;
+  --text-03: #ffffff99;
+  --text-02: #ffffff73;
+  --text-inverted-05: #000000e5;
+  --text-inverted-04: #000000bf;
+  --primary-04: #5aa9cf;
+  --primary-05: #7cc0e0;
+  --primary-06: #a6d5ea;
+  --error: #f87171;
+  --success: #4ade80;
+  color-scheme: dark;
 }
 
 * {
@@ -47,19 +66,19 @@
 
 body {
   font-family: var(--font);
-  background: linear-gradient(
-    135deg,
-    var(--background-900) 0%,
-    var(--background-800) 100%
-  );
+  background: var(--background-page);
   min-height: 100vh;
   color: var(--text-05);
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 40px 20px 20px;
+  padding: 56px 20px 32px;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary-05) 25%, transparent);
 }
 
 .titlebar {
@@ -73,41 +92,41 @@ body {
   z-index: 10000;
 }
 
-.panel {
-  max-width: 540px;
+/* ---- Card ---------------------------------------------------------------- */
+
+.card {
   width: 100%;
-  background: var(--background-800);
+  max-width: 448px;
+  background: var(--background-card);
   border-radius: 16px;
-  border: 1px solid var(--line-10);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  /* Auto margins centre a short card and let a tall one scroll from its top. */
+  margin-block: auto;
 }
 
-.panel-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--line-10);
+.dark .card {
+  border: 1px solid var(--border-01);
+}
+
+.card-top {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.panel-header img {
-  width: 36px;
-  height: 36px;
+.logo {
+  width: 44px;
+  height: 44px;
+  color: var(--primary-05);
 }
 
-.panel-title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.panel-subtitle {
-  font-size: 12px;
+.step {
+  font-size: 14px;
+  line-height: 20px;
   color: var(--text-03);
-}
-
-.panel-body {
-  padding: 24px;
+  font-variant-numeric: tabular-nums;
 }
 
 .view {
@@ -118,34 +137,61 @@ body {
   display: block;
 }
 
-h2 {
-  font-size: 16px;
+h1 {
+  font-size: 24px;
+  line-height: 36px;
   font-weight: 600;
-  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lead {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-03);
+  margin-top: 2px;
+}
+
+.content {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 p,
 .hint {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 20px;
   color: var(--text-03);
-  margin-bottom: 12px;
 }
 
-.step-label {
-  font-size: 11px;
+/* ---- Sections (settings) ------------------------------------------------- */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section + .section {
+  margin-top: 12px;
+}
+
+h2 {
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-03);
-  margin-bottom: 6px;
+  color: var(--text-04);
 }
 
 .group {
-  background: var(--background-900);
+  border: 1px solid var(--border-01);
   border-radius: 12px;
   padding: 12px;
-  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .row {
@@ -153,102 +199,161 @@ p,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 0;
+  min-height: 24px;
 }
 
 .row-label {
   font-size: 14px;
+  line-height: 20px;
+  color: var(--text-04);
 }
 
-.option {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line-10);
-  margin-bottom: 8px;
-  cursor: pointer;
-}
-
-.option input {
-  margin-top: 3px;
-}
-
-.option strong {
-  display: block;
+.row-value {
   font-size: 14px;
-  font-weight: 600;
+  line-height: 20px;
+  color: var(--text-03);
 }
 
-.option span {
-  font-size: 12px;
-  color: var(--text-03);
+/* ---- Fields -------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--text-04);
+  padding-inline: 2px;
 }
 
 input[type="text"],
 input[type="password"],
-input[type="email"],
-select {
+input[type="email"] {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--line-15);
+  height: 38px;
+  padding: 0 8px;
+  border: 1px solid var(--border-01);
   border-radius: 8px;
   font-size: 14px;
-  background: var(--background-800);
-  color: var(--text-05);
+  background: var(--background-card);
+  color: var(--text-04);
+  caret-color: var(--primary-05);
   font-family: var(--font);
   -webkit-user-select: text;
   user-select: text;
-  margin-bottom: 10px;
 }
 
-input:focus,
-select:focus {
+input::placeholder {
+  color: var(--text-02);
+}
+
+input:hover {
+  border-color: var(--border-02);
+}
+
+input:focus {
   outline: none;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent);
+  border-color: var(--primary-05);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-05) 20%, transparent);
 }
 
-button:focus-visible,
-a:focus-visible,
-input[type="checkbox"]:focus-visible,
-input[type="radio"]:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-05);
 }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-02);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-01);
+}
+
+/* ---- Buttons ------------------------------------------------------------- */
 
 .buttons {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 8px;
+}
+
+.buttons.stack {
+  flex-direction: column;
 }
 
 button {
-  padding: 10px 18px;
-  border-radius: 8px;
-  border: 1px solid var(--line-15);
-  background: var(--background-800);
-  color: var(--text-05);
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-01);
+  background: var(--background-tint-01);
+  color: var(--text-04);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  line-height: 20px;
+  font-weight: 500;
   font-family: var(--font);
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+button:hover:not(:disabled) {
+  background: var(--background-tint-02);
 }
 
 button.primary {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
+  background: var(--primary-05);
+  border-color: transparent;
+  color: var(--text-inverted-05);
 }
 
-button.primary:hover {
-  background: var(--brand-hover);
+button.primary:hover:not(:disabled) {
+  background: var(--primary-04);
+}
+
+button.primary:active:not(:disabled) {
+  background: var(--primary-06);
+}
+
+button.primary:disabled {
+  background: var(--background-disabled);
+  color: var(--text-inverted-04);
+  opacity: 1;
+}
+
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-03);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--background-tint-02);
+  color: var(--text-04);
 }
 
 button.danger {
-  color: var(--danger);
+  color: var(--error);
+}
+
+button.block {
+  width: 100%;
 }
 
 button:disabled {
@@ -256,11 +361,19 @@ button:disabled {
   cursor: not-allowed;
 }
 
+button:focus-visible,
+a:focus-visible,
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--primary-05);
+  outline-offset: 2px;
+}
+
+/* ---- Messages, log and progress ------------------------------------------ */
+
 .message {
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 8px 0;
-  min-height: 1em;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-03);
 }
 
 /* An empty message line leaves no gap above the buttons. */
@@ -269,21 +382,22 @@ button:disabled {
 }
 
 .message.error {
-  color: var(--danger);
+  color: var(--error);
 }
 
 .message.ok {
-  color: var(--ok);
+  color: var(--success);
 }
 
 .log {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  line-height: 1.5;
-  background: var(--background-900);
+  line-height: 16px;
+  background: var(--background-tint-01);
+  border: 1px solid var(--border-01);
   border-radius: 8px;
   padding: 10px;
-  height: 180px;
+  height: 160px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
@@ -292,18 +406,38 @@ button:disabled {
   user-select: text;
 }
 
+.log:empty {
+  display: none;
+}
+
+.boot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+
 .spinner {
-  width: 22px;
-  height: 22px;
-  border: 3px solid var(--line-15);
-  border-top-color: var(--brand);
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-01);
+  border-top-color: var(--primary-05);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
-  margin: 8px auto 16px;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+  button {
+    transition: none;
   }
 }

@@ -9,130 +9,152 @@
   <body>
     <div class="titlebar"></div>
 
-    <div class="panel">
-      <div class="panel-header">
-        <img src="deepx.svg" alt="" />
-        <div>
-          <div class="panel-title" id="panelTitle">Deep X</div>
-          <div class="panel-subtitle" id="panelSubtitle"></div>
-        </div>
+    <main class="card">
+      <div class="card-top">
+        <svg class="logo" viewBox="0 0 32 32" fill="none" aria-label="Deep X">
+          <path
+            d="M5 5h5l12 22h5M5 27h5L22 5h5"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span class="step" id="stepText"></span>
       </div>
 
-      <div class="panel-body">
-        <!-- Startup -->
-        <section class="view" id="view-boot">
-          <div class="spinner"></div>
-          <p id="bootText" style="text-align: center">Opening Deep X</p>
-        </section>
-
-        <!-- Step 1: Deep X Route -->
-        <section class="view" id="view-route">
-          <div class="step-label" id="routeStepLabel">Step 1 of 2</div>
-          <h2>Connect Deep X Route</h2>
-          <p>Deep X uses Deep X Route for the AI models. Chat needs a key.</p>
-          <div id="signInBlock" style="display: none">
-            <div class="buttons" style="margin-bottom: 12px">
-              <button class="primary" id="signInBtn">
-                Sign in with Deep X Route
-              </button>
-              <button id="signInCancelBtn" style="display: none">Cancel</button>
-            </div>
-            <p class="hint">Or paste an API key:</p>
+      <!-- Startup -->
+      <section class="view" id="view-boot">
+        <h1>Deep X</h1>
+        <div class="content">
+          <div class="boot">
+            <div class="spinner"></div>
+            <p id="bootText">Opening Deep X</p>
           </div>
-          <input
-            type="password"
-            id="keyInput"
-            placeholder="sk-dxr-..."
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <div class="message" id="routeMessage"></div>
-          <div class="buttons">
-            <button class="primary" id="keySaveBtn">Save key</button>
-            <button id="routeSkipBtn">Skip for now</button>
-          </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Step 2 and later starts: engine progress -->
-        <section class="view" id="view-start">
-          <div class="step-label" id="startStepLabel">Step 2 of 2</div>
-          <h2>Starting the engine</h2>
-          <p id="startHint">
-            The first start downloads the engine. This can take 10 minutes or
-            more on a slow connection.
-          </p>
-          <div class="log" id="startLog"></div>
-          <div class="message" id="startMessage"></div>
-          <div class="buttons">
-            <button class="primary" id="startRetryBtn" style="display: none">
-              Try again
+      <!-- Step 1: Deep X Route -->
+      <section class="view" id="view-route">
+        <h1>Connect Deep X Route</h1>
+        <p class="lead">Deep X uses Deep X Route for its AI models.</p>
+        <div class="content">
+          <div class="buttons stack" id="signInBlock" style="display: none">
+            <button class="primary block" id="signInBtn">
+              Sign in with Deep X Route
             </button>
-            <button id="startSettingsBtn" style="display: none">
-              Settings
+            <button class="ghost block" id="signInCancelBtn" style="display: none">
+              Cancel
             </button>
+            <div class="divider">or paste an API key</div>
           </div>
-        </section>
-
-        <!-- Settings -->
-        <section class="view" id="view-settings">
-          <div class="step-label">Engine</div>
-          <div class="group">
-            <div class="row">
-              <span class="row-label">Status</span>
-              <span class="hint" id="engineStatus" style="margin: 0"
-                >Unknown</span
-              >
-            </div>
-            <div class="row">
-              <label class="row-label" for="stopOnQuit"
-                >Stop the engine when Deep X quits</label
-              >
-              <input type="checkbox" id="stopOnQuit" />
-            </div>
-            <div class="buttons">
-              <button id="engineStartBtn">Start</button>
-              <button id="engineStopBtn">Stop</button>
-              <button id="engineRestartBtn">Restart</button>
-            </div>
-          </div>
-
-          <div class="step-label">Deep X Route</div>
-          <div class="group">
-            <div class="row">
-              <span class="row-label">API key</span>
-              <span class="hint" id="keyStatus" style="margin: 0">Unknown</span>
-            </div>
-            <div class="buttons">
-              <button id="reconnectBtn">Connect again</button>
-              <button class="danger" id="forgetKeyBtn">Remove key</button>
-            </div>
-          </div>
-
-          <div class="step-label">Server</div>
-          <div class="group">
-            <p class="hint" id="serverHint">
-              Deep X uses the engine on this computer.
-            </p>
+          <div class="field">
+            <label for="keyInput">API Key</label>
             <input
-              type="text"
-              id="serverInput"
-              placeholder="https://deepx.example.com"
+              type="password"
+              id="keyInput"
+              placeholder="sk-dxr-..."
               autocomplete="off"
               spellcheck="false"
             />
-            <div class="buttons">
-              <button id="serverSaveBtn">Use this server</button>
-              <button id="useLocalBtn">Use the engine on this computer</button>
+          </div>
+          <div class="message" id="routeMessage"></div>
+          <div class="buttons stack">
+            <button class="primary block" id="keySaveBtn">Save key</button>
+            <button class="ghost block" id="routeSkipBtn">Skip for now</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2 and later starts: engine progress -->
+      <section class="view" id="view-start">
+        <h1 id="startTitle">Starting Deep X</h1>
+        <p class="lead" id="startHint">
+          The first start downloads the engine. This can take 10 minutes or
+          more on a slow connection.
+        </p>
+        <div class="content">
+          <div class="boot" id="startBusy">
+            <div class="spinner"></div>
+            <p>Starting the engine</p>
+          </div>
+          <div class="log" id="startLog"></div>
+          <div class="message" id="startMessage"></div>
+          <div class="buttons stack">
+            <button class="primary block" id="startRetryBtn" style="display: none">
+              Try again
+            </button>
+            <button class="ghost block" id="startSettingsBtn" style="display: none">
+              Settings
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="view" id="view-settings">
+        <h1>Settings</h1>
+        <p class="lead" id="settingsVersion"></p>
+        <div class="content">
+          <div class="section">
+            <h2>Engine</h2>
+            <div class="group">
+              <div class="row">
+                <span class="row-label">Status</span>
+                <span class="row-value" id="engineStatus">Unknown</span>
+              </div>
+              <div class="row">
+                <label class="row-label" for="stopOnQuit"
+                  >Stop the engine when Deep X quits</label
+                >
+                <input type="checkbox" id="stopOnQuit" />
+              </div>
+              <div class="buttons">
+                <button id="engineStartBtn">Start</button>
+                <button id="engineStopBtn">Stop</button>
+                <button id="engineRestartBtn">Restart</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>Deep X Route</h2>
+            <div class="group">
+              <div class="row">
+                <span class="row-label">API key</span>
+                <span class="row-value" id="keyStatus">Unknown</span>
+              </div>
+              <div class="buttons">
+                <button id="reconnectBtn">Connect again</button>
+                <button class="danger" id="forgetKeyBtn">Remove key</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>Server</h2>
+            <div class="group">
+              <p id="serverHint">Deep X uses the engine on this computer.</p>
+              <input
+                type="text"
+                id="serverInput"
+                aria-label="Server address"
+                placeholder="https://deepx.example.com"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <div class="buttons">
+                <button id="serverSaveBtn">Use this server</button>
+                <button id="useLocalBtn">Use the engine on this computer</button>
+              </div>
             </div>
           </div>
 
           <div class="message" id="settingsMessage"></div>
-          <div class="buttons">
-            <button class="primary" id="openAppBtn">Open Deep X</button>
-          </div>
-        </section>
-      </div>
-    </div>
+          <button class="primary block" id="openAppBtn">Open Deep X</button>
+        </div>
+      </section>
+    </main>
 
     <script src="setup.js"></script>
   </body>

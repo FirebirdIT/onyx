@@ -7,42 +7,59 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="panel">
-      <div class="panel-header">
-        <img src="deepx.svg" alt="" />
-        <div>
-          <div class="panel-title" id="title">Back up Deep X</div>
-          <div class="panel-subtitle">Encrypted on this computer</div>
-        </div>
+    <main class="card">
+      <div class="card-top">
+        <svg class="logo" viewBox="0 0 32 32" fill="none" aria-label="Deep X">
+          <path
+            d="M5 5h5l12 22h5M5 27h5L22 5h5"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </div>
-      <div class="panel-body">
-        <p id="intro"></p>
-        <form id="form">
-          <input type="email" id="email" placeholder="Email" required />
+      <h1 id="title">Back up Deep X</h1>
+      <p class="lead" id="intro"></p>
+      <form class="content" id="form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+        <div class="field">
+          <label for="passphrase">Passphrase</label>
           <input
             type="password"
             id="passphrase"
-            placeholder="Backup passphrase (12 characters or more)"
+            placeholder="12 characters or more"
             autocomplete="new-password"
             required
           />
+        </div>
+        <div class="field" id="confirmField">
+          <label for="confirm">Confirm Passphrase</label>
           <input
             type="password"
             id="confirm"
             placeholder="Type the passphrase again"
             autocomplete="new-password"
           />
-          <div class="message" id="message"></div>
-          <div class="buttons">
-            <button class="primary" id="submitBtn" type="submit">
-              Back up now
-            </button>
-            <button id="closeBtn" type="button">Close</button>
-          </div>
-        </form>
-        <div class="log" id="log" style="display: none; margin-top: 12px"></div>
-      </div>
-    </div>
+        </div>
+        <div class="message" id="message"></div>
+        <div class="log" id="log" style="display: none"></div>
+        <div class="buttons stack">
+          <button class="primary block" id="submitBtn" type="submit">
+            Back up now
+          </button>
+          <button class="ghost block" id="closeBtn" type="button">Close</button>
+        </div>
+      </form>
+    </main>
     <script src="backup.js"></script>
   </body>
 </html>
