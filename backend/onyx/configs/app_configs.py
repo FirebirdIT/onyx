@@ -1712,6 +1712,9 @@ DEFAULT_LLM_OUTPUT_COST_PER_MTOK = max(
 CODE_INTERPRETER_BASE_URL = os.environ.get(
     "CODE_INTERPRETER_BASE_URL", "http://localhost:8000"
 )
+# Bearer token sent to the Code Interpreter service. The Deep X local code
+# runner requires it. Empty sends no token.
+CODE_INTERPRETER_API_TOKEN = os.environ.get("CODE_INTERPRETER_API_TOKEN", "")
 
 CODE_INTERPRETER_DEFAULT_TIMEOUT_MS = int(
     os.environ.get("CODE_INTERPRETER_DEFAULT_TIMEOUT_MS") or 60_000

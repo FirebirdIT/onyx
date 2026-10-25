@@ -19,6 +19,7 @@ import uvicorn
 
 from onyx.deepx.code_runner import config
 from onyx.deepx.code_runner.app import create_app
+from onyx.tools.tool_implementations.python import code_interpreter_client
 from onyx.tools.tool_implementations.python.code_interpreter_client import (
     CodeInterpreterClient,
     FileInput,
@@ -37,6 +38,7 @@ pytestmark = [
     pytest.mark.skipif(sys.platform == "win32", reason="POSIX only"),
 ]
 
+TOKEN = "test-runner-token"
 CSV = b"month,sales\nJan,10\nFeb,14\nMar,9\n"
 
 
@@ -52,6 +54,8 @@ def runner_url(tmp_path_factory: pytest.TempPathFactory) -> Generator[str, None,
     patch.setattr(config, "SRT_COMMAND", SRT_COMMAND.split())
     patch.setattr(config, "JOB_PYTHON", JOB_PYTHON)
     patch.setattr(config, "MAX_MEMORY_MB", 400)
+    patch.setattr(config, "API_TOKEN", TOKEN)
+    patch.setattr(code_interpreter_client, "CODE_INTERPRETER_API_TOKEN", TOKEN)
     port = _free_port()
     server = uvicorn.Server(
         uvicorn.Config(
@@ -208,3 +212,27 @@ def test_bash_session_keeps_files_and_has_no_network(runner_url: str) -> None:
         client.delete_session(session.session_id)
         with pytest.raises(requests.HTTPError):
             client.execute_bash_in_session(session.session_id, "true")
+
+
+def test_requests_without_the_token_are_refused(runner_url: str) -> None:
+    response = requests.get(f"{runner_url}/health", timeout=10)
+    assert response.status_code == 401
+    wrong = requests.get(
+        f"{runner_url}/health",
+        headers={"Authorization": "Bearer wrong"},
+        timeout=10,
+    )
+    assert wrong.status_code == 401
+
+
+def test_browser_requests_are_refused_even_with_the_token(runner_url: str) -> None:
+    response = requests.post(
+        f"{runner_url}/v1/execute",
+        json={"code": "print(1)"},
+        headers={
+            "Authorization": f"Bearer {TOKEN}",
+            "Origin": "https://evil.example",
+        },
+        timeout=10,
+    )
+    assert response.status_code == 403

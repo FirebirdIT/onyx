@@ -1,11 +1,12 @@
 """HTTP API of the local code runner."""
 
 import asyncio
-from collections.abc import AsyncIterator
+import hmac
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
 from onyx.deepx.code_runner import config
@@ -23,7 +24,11 @@ from onyx.deepx.code_runner.models import (
 )
 from onyx.deepx.code_runner.runner import Runner
 from onyx.error_handling.error_codes import OnyxErrorCode
-from onyx.error_handling.exceptions import OnyxError, register_onyx_exception_handlers
+from onyx.error_handling.exceptions import (
+    OnyxError,
+    onyx_error_to_json_response,
+    register_onyx_exception_handlers,
+)
 from onyx.utils.logger import setup_logger
 
 logger = setup_logger()
@@ -31,6 +36,24 @@ logger = setup_logger()
 
 def _sse(event: str, body: str) -> str:
     return f"event: {event}\ndata: {body}\n\n"
+
+
+async def _only_the_engine(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    # A browser sends Origin on every cross-site request. The backend never
+    # does, so this stops web pages that post to 127.0.0.1.
+    if "origin" in request.headers:
+        return onyx_error_to_json_response(
+            OnyxError(OnyxErrorCode.UNAUTHORIZED, "Browser requests are not allowed")
+        )
+    if config.API_TOKEN and not hmac.compare_digest(
+        request.headers.get("authorization", ""), f"Bearer {config.API_TOKEN}"
+    ):
+        return onyx_error_to_json_response(
+            OnyxError(OnyxErrorCode.UNAUTHENTICATED, "A valid token is required")
+        )
+    return await call_next(request)
 
 
 def create_app(data_dir: Path = config.DATA_DIR) -> FastAPI:
@@ -45,6 +68,8 @@ def create_app(data_dir: Path = config.DATA_DIR) -> FastAPI:
 
     app = FastAPI(title="Deep X code runner", lifespan=lifespan)
     register_onyx_exception_handlers(app)
+
+    app.middleware("http")(_only_the_engine)
 
     def runner() -> Runner:
         return runner_holder[0]

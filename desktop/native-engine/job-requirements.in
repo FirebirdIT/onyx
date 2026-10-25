@@ -1,0 +1,14 @@
+# Top-level libraries that code from chat can import in the native engine's code runner.
+numpy
+pandas
+matplotlib
+seaborn
+scipy
+openpyxl
+xlsxwriter
+python-docx
+python-pptx
+reportlab
+pillow
+pypdf
+tabulate

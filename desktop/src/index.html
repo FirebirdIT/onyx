@@ -29,9 +29,9 @@
           <p id="bootText" style="text-align: center">Opening Deep X</p>
         </section>
 
-        <!-- Step 1: Docker -->
+        <!-- Step 2: Docker (Docker modes only) -->
         <section class="view" id="view-docker">
-          <div class="step-label">Step 1 of 4</div>
+          <div class="step-label">Step 2 of 4</div>
           <h2>Docker</h2>
           <p>
             Deep X runs its engine on this computer with Docker Desktop. Your
@@ -45,14 +45,24 @@
           </div>
         </section>
 
-        <!-- Step 2: Mode -->
+        <!-- Step 1: Mode -->
         <section class="view" id="view-mode">
-          <div class="step-label">Step 2 of 4</div>
+          <div class="step-label">Step 1 of 4</div>
           <h2>Engine mode</h2>
-          <label class="option">
-            <input type="radio" name="mode" value="lite" checked />
+          <label class="option" id="nativeOption">
+            <input type="radio" name="mode" value="native" />
             <div>
-              <strong>Lite (recommended)</strong>
+              <strong>Without Docker (recommended)</strong>
+              <span
+                >Chat, files, projects and assistants. Deep X runs the engine
+                itself, so you do not need Docker Desktop.</span
+              >
+            </div>
+          </label>
+          <label class="option">
+            <input type="radio" name="mode" value="lite" />
+            <div>
+              <strong>Lite (Docker)</strong>
               <span
                 >Chat, files, projects and assistants. Uses approximately 2 GB
                 of memory.</span
@@ -62,7 +72,7 @@
           <label class="option">
             <input type="radio" name="mode" value="full" />
             <div>
-              <strong>Full</strong>
+              <strong>Full (Docker)</strong>
               <span
                 >Adds connectors (for example SharePoint) and document search.
                 Needs 16 GB of memory or more.</span
@@ -135,8 +145,11 @@
             <div class="row">
               <span class="row-label">Mode</span>
               <select id="modeSelect" style="width: auto; margin: 0">
-                <option value="lite">Lite</option>
-                <option value="full">Full</option>
+                <option value="native" id="nativeSelectOption">
+                  Without Docker
+                </option>
+                <option value="lite">Lite (Docker)</option>
+                <option value="full">Full (Docker)</option>
               </select>
             </div>
             <div class="row">

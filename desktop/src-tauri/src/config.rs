@@ -9,18 +9,44 @@ use std::path::PathBuf;
 use std::sync::{Mutex, RwLock};
 use url::Url;
 
-/// The local engine serves the app on this address.
-pub const DEFAULT_SERVER_URL: &str = "http://localhost:3000";
+/// The Docker engine serves the app on this address.
+pub const DOCKER_SERVER_URL: &str = "http://localhost:3000";
+/// The native engine serves the app on this address.
+pub const NATIVE_SERVER_URL: &str = "http://localhost:9999";
+/// The local engine address of the default engine mode.
+#[cfg(target_os = "macos")]
+pub const DEFAULT_SERVER_URL: &str = NATIVE_SERVER_URL;
+#[cfg(not(target_os = "macos"))]
+pub const DEFAULT_SERVER_URL: &str = DOCKER_SERVER_URL;
 pub const DEFAULT_HUB_URL: &str = "https://deepx-hub.vercel.app";
 const CONFIG_FILE_NAME: &str = "config.json";
 
-/// Which set of engine services runs. Lite is Postgres + API + web only.
+/// How the engine runs. Native runs the engine processes on this computer
+/// with no Docker (macOS only for now). Lite and Full use Docker: Lite is
+/// Postgres + API + web only, and Full adds connectors and search.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum EngineMode {
-    #[default]
+    #[cfg_attr(target_os = "macos", default)]
+    Native,
+    #[cfg_attr(not(target_os = "macos"), default)]
     Lite,
     Full,
+}
+
+impl EngineMode {
+    /// The address of the local engine in this mode.
+    pub const fn local_server_url(self) -> &'static str {
+        match self {
+            Self::Native => NATIVE_SERVER_URL,
+            Self::Lite | Self::Full => DOCKER_SERVER_URL,
+        }
+    }
+}
+
+/// True when `url` is the address of a local engine.
+pub fn is_local_server_url(url: &str) -> bool {
+    url == NATIVE_SERVER_URL || url == DOCKER_SERVER_URL
 }
 
 // Independent on/off settings read from config.json, not a state machine.
@@ -313,7 +339,8 @@ mod tests {
         let config = parse("{}");
         assert_eq!(config.server_url, DEFAULT_SERVER_URL);
         assert!(config.local_engine);
-        assert_eq!(config.engine_mode, EngineMode::Lite);
+        assert_eq!(config.engine_mode, EngineMode::default());
+        assert_eq!(config.engine_mode.local_server_url(), DEFAULT_SERVER_URL);
         assert!(!config.setup_complete);
         assert_eq!(config.hub_url, DEFAULT_HUB_URL);
         assert_eq!(config.deepx_route_client_id, "");
@@ -323,6 +350,17 @@ mod tests {
     fn engine_mode_uses_lowercase_names() {
         let config = parse(r#"{"engine_mode": "full"}"#);
         assert_eq!(config.engine_mode, EngineMode::Full);
+        let config = parse(r#"{"engine_mode": "native"}"#);
+        assert_eq!(config.engine_mode, EngineMode::Native);
+    }
+
+    #[test]
+    fn each_mode_has_its_local_address() {
+        assert_eq!(EngineMode::Native.local_server_url(), NATIVE_SERVER_URL);
+        assert_eq!(EngineMode::Lite.local_server_url(), DOCKER_SERVER_URL);
+        assert!(is_local_server_url(NATIVE_SERVER_URL));
+        assert!(is_local_server_url(DOCKER_SERVER_URL));
+        assert!(!is_local_server_url("https://deepx.example.com"));
     }
 
     #[test]

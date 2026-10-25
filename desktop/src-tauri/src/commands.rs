@@ -5,7 +5,6 @@
 
 use crate::config::{
     get_config_dir, get_config_path, save_config, AppConfig, ConfigState, EngineMode,
-    DEFAULT_SERVER_URL,
 };
 use crate::window::{build_and_setup_window, is_externally_openable, open_in_default_browser};
 use serde::Serialize;
@@ -69,6 +68,8 @@ pub struct BootstrapState {
     stop_engine_on_quit: bool,
     hub_url: String,
     app_version: String,
+    /// True where the engine can run without Docker.
+    native_supported: bool,
 }
 
 /// Get the config values that the setup and settings pages show.
@@ -90,6 +91,7 @@ pub fn get_bootstrap_state(
         stop_engine_on_quit: config.stop_engine_on_quit,
         hub_url: config.hub_url,
         app_version: app.package_info().version.to_string(),
+        native_supported: cfg!(target_os = "macos"),
     }
 }
 
@@ -104,7 +106,7 @@ pub fn set_server_url(state: tauri::State<ConfigState>, url: String) -> Result<S
     let url = url.trim_end_matches('/').to_string();
     // The default address is the local engine. Any other address is a remote
     // server, and then the app does not start the engine.
-    let local_engine = url == DEFAULT_SERVER_URL;
+    let local_engine = crate::config::is_local_server_url(&url);
     let config = state.update_and_persist(|c| {
         c.server_url = url;
         c.local_engine = local_engine;

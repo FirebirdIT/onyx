@@ -24,6 +24,11 @@ DATA_DIR = Path(
     or Path.home() / ".deepx" / "code-runner"
 )
 
+# Requests must send `Authorization: Bearer <token>`. The engine makes a random
+# token at each start and gives it to the backend as CODE_INTERPRETER_API_TOKEN.
+# Empty accepts requests with no token (tests only).
+API_TOKEN = os.environ.get("DEEPX_CODE_RUNNER_TOKEN", "")
+
 # The Python that runs the jobs. It has the data and office libraries.
 JOB_PYTHON = os.environ.get("DEEPX_CODE_RUNNER_PYTHON", "python3")
 

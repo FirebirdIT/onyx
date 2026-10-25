@@ -39,7 +39,7 @@
     window.location.href = bootstrap.server_url;
   }
 
-  // ---- Step 1: Docker -------------------------------------------------
+  // ---- Step 2: Docker (Docker modes only) ----------------------------
   async function checkDocker() {
     setMessage("dockerMessage", "Checking Docker");
     $("dockerCheckBtn").disabled = true;
@@ -51,7 +51,7 @@
       $("dockerGetBtn").style.display = check.installed ? "none" : "";
       if (check.running && check.compose) {
         setMessage("dockerMessage", check.message, "ok");
-        setTimeout(() => show("mode", "Setup"), 600);
+        setTimeout(() => showRoute("setup"), 600);
       } else {
         setMessage("dockerMessage", check.message, "error");
       }
@@ -62,11 +62,25 @@
     }
   }
 
-  // ---- Step 2: Mode ---------------------------------------------------
+  // ---- Step 1: Mode ---------------------------------------------------
+  function showMode() {
+    $("nativeOption").style.display = bootstrap.native_supported ? "" : "none";
+    const mode =
+      bootstrap.engine_mode === "native" && !bootstrap.native_supported
+        ? "lite"
+        : bootstrap.engine_mode;
+    const radio = document.querySelector(`input[name="mode"][value="${mode}"]`);
+    if (radio) radio.checked = true;
+    show("mode", "Setup");
+  }
+
   async function saveMode() {
     const mode = document.querySelector('input[name="mode"]:checked').value;
     await invoke("engine_set_mode", { mode });
-    await showRoute("setup");
+    bootstrap = await invoke("get_bootstrap_state");
+    if (mode === "native") return showRoute("setup");
+    show("docker", "Setup");
+    return checkDocker();
   }
 
   // ---- Step 3: Deep X Route --------------------------------------------
@@ -190,6 +204,7 @@
 
   async function showSettings(message) {
     bootstrap = await invoke("get_bootstrap_state");
+    $("nativeSelectOption").hidden = !bootstrap.native_supported;
     $("modeSelect").value = bootstrap.engine_mode;
     $("stopOnQuit").checked = bootstrap.stop_engine_on_quit;
     $("serverInput").value = bootstrap.local_engine ? "" : bootstrap.server_url;
@@ -270,10 +285,7 @@
     }
     if (window.location.hash === "#settings") return showSettings();
     if (!bootstrap.local_engine) return openRemote();
-    if (!bootstrap.setup_complete) {
-      show("docker", "Setup");
-      return checkDocker();
-    }
+    if (!bootstrap.setup_complete) return showMode();
     return startEngine();
   }
 
@@ -331,16 +343,12 @@
       await invoke("use_local_engine");
       bootstrap = await invoke("get_bootstrap_state");
       if (bootstrap.setup_complete) return startEngine();
-      show("docker", "Setup");
-      return checkDocker();
+      return showMode();
     });
     $("openAppBtn").addEventListener("click", async () => {
       bootstrap = await invoke("get_bootstrap_state");
       if (!bootstrap.local_engine) return openRemote();
-      if (!bootstrap.setup_complete) {
-        show("docker", "Setup");
-        return checkDocker();
-      }
+      if (!bootstrap.setup_complete) return showMode();
       return startEngine();
     });
   }

@@ -51,7 +51,12 @@ pub async fn engine_restart(app: AppHandle, lock: State<'_, EngineLock>) -> Resu
 #[tauri::command]
 pub fn engine_set_mode(state: State<ConfigState>, mode: EngineMode) -> Result<(), String> {
     state
-        .update_and_persist(|c| c.engine_mode = mode)
+        .update_and_persist(|c| {
+            c.engine_mode = mode;
+            if c.local_engine {
+                c.server_url = mode.local_server_url().to_string();
+            }
+        })
         .map(|_| ())
 }
 
@@ -67,7 +72,7 @@ pub fn engine_set_stop_on_quit(state: State<ConfigState>, enabled: bool) -> Resu
 pub fn use_local_engine(state: State<ConfigState>) -> Result<String, String> {
     let config = state.update_and_persist(|c| {
         c.local_engine = true;
-        c.server_url = crate::config::DEFAULT_SERVER_URL.to_string();
+        c.server_url = c.engine_mode.local_server_url().to_string();
     })?;
     state.set_config_initialized(true);
     Ok(config.server_url)
