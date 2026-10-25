@@ -29,6 +29,18 @@ pub struct NativeInput<'a> {
 
 type Env = Vec<(String, String)>;
 
+/// The read-only database role that the backend uses for knowledge graph
+/// views. Postgres keeps roles outside a dump, so an import makes it again.
+pub const READONLY_ROLE: &str = "db_readonly_user";
+
+/// The read-only role password: stable for the engine, but not the backend
+/// default "password". Hex only, so it is safe in SQL text.
+pub fn readonly_password(secrets: &EngineSecrets) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(format!("deepx-readonly:{}", secrets.postgres_password));
+    hex::encode(&digest[..16])
+}
+
 fn pairs(items: &[(&str, &str)]) -> Env {
     items
         .iter()
@@ -45,6 +57,8 @@ pub fn backend_env(input: &NativeInput<'_>) -> Env {
         ("POSTGRES_PORT", &input.ports.postgres.to_string()),
         ("POSTGRES_USER", POSTGRES_USER),
         ("POSTGRES_PASSWORD", &input.secrets.postgres_password),
+        ("DB_READONLY_USER", READONLY_ROLE),
+        ("DB_READONLY_PASSWORD", &readonly_password(input.secrets)),
         ("AUTH_TYPE", "basic"),
         ("USER_AUTH_SECRET", &input.secrets.user_auth_secret),
         ("PRODUCT_BRAND", "deepx"),
@@ -185,6 +199,9 @@ mod tests {
         let env = map(backend_env(&input));
         assert_eq!(env["POSTGRES_PORT"], "5001");
         assert_eq!(env["POSTGRES_PASSWORD"], "pgpass");
+        assert_eq!(env["DB_READONLY_PASSWORD"], readonly_password(&secrets));
+        assert_eq!(env["DB_READONLY_PASSWORD"].len(), 32);
+        assert_ne!(env["DB_READONLY_PASSWORD"], "password");
         assert_eq!(env["CODE_INTERPRETER_BASE_URL"], "http://127.0.0.1:5003");
         assert_eq!(env["CODE_INTERPRETER_API_TOKEN"], "tok");
         assert_eq!(env["DISABLE_VECTOR_DB"], "true");

@@ -134,6 +134,37 @@ pub async fn dump(
     .await
 }
 
+/// Make the read-only role if it does not exist, as the backend migration
+/// does. A dump does not hold roles, so a restore needs this first.
+pub async fn ensure_readonly_role(
+    bundle: &Bundle,
+    port: u16,
+    password: &str,
+    role: &str,
+    role_password: &str,
+    log: &Path,
+) -> Result<(), String> {
+    let sql = format!(
+        "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{role}') \
+         THEN EXECUTE format('CREATE USER %I WITH PASSWORD %L', '{role}', '{role_password}'); \
+         END IF; END $$;"
+    );
+    let mut args = connection_args(port);
+    args.extend([
+        "-v".into(),
+        "ON_ERROR_STOP=1".into(),
+        "-d".into(),
+        DB_NAME.into(),
+        "-c".into(),
+        sql,
+    ]);
+    run_to_end(
+        &spec(bundle, "psql", "psql", args, password, log),
+        STEP_TIMEOUT,
+    )
+    .await
+}
+
 /// Restore a `pg_dump -Fc` file. `clean` drops the objects that exist first.
 pub async fn restore(
     bundle: &Bundle,

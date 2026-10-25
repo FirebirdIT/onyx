@@ -132,8 +132,10 @@ async fn stop_leftovers(layout: &NativeLayout) {
     let groups = groups_of(&ps, &pids);
     for signal in ["-INT", "-KILL"] {
         for pgid in &groups {
+            // A group that already ended makes `kill` fail, which is fine.
             let _ = tokio::process::Command::new("/bin/kill")
                 .args([signal, &format!("-{pgid}")])
+                .stderr(std::process::Stdio::null())
                 .status()
                 .await;
         }
@@ -231,6 +233,15 @@ async fn import_docker_data(
         let _ = compose.run_capture(["stop", "relational_db"]).await;
     }
     dumped?;
+    postgres::ensure_readonly_role(
+        bundle,
+        port,
+        &secrets.postgres_password,
+        env::READONLY_ROLE,
+        &env::readonly_password(secrets),
+        &layout.log("import"),
+    )
+    .await?;
     let restored = postgres::restore(
         bundle,
         port,
@@ -394,10 +405,29 @@ async fn start_services(
     }
 }
 
-/// Start the native engine and wait until it answers.
+/// Start the native engine and wait until it answers. A failure is also
+/// written to `logs/engine.log`, because the window shows it only once.
+pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
+    let result = start_engine(app, config).await;
+    if let Err(error) = &result {
+        if let Ok(layout) = native_layout() {
+            let line = format!(
+                "{} start failed: {error}\n",
+                crate::debug_log::format_utc_timestamp()
+            );
+            let _ = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(layout.log("engine"))
+                .and_then(|mut file| std::io::Write::write_all(&mut file, line.as_bytes()));
+        }
+    }
+    result
+}
+
 // The lock is held for the whole start, so a second start waits for this one.
 #[allow(clippy::significant_drop_tightening)]
-pub async fn start(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
+async fn start_engine(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
     let mut guard = running().lock().await;
     if guard.is_some() {
         emit_progress(app, "done", "The engine is ready");
