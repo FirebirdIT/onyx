@@ -17,11 +17,12 @@
     query.addEventListener("change", update);
   }
 
-  function show(view, subtitle) {
+  // `step` is the first-run progress ("Step 1 of 2"), or empty.
+  function show(view, step) {
     document
       .querySelectorAll(".view")
       .forEach((el) => el.classList.toggle("active", el.id === `view-${view}`));
-    $("panelSubtitle").textContent = subtitle || "";
+    $("stepText").textContent = step || "";
   }
 
   function setMessage(id, text, kind) {
@@ -51,18 +52,18 @@
   // ---- Step 1: Deep X Route --------------------------------------------
   async function showRoute(returnTo) {
     routeReturn = returnTo;
-    $("routeStepLabel").textContent =
-      returnTo === "setup" ? "Step 1 of 2" : "Deep X Route";
     $("routeSkipBtn").textContent =
       returnTo === "setup" ? "Skip for now" : "Back";
     $("keyInput").value = "";
     setMessage("routeMessage", "");
     const status = await invoke("route_key_status");
     $("signInBlock").style.display = status.sign_in_available ? "" : "none";
+    // Sign-in is the main action when it is there; the key is the fallback.
+    $("keySaveBtn").className = status.sign_in_available ? "block" : "primary block";
     if (status.saved && returnTo === "setup") {
       setMessage("routeMessage", "A key is saved already.", "ok");
     }
-    show("route", returnTo === "setup" ? "Setup" : "Settings");
+    show("route", returnTo === "setup" ? "Step 1 of 2" : "");
   }
 
   async function afterKeySaved(text) {
@@ -124,7 +125,7 @@
     }
   }
 
-  // ---- Step 4: Start the engine ------------------------------------------
+  // ---- Step 2: Start the engine ------------------------------------------
   function appendLog(line) {
     const log = $("startLog");
     log.textContent += `${line}\n`;
@@ -133,13 +134,13 @@
 
   async function startEngine() {
     const firstRun = !bootstrap.setup_complete;
-    $("startStepLabel").style.display = firstRun ? "" : "none";
     $("startHint").style.display = firstRun ? "" : "none";
+    $("startBusy").style.display = "";
     $("startRetryBtn").style.display = "none";
     $("startSettingsBtn").style.display = "none";
     $("startLog").textContent = "";
     setMessage("startMessage", "");
-    show("start", firstRun ? "Setup" : "");
+    show("start", firstRun ? "Step 2 of 2" : "");
     try {
       await invoke("engine_start");
       if (firstRun) {
@@ -149,6 +150,7 @@
       setMessage("startMessage", "The engine is ready.", "ok");
       openApp();
     } catch (error) {
+      $("startBusy").style.display = "none";
       setMessage("startMessage", errorText(error), "error");
       $("startRetryBtn").style.display = "";
       $("startSettingsBtn").style.display = "";
@@ -175,7 +177,8 @@
       ? "Deep X uses the engine on this computer. To use a remote Deep X server, enter its address."
       : `Deep X uses the server at ${bootstrap.server_url}.`;
     setMessage("settingsMessage", message || "", message ? "ok" : "");
-    show("settings", `Settings · version ${bootstrap.app_version}`);
+    $("settingsVersion").textContent = `Version ${bootstrap.app_version}`;
+    show("settings");
     await refreshStatus();
   }
 
@@ -242,6 +245,7 @@
     try {
       bootstrap = await invoke("get_bootstrap_state");
     } catch (error) {
+      $("startBusy").style.display = "none";
       setMessage("startMessage", errorText(error), "error");
       show("start");
       return;

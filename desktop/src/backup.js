@@ -85,7 +85,7 @@
     $("title").textContent = TEXT.title;
     $("intro").textContent = TEXT.intro;
     $("submitBtn").textContent = TEXT.button;
-    $("confirm").style.display = restore ? "none" : "";
+    $("confirmField").style.display = restore ? "none" : "";
     $("confirm").required = !restore;
     $("passphrase").autocomplete = restore ? "current-password" : "new-password";
     $("form").addEventListener("submit", submit);
