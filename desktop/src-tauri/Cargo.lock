@@ -793,6 +793,7 @@ dependencies = [
  "chacha20poly1305",
  "clap",
  "directories",
+ "flate2",
  "gtk",
  "hex",
  "hkdf",
@@ -802,6 +803,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "subtle",
+ "tar",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
@@ -814,6 +816,7 @@ dependencies = [
  "url",
  "uuid",
  "window-vibrancy 0.7.1",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

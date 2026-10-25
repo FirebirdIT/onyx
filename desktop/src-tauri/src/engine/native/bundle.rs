@@ -25,6 +25,8 @@ pub const fn current_platform() -> Option<&'static str> {
         Some("darwin-aarch64")
     } else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
         Some("darwin-x86_64")
+    } else if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
+        Some("windows-x86_64")
     } else {
         None
     }
@@ -63,20 +65,38 @@ impl Bundle {
         })
     }
 
+    // python-build-standalone and the Node.js zip keep their programs in
+    // the top folder on Windows, and in `bin/` elsewhere.
     pub fn python(&self) -> PathBuf {
-        self.root.join("python/bin/python3")
+        if cfg!(windows) {
+            self.root.join("python").join("python.exe")
+        } else {
+            self.root.join("python/bin/python3")
+        }
     }
     pub fn job_python(&self) -> PathBuf {
-        self.root.join("jobpython/bin/python3")
+        if cfg!(windows) {
+            self.root.join("jobpython").join("python.exe")
+        } else {
+            self.root.join("jobpython/bin/python3")
+        }
     }
     pub fn node(&self) -> PathBuf {
-        self.root.join("node/bin/node")
+        self.node_bin_dir()
+            .join(format!("node{}", std::env::consts::EXE_SUFFIX))
     }
     pub fn node_bin_dir(&self) -> PathBuf {
-        self.root.join("node/bin")
+        if cfg!(windows) {
+            self.root.join("node")
+        } else {
+            self.root.join("node/bin")
+        }
     }
     pub fn postgres_bin(&self, program: &str) -> PathBuf {
-        self.root.join("postgres/bin").join(program)
+        self.root
+            .join("postgres")
+            .join("bin")
+            .join(format!("{program}{}", std::env::consts::EXE_SUFFIX))
     }
     pub fn srt_cli(&self) -> PathBuf {
         self.root
@@ -258,19 +278,9 @@ async fn install(bundles_dir: &Path, archive: &Path, version: &str) -> Result<Bu
     let _ = fs::remove_dir_all(&partial);
     fs::create_dir_all(&partial)
         .map_err(|e| format!("Failed to create {}: {e}", partial.display()))?;
-    let status = tokio::process::Command::new("/usr/bin/tar")
-        .arg("-xzf")
-        .arg(archive)
-        .arg("-C")
-        .arg(&partial)
-        .status()
-        .await
-        .map_err(|e| format!("Failed to unpack the engine: {e}"))?;
-    if !status.success() {
+    if let Err(error) = unpack(archive, &partial, None).await {
         let _ = fs::remove_dir_all(&partial);
-        return Err(format!(
-            "Failed to unpack the engine: tar ended with {status}"
-        ));
+        return Err(format!("Failed to unpack the engine: {error}"));
     }
     let bundle = Bundle::load(&partial)?;
     if bundle.manifest.version != version {
@@ -282,6 +292,51 @@ async fn install(bundles_dir: &Path, archive: &Path, version: &str) -> Result<Bu
     write_current(bundles_dir, version)?;
     remove_other_versions(bundles_dir, version);
     Bundle::load(&target)
+}
+
+/// Unpack the `.tar.gz` `archive` into `target`, or only its member `only`.
+#[cfg(unix)]
+async fn unpack(archive: &Path, target: &Path, only: Option<&str>) -> Result<(), String> {
+    let mut command = tokio::process::Command::new("/usr/bin/tar");
+    command.arg("-xzf").arg(archive).arg("-C").arg(target);
+    if let Some(member) = only {
+        command.arg(member);
+    }
+    let status = command.status().await.map_err(|e| e.to_string())?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("tar ended with {status}"))
+    }
+}
+
+/// Unpack the `.tar.gz` `archive` into `target`, or only its member `only`.
+/// This uses the `tar` crate, because the bundle has paths longer than the
+/// 260 characters that `tar.exe` can handle.
+#[cfg(windows)]
+async fn unpack(archive: &Path, target: &Path, only: Option<&str>) -> Result<(), String> {
+    let archive = archive.to_path_buf();
+    let target = target.to_path_buf();
+    let only = only.map(|member| member.trim_start_matches("./").to_string());
+    tokio::task::spawn_blocking(move || {
+        let file = fs::File::open(&archive).map_err(|e| e.to_string())?;
+        let mut tar =
+            tar::Archive::new(flate2::read::GzDecoder::new(std::io::BufReader::new(file)));
+        let Some(member) = only else {
+            return tar.unpack(&target).map_err(|e| e.to_string());
+        };
+        for entry in tar.entries().map_err(|e| e.to_string())? {
+            let mut entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path().map_err(|e| e.to_string())?;
+            if path.to_string_lossy().trim_start_matches("./") == member {
+                entry.unpack_in(&target).map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+        }
+        Err(format!("The archive has no {member}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 fn remove_other_versions(bundles_dir: &Path, keep: &str) {
@@ -307,16 +362,10 @@ async fn install_local_archive(bundles_dir: &Path, archive: &Path) -> Result<Bun
     let scratch = bundles_dir.join("local.partial");
     let _ = fs::remove_dir_all(&scratch);
     fs::create_dir_all(&scratch).map_err(|e| format!("Failed to create a folder: {e}"))?;
-    let status = tokio::process::Command::new("/usr/bin/tar")
-        .args(["-xzf"])
-        .arg(archive)
-        .args(["-C"])
-        .arg(&scratch)
-        .arg("./manifest.json")
-        .status()
+    if unpack(archive, &scratch, Some("./manifest.json"))
         .await
-        .map_err(|e| format!("Failed to read the engine bundle: {e}"))?;
-    if !status.success() {
+        .is_err()
+    {
         return Err("The local engine bundle has no manifest".to_string());
     }
     let version = Bundle::load(&scratch)?.manifest.version;
@@ -426,6 +475,92 @@ mod tests {
         assert_eq!(read_current(dir.path()), None);
         write_current(dir.path(), "0.2.0").unwrap();
         assert_eq!(read_current(dir.path()).as_deref(), Some("0.2.0"));
+    }
+
+    #[test]
+    fn program_paths_match_the_bundle_layout() {
+        let bundle = Bundle {
+            root: PathBuf::from("b"),
+            manifest: Manifest {
+                version: "0.2.0".into(),
+                platform: current_platform().unwrap_or("none").into(),
+                web_server: "web/server.js".into(),
+            },
+        };
+        if cfg!(windows) {
+            assert_eq!(bundle.python(), Path::new("b/python/python.exe"));
+            assert_eq!(bundle.job_python(), Path::new("b/jobpython/python.exe"));
+            assert_eq!(bundle.node(), Path::new("b/node/node.exe"));
+            assert_eq!(
+                bundle.postgres_bin("pg_ctl"),
+                Path::new("b/postgres/bin/pg_ctl.exe")
+            );
+        } else {
+            assert_eq!(bundle.python(), Path::new("b/python/bin/python3"));
+            assert_eq!(bundle.node(), Path::new("b/node/bin/node"));
+            assert_eq!(
+                bundle.postgres_bin("pg_ctl"),
+                Path::new("b/postgres/bin/pg_ctl")
+            );
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_has_a_platform_name() {
+        assert_eq!(current_platform(), Some("windows-x86_64"));
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn unpacks_the_whole_archive_or_only_the_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        let archive = dir.path().join("b.tar.gz");
+        {
+            let gz = flate2::write::GzEncoder::new(
+                fs::File::create(&archive).unwrap(),
+                flate2::Compression::fast(),
+            );
+            let mut builder = tar::Builder::new(gz);
+            for (name, data) in [("manifest.json", &b"{}"[..]), ("web/server.js", b"js")] {
+                let mut header = tar::Header::new_gnu();
+                header.set_size(data.len() as u64);
+                header.set_mode(0o644);
+                header.set_cksum();
+                builder
+                    .append_data(&mut header, format!("./{name}"), data)
+                    .unwrap();
+            }
+            builder.into_inner().unwrap().finish().unwrap();
+        }
+        let all = dir.path().join("all");
+        fs::create_dir_all(&all).unwrap();
+        unpack(&archive, &all, None).await.unwrap();
+        assert_eq!(fs::read(all.join("web/server.js")).unwrap(), b"js");
+        let one = dir.path().join("one");
+        fs::create_dir_all(&one).unwrap();
+        unpack(&archive, &one, Some("./manifest.json"))
+            .await
+            .unwrap();
+        assert!(one.join("manifest.json").exists());
+        assert!(!one.join("web").exists());
+    }
+
+    /// Unpack a real bundle and load its manifest:
+    /// `DEEPX_TEST_ARCHIVE=<bundle.tar.gz> DEEPX_TEST_TARGET=<folder> cargo test -- --ignored`
+    #[tokio::test]
+    #[ignore = "needs a built engine bundle"]
+    async fn unpacks_a_real_bundle() {
+        let archive = PathBuf::from(std::env::var("DEEPX_TEST_ARCHIVE").unwrap());
+        let target = PathBuf::from(std::env::var("DEEPX_TEST_TARGET").unwrap());
+        let _ = fs::remove_dir_all(&target);
+        fs::create_dir_all(&target).unwrap();
+        unpack(&archive, &target, None).await.unwrap();
+        let bundle = Bundle::load(&target).unwrap();
+        assert!(bundle.python().exists());
+        assert!(bundle.node().exists());
+        assert!(bundle.postgres_bin("postgres").exists());
+        assert!(bundle.web_server().exists());
     }
 
     #[test]

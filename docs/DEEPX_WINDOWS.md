@@ -11,9 +11,13 @@ computer. It tells you what to change, how to test it, and how to ship it.
   process.
 - Windows is on desktop **0.1.2**. That build is older than the Docker removal,
   so its setup still asks for Docker Desktop.
-- The current desktop code compiles on Windows, but the engine does not start
-  there. `is_supported()` in `desktop/src-tauri/src/engine/mod.rs` returns
-  `true` only on macOS, and the `native` module compiles only on Unix.
+- The desktop engine code now supports Windows (steps 2 and 4 below are done),
+  and `desktop/native-engine/build-bundle.ps1` builds the Windows bundle
+  (step 1). The bundle works when started by hand with the app's programs,
+  arguments and settings: `initdb`, Postgres, the migrations, the API server
+  and the web server start, `http://localhost:9999` answers, and sign-up and
+  log-in work. What is left: the test in the app itself (step 3 of **Test**),
+  the hub (step 3 below) and the release.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
@@ -26,8 +30,10 @@ macOS. Keep the macOS build working.
 
 1. Install Git, Rust (MSVC toolchain:
    `rustup default stable-x86_64-pc-windows-msvc`), Visual Studio Build Tools
-   with "Desktop development with C++", Bun, `uv`, Node 22, and the GitHub CLI
-   (then run `gh auth login`).
+   with "Desktop development with C++", Bun **1.3.13** (older versions cannot
+   read `web/bun.lock`; check that `bun --version` finds the new one first on
+   `PATH`), `uv`, Node 22, and the GitHub CLI (then run `gh auth login`).
+   `winget install Rustlang.Rustup astral-sh.uv` installs Rust and `uv`.
 2. Install WebView2 if it is not there. Windows 11 has it.
 3. Clone the repos:
    - `git clone https://github.com/FirebirdIT/onyx`
@@ -41,56 +47,71 @@ macOS. Keep the macOS build working.
 
 ## What to change
 
-### 1. Engine bundle for `windows-x86_64`
+### 1. Engine bundle for `windows-x86_64` (done)
 
-`desktop/native-engine/build-bundle.sh` builds macOS bundles only. Write a
-Windows build (PowerShell, for example `build-bundle.ps1`) that makes the same
-layout:
+Build it with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop\native-engine\build-bundle.ps1 <version> [out-dir]
+```
+
+It makes `deepx-engine-<version>-windows-x86_64.tar.gz`, its `.sha256` file
+and `native-windows-x86_64.json` (the `native.json` entry with `url`, `sha256`
+and `size`). The staging folder is `%LOCALAPPDATA%\deepx-engine-bundle`. The
+Next.js build needs about 8 GB of free memory.
 
 | Part | macOS source | Windows source |
 | --- | --- | --- |
-| Python + backend | python-build-standalone | python-build-standalone `x86_64-pc-windows-msvc` |
+| Python + backend | python-build-standalone | python-build-standalone `windows-x86_64` |
 | Node + web server | nodejs.org `darwin-*` tarball | nodejs.org `win-x64` zip |
 | Postgres 15 | theseus-rs/postgresql-binaries `*-apple-darwin` | same project, `x86_64-pc-windows-msvc` |
-| sandbox-runtime | npm `@anthropic-ai/sandbox-runtime` | **not available on Windows** (see step 4) |
-| Job Python | python-build-standalone | python-build-standalone Windows |
+| sandbox-runtime | npm `@anthropic-ai/sandbox-runtime` | **not in the bundle** (see step 4) |
+| Job Python | python-build-standalone | **not in the bundle** (only the code runner uses it) |
 
-Keep these rules from the macOS script:
+Things that differ from the macOS script, and why:
 
-- Check the SHA-256 of every download.
-- Install Python packages with `--require-hashes`, and `--only-binary` for
-  native packages. Some packages may have no Windows wheel. Find them early.
-- Swap `sharp` for the `win32-x64` build.
-- Write `manifest.json` with `platform: "windows-x86_64"`.
-- Make the archive and a `native.json` entry with `url`, `sha256` and `size`.
+- Every Python package has a Windows wheel except `chonkie`, which is compiled
+  with Visual C++ during the build. The CUDA, `triton`, `caio` and
+  `mitmproxy-linux` packages are Linux-only and are skipped.
+- The web build uses `bun install --linker hoisted`. Bun's default isolated
+  layout links packages with absolute Windows junctions into the build folder,
+  and the standalone copy then loses the dependencies of `next` (the server
+  fails with `Cannot find module '@swc/helpers/...'`). Hoisted also makes the
+  paths shorter.
+- Bun runs the `prepare` builds of the workspace packages (`lib/shared`,
+  `lib/opal`) only on a fresh install, so the script builds them itself. It
+  also deletes `.next` first: the Turbopack cache keeps failed lookups of an
+  earlier build (`Package path ./tokens.css ... no valid target file`).
+- The web server builds on Windows x64, so `sharp` is already the `win32-x64`
+  build. There is nothing to swap.
+- The archive is written by Python with `\\?\` paths, because `tar.exe` and
+  PowerShell's `Remove-Item` fail on paths over 260 characters.
 
-### 2. Desktop engine code (`desktop/src-tauri/src/engine/`)
+### 2. Desktop engine code (`desktop/src-tauri/src/engine/`) (done)
 
-These parts are Unix-only today. Make each one work on Windows with `#[cfg]`
-branches or a small platform module:
-
-- `mod.rs`: remove `#[cfg(unix)]` from `native`, and let `is_supported()`
-  return `true` on Windows.
-- `native/bundle.rs`:
-  - `current_platform()` must return `"windows-x86_64"`.
-  - Program paths differ: `python/python.exe`, `node/node.exe`,
-    `postgres/bin/postgres.exe`, `jobpython/python.exe`.
-  - Unpacking calls `/usr/bin/tar`. Windows has `tar.exe` in `System32`, or
-    use the `flate2` and `tar` crates instead of a program.
-- `native/process.rs`:
-  - `command.process_group(0)` is Unix-only. On Windows, use the
-    `CREATE_NEW_PROCESS_GROUP` creation flag and a Job Object, so that a stop
-    also ends the child processes.
-  - `signal_group()` calls `/bin/kill`. On Windows, close the Job Object or run
-    `taskkill /T /F /PID <pid>`.
-- `native/mod.rs`: the leftover cleanup uses `lsof` and `ps` to find processes
-  by executable path. On Windows, use the `sysinfo` crate (it gives the
-  executable path) or a Job Object. Kill only processes whose executable is in
-  the bundles folder.
-- `native/postgres.rs`: drop `unix_socket_directories` on Windows. Check that
-  `initdb` and `pg_ctl` work in a folder path with spaces.
-- `native/env.rs`: `PATH` uses `:` as a separator. Use
-  `std::env::join_paths`, which uses `;` on Windows.
+- `mod.rs`: `native` compiles on every platform. `is_supported()` is true
+  where `current_platform()` has a name: macOS and Windows x86_64.
+- `native/bundle.rs`: `current_platform()` returns `"windows-x86_64"`. The
+  program paths are `python\python.exe`, `node\node.exe` and
+  `postgres\bin\<name>.exe`. Windows unpacks with the `tar` and `flate2`
+  crates (macOS keeps `/usr/bin/tar`), because the bundle has paths that
+  `tar.exe` cannot write.
+- `native/mod.rs`: on Windows the bundles go to `%LOCALAPPDATA%\deepx\engine`,
+  not the app data folder (`%APPDATA%\deepx\deepx-desktop\data`). Python and
+  Node need every path under 260 characters, and the bundle has paths of about
+  150. Under the app data folder, a user name of 7 or more characters broke
+  Python imports.
+- `native/job.rs` and `native/process.rs`: each service runs in its own Job
+  Object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`. The process starts
+  suspended and runs only after it is in its job, so no child escapes. A stop
+  ends the job, and when the app ends or crashes, Windows ends the jobs too.
+  So there is no leftover cleanup on Windows (`stop_leftovers` does nothing).
+  Engine processes start with `CREATE_NO_WINDOW`, so no console window shows.
+- `native/postgres.rs`: the clean stop of Postgres on Windows is
+  `pg_ctl kill INT <pid>` (Postgres takes its signals that way on Windows).
+  There is no `unix_socket_directories` on Windows. `initdb` and the server
+  work in folders with spaces.
+- `native/env.rs`: `PATH` is built with `std::env::join_paths`.
 
 ### 3. Hub
 
@@ -98,17 +119,19 @@ branches or a small platform module:
 `darwin-x86_64`. Add `windows-x86_64` to the enum, add a test, and deploy with
 `vercel deploy --prod`.
 
-### 4. Code runner (no sandbox-runtime on Windows)
+### 4. Code runner (no sandbox-runtime on Windows) (done)
 
 The code runner (`backend/onyx/deepx/code_runner/`) runs user code inside
 Anthropic sandbox-runtime (`srt`). `srt` supports only macOS and Linux.
 `sandbox.py` also uses `os.killpg` and process groups.
 
-Do **not** run model-written code without a sandbox. For the first Windows
-release, turn the code runner off on Windows: do not start the `code_runner`
-service, and do not set `CODE_INTERPRETER_BASE_URL`, so the tool does not
-show. Add a Windows sandbox later as its own task (for example Windows
-Sandbox, a restricted token with a Job Object, or WSL with bubblewrap).
+Do **not** run model-written code without a sandbox. On Windows the
+`code_runner` service does not start (`HAS_CODE_RUNNER` in `native/env.rs`),
+and `CODE_INTERPRETER_BASE_URL` is set to an **empty** string. Leaving it unset
+is not enough: the backend then uses its default `http://localhost:8000`, and
+the code tools show. Add a Windows sandbox later as its own task (for example
+Windows Sandbox, a restricted token with a Job Object, or WSL with
+bubblewrap).
 
 ### 5. Desktop app version
 
@@ -118,10 +141,15 @@ version for macOS and Windows.
 
 ## Test
 
-1. Unit tests: `cd desktop/src-tauri` and run `cargo test`. Add Windows cases
-   for the paths, the `PATH` separator and the platform name.
-2. Build the bundle. Install it from the local archive
-   (`install_local_archive` in `bundle.rs`), so you can test without the hub.
+1. Unit tests: `cd desktop/src-tauri` and run `cargo test`. They pass on
+   Windows, with Windows cases for the paths, the `PATH` separator, the
+   platform name, the unpacking and the job stop.
+2. Build the bundle. Check that the app's unpacking reads it:
+   `$env:DEEPX_TEST_ARCHIVE="<archive>"; $env:DEEPX_TEST_TARGET="<folder>";
+   cargo test unpacks_a_real_bundle -- --ignored`. Then set
+   `DEEPX_ENGINE_BUNDLE=<archive>` before `bun run tauri dev`, so that the app
+   installs the local archive (`install_local_archive` in `bundle.rs`) instead
+   of asking the hub.
 3. Run `bun run tauri dev` from `desktop/`. Check that:
    - Setup has 2 steps (Deep X Route, then start). There is no Docker step.
    - The engine starts, and `http://localhost:9999` opens the chat.

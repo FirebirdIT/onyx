@@ -26,6 +26,7 @@ fn spec(
         env: vec![("PGPASSWORD".to_string(), password.to_string())],
         log: log.to_path_buf(),
         stop_signal: "INT",
+        signal_with: None,
     }
 }
 
@@ -73,25 +74,29 @@ pub async fn init(bundle: &Bundle, data: &Path, password: &str, log: &Path) -> R
 /// The `postgres` server process. No Unix socket: the app folder path is too
 /// long for one, and TCP on the loopback address is enough.
 pub fn server_spec(bundle: &Bundle, data: &Path, port: u16, log: &Path) -> ServiceSpec {
+    let mut args = vec![
+        "-D".into(),
+        data.to_string_lossy().to_string(),
+        "-p".into(),
+        port.to_string(),
+        "-h".into(),
+        LOOPBACK.into(),
+        "-c".into(),
+        "max_connections=250".into(),
+    ];
+    if cfg!(unix) {
+        args.extend(["-c".into(), "unix_socket_directories=".into()]);
+    }
     ServiceSpec {
         name: "postgres",
         program: bundle.postgres_bin("postgres"),
-        args: vec![
-            "-D".into(),
-            data.to_string_lossy().to_string(),
-            "-p".into(),
-            port.to_string(),
-            "-h".into(),
-            LOOPBACK.into(),
-            "-c".into(),
-            "unix_socket_directories=".into(),
-            "-c".into(),
-            "max_connections=250".into(),
-        ],
+        args,
         cwd: bundle.root.clone(),
         env: Vec::new(),
         log: log.to_path_buf(),
         stop_signal: "INT",
+        // Postgres on Windows takes signals from `pg_ctl kill`.
+        signal_with: Some(bundle.postgres_bin("pg_ctl")),
     }
 }
 
@@ -99,11 +104,11 @@ pub fn server_spec(bundle: &Bundle, data: &Path, port: u16, log: &Path) -> Servi
 pub async fn wait_ready(bundle: &Bundle, port: u16, timeout: Duration) -> Result<(), String> {
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {
-        let ready = tokio::process::Command::new(bundle.postgres_bin("pg_isready"))
-            .args(["-q", "-h", LOOPBACK, "-p", &port.to_string()])
-            .status()
-            .await
-            .is_ok_and(|status| status.success());
+        let mut command = tokio::process::Command::new(bundle.postgres_bin("pg_isready"));
+        command.args(["-q", "-h", LOOPBACK, "-p", &port.to_string()]);
+        #[cfg(windows)]
+        command.creation_flags(super::job::HELPER_FLAGS);
+        let ready = command.status().await.is_ok_and(|status| status.success());
         if ready {
             return Ok(());
         }
