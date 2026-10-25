@@ -24,6 +24,7 @@ from onyx.prompts.tool_prompts import (
     OFFICE_FILES_GUIDANCE,
     OPEN_URLS_GUIDANCE,
     PYTHON_TOOL_GUIDANCE,
+    READ_SKILL_GUIDANCE,
     TOOL_DESCRIPTION_SEARCH_GUIDANCE,
     TOOL_SECTION_HEADER,
     WEB_SEARCH_GUIDANCE,
@@ -50,6 +51,7 @@ from onyx.tools.tool_implementations.office.office_tools import OfficeFileTool
 from onyx.tools.tool_implementations.open_url.open_url_tool import OpenURLTool
 from onyx.tools.tool_implementations.python.python_tool import PythonTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
+from onyx.tools.tool_implementations.skills.read_skill_tool import ReadSkillTool
 from onyx.tools.tool_implementations.web_search.web_search_tool import WebSearchTool
 from onyx.utils.timing import log_function_time
 
@@ -320,6 +322,7 @@ def build_system_prompt(
             OPEN_URLS_GUIDANCE,
             PYTHON_TOOL_GUIDANCE,
             OFFICE_FILES_GUIDANCE,
+            READ_SKILL_GUIDANCE,
             GENERATE_IMAGE_GUIDANCE,
             MEMORY_GUIDANCE,
         ]
@@ -336,6 +339,7 @@ def build_system_prompt(
             isinstance(tool, ImageGenerationTool) for tool in tools
         )
         has_memory = any(isinstance(tool, MemoryTool) for tool in tools)
+        has_read_skill = any(isinstance(tool, ReadSkillTool) for tool in tools)
 
         tool_guidance_sections: list[str] = []
 
@@ -366,6 +370,9 @@ def build_system_prompt(
 
         if has_office_files or include_all_guidance:
             tool_guidance_sections.append(OFFICE_FILES_GUIDANCE)
+
+        if has_read_skill or include_all_guidance:
+            tool_guidance_sections.append(READ_SKILL_GUIDANCE)
 
         if has_generate_image or include_all_guidance:
             tool_guidance_sections.append(GENERATE_IMAGE_GUIDANCE)

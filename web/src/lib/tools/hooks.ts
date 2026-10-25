@@ -26,6 +26,7 @@ import {
   MEMORY_TOOL_ID,
   OPEN_URL_TOOL_ID,
   PUBLISH_HTML_TOOL_ID,
+  READ_SKILL_TOOL_ID,
   PYTHON_TOOL_ID,
   SEARCH_TOOL_ID,
   WEB_SEARCH_TOOL_ID,
@@ -588,6 +589,7 @@ export function useBuiltInToolNames(): Record<string, string> {
       ),
       [CREATE_PDF_TOOL_ID]: t("toolNames.pdfDocument.label"),
       [PUBLISH_HTML_TOOL_ID]: t("toolNames.publishWebPage.label"),
+      [READ_SKILL_TOOL_ID]: t("toolNames.readSkill.label"),
     }),
     [t]
   );

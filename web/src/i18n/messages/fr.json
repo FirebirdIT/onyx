@@ -768,6 +768,9 @@
       },
       "publishWebPage": {
         "label": "Publier une page web"
+      },
+      "readSkill": {
+        "label": "Lire une compétence"
       }
     },
     "toolsPopover": {
@@ -16470,6 +16473,9 @@
         },
         "publishedLinks": {
           "label": "Liens publiés"
+        },
+        "skills": {
+          "label": "Compétences"
         }
       }
     },
@@ -16809,6 +16815,9 @@
         },
         "publishedLinks": {
           "label": "Liens publiés"
+        },
+        "skills": {
+          "label": "Compétences"
         }
       },
       "sections": {
@@ -17052,7 +17061,8 @@
           "placeholder": "Nommez votre compétence",
           "title": "Nom"
         },
-        "title": "Détails"
+        "title": "Détails",
+        "chatDescription": "Définissez quand et comment le chat doit utiliser cette compétence."
       },
       "files": {
         "busyLabel": "Téléversement...",
@@ -17098,7 +17108,8 @@
         "description": "Décrivez le comportement et le flux de travail que cette compétence ajoute à Craft.",
         "emptyFallback": "Pas encore d'instructions.",
         "placeholder": "Rédigez les instructions de la compétence.",
-        "title": "Instructions"
+        "title": "Instructions",
+        "chatDescription": "Décrivez le comportement et le flux de travail que cette compétence ajoute au chat."
       },
       "loadError": {
         "description": "Cette compétence n'existe peut-être pas, est peut-être intégrée ou n'est peut-être pas modifiable avec votre compte.",
@@ -17399,7 +17410,8 @@
       },
       "header": {
         "description": "Ensembles de capacités que votre agent Craft peut mobiliser. Cette page présente les compétences intégrées, celles partagées avec vous et vos compétences personnelles.",
-        "title": "Compétences"
+        "title": "Compétences",
+        "chatDescription": "Des instructions que le chat suit pour un type de tâche. Cette page présente les compétences intégrées, celles partagées avec vous et vos propres compétences. Activez une compétence pour que le chat puisse l’utiliser."
       },
       "loadError": {
         "description": "Consultez la console pour plus de détails et essayez d'actualiser la page.",

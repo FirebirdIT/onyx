@@ -768,6 +768,9 @@
       },
       "publishWebPage": {
         "label": "Webseite veröffentlichen"
+      },
+      "readSkill": {
+        "label": "Skill lesen"
       }
     },
     "toolsPopover": {
@@ -16470,6 +16473,9 @@
         },
         "publishedLinks": {
           "label": "Veröffentlichte Links"
+        },
+        "skills": {
+          "label": "Skills"
         }
       }
     },
@@ -16809,6 +16815,9 @@
         },
         "publishedLinks": {
           "label": "Veröffentlichte Links"
+        },
+        "skills": {
+          "label": "Skills"
         }
       },
       "sections": {
@@ -17052,7 +17061,8 @@
           "placeholder": "Benennen Sie Ihren Skill",
           "title": "Name"
         },
-        "title": "Details"
+        "title": "Details",
+        "chatDescription": "Legen Sie fest, wann und wie der Chat diesen Skill verwenden soll."
       },
       "files": {
         "busyLabel": "Wird hochgeladen...",
@@ -17098,7 +17108,8 @@
         "description": "Beschreiben Sie das Verhalten und den Workflow, den dieser Skill zu Craft hinzufügt.",
         "emptyFallback": "Noch keine Anweisungen.",
         "placeholder": "Schreiben Sie die Skill-Anweisungen.",
-        "title": "Anweisungen"
+        "title": "Anweisungen",
+        "chatDescription": "Beschreiben Sie das Verhalten und den Workflow, den dieser Skill dem Chat hinzufügt."
       },
       "loadError": {
         "description": "Dieser Skill existiert möglicherweise nicht, ist integriert oder kann mit Ihrem Konto nicht bearbeitet werden.",
@@ -17399,7 +17410,8 @@
       },
       "header": {
         "description": "Fähigkeitspakete, auf die Ihr Craft-Agent zugreifen kann. Diese Seite zeigt integrierte Skills, mit Ihnen geteilte Skills und Ihre persönlichen Skills.",
-        "title": "Skills"
+        "title": "Skills",
+        "chatDescription": "Anweisungen, denen der Chat bei einer Art von Aufgabe folgt. Diese Seite zeigt integrierte Skills, mit Ihnen geteilte Skills und Ihre eigenen Skills. Aktivieren Sie einen Skill, damit der Chat ihn verwenden kann."
       },
       "loadError": {
         "description": "Prüfen Sie die Konsole für Details und versuchen Sie, die Seite zu aktualisieren.",

@@ -64,12 +64,15 @@ import SkillFilesPicker from "@/sections/skills/SkillFilesPicker";
 import { ConfirmationModalLayout } from "@opal/layouts";
 import { useUser } from "@/providers/UserProvider";
 import { externalAppAdminUrl } from "@/app/craft/v1/apps/admin/skillAssociationNavigation";
+import { SKILL_LIBRARY_ROUTES, type SkillLibraryId } from "@/lib/skills/routes";
 
 interface SkillEditorPageProps {
   skillId?: string;
   draftId?: string;
   externalAppId?: number;
   externalAppName?: string;
+  /** Which skills library this editor returns to. Defaults to Craft. */
+  library?: SkillLibraryId;
 }
 
 export default function SkillEditorPage({
@@ -77,7 +80,9 @@ export default function SkillEditorPage({
   draftId,
   externalAppId,
   externalAppName,
+  library = "craft",
 }: SkillEditorPageProps) {
+  const routes = SKILL_LIBRARY_ROUTES[library];
   const t = useTranslations("skills");
   const isCreating = skillId === undefined;
   const hasAppContext = externalAppId !== undefined;
@@ -207,7 +212,7 @@ export default function SkillEditorPage({
 
   function leaveEditor() {
     router.push(
-      hasAppContext ? externalAppAdminUrl(externalAppId) : "/craft/v1/skills"
+      hasAppContext ? externalAppAdminUrl(externalAppId) : routes.library
     );
   }
 
@@ -262,9 +267,7 @@ export default function SkillEditorPage({
         });
         toast.success(t("editor.toasts.created", { name: created.name }));
         router.replace(
-          isCreatingForApp
-            ? externalAppAdminUrl(externalAppId)
-            : "/craft/v1/skills"
+          isCreatingForApp ? externalAppAdminUrl(externalAppId) : routes.library
         );
         return;
       }
@@ -580,7 +583,11 @@ export default function SkillEditorPage({
               <Section alignItems="stretch">
                 <Content
                   title={t("editor.details.title")}
-                  description={t("editor.details.description")}
+                  description={
+                    routes.context === "chat"
+                      ? t("editor.details.chatDescription")
+                      : t("editor.details.description")
+                  }
                   sizePreset="main-content"
                   variant="section"
                 />
@@ -647,7 +654,11 @@ export default function SkillEditorPage({
                 <div className="flex w-full items-start justify-between gap-2">
                   <Content
                     title={t("editor.instructions.title")}
-                    description={t("editor.instructions.description")}
+                    description={
+                      routes.context === "chat"
+                        ? t("editor.instructions.chatDescription")
+                        : t("editor.instructions.description")
+                    }
                     sizePreset="main-content"
                     variant="section"
                   />

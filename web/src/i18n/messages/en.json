@@ -768,6 +768,9 @@
       },
       "publishWebPage": {
         "label": "Publish Web Page"
+      },
+      "readSkill": {
+        "label": "Read Skill"
       }
     },
     "toolsPopover": {
@@ -16470,6 +16473,9 @@
         },
         "publishedLinks": {
           "label": "Published Links"
+        },
+        "skills": {
+          "label": "Skills"
         }
       }
     },
@@ -16809,6 +16815,9 @@
         },
         "publishedLinks": {
           "label": "Published Links"
+        },
+        "skills": {
+          "label": "Skills"
         }
       },
       "sections": {
@@ -17052,7 +17061,8 @@
           "placeholder": "Name your skill",
           "title": "Name"
         },
-        "title": "Details"
+        "title": "Details",
+        "chatDescription": "Define when and how chat should use this skill."
       },
       "files": {
         "busyLabel": "Uploading...",
@@ -17098,7 +17108,8 @@
         "description": "Write the behavior and workflow this skill adds to Craft.",
         "emptyFallback": "No instructions yet.",
         "placeholder": "Write the skill instructions.",
-        "title": "Instructions"
+        "title": "Instructions",
+        "chatDescription": "Write the behavior and workflow this skill adds to chat."
       },
       "loadError": {
         "description": "This skill may not exist, may be built-in, or may not be editable by your account.",
@@ -17399,7 +17410,8 @@
       },
       "header": {
         "description": "Capability bundles your Craft agent can reach for. This page shows built-in skills, skills shared with you, and your own personal skills.",
-        "title": "Skills"
+        "title": "Skills",
+        "chatDescription": "Instructions that chat follows for a type of task. This page shows built-in skills, skills shared with you, and your own skills. Turn a skill on to let chat use it."
       },
       "loadError": {
         "description": "Check the console for details and try refreshing the page.",

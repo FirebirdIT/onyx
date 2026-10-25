@@ -768,6 +768,9 @@
       },
       "publishWebPage": {
         "label": "发布网页"
+      },
+      "readSkill": {
+        "label": "读取技能"
       }
     },
     "toolsPopover": {
@@ -16470,6 +16473,9 @@
         },
         "publishedLinks": {
           "label": "已发布的链接"
+        },
+        "skills": {
+          "label": "技能"
         }
       }
     },
@@ -16809,6 +16815,9 @@
         },
         "publishedLinks": {
           "label": "已发布链接"
+        },
+        "skills": {
+          "label": "技能"
         }
       },
       "sections": {
@@ -17052,7 +17061,8 @@
           "placeholder": "为您的技能命名",
           "title": "名称"
         },
-        "title": "详情"
+        "title": "详情",
+        "chatDescription": "定义聊天应在何时以及如何使用此技能。"
       },
       "files": {
         "busyLabel": "正在上传...",
@@ -17098,7 +17108,8 @@
         "description": "编写此技能为 Craft 添加的行为和工作流程。",
         "emptyFallback": "暂无说明。",
         "placeholder": "编写技能说明。",
-        "title": "说明"
+        "title": "说明",
+        "chatDescription": "编写此技能为聊天添加的行为和工作流程。"
       },
       "loadError": {
         "description": "此技能可能不存在、是内置技能，或您的账户无法编辑。",
@@ -17399,7 +17410,8 @@
       },
       "header": {
         "description": "您的 Craft 智能体可调用的能力包。此页面显示内置技能、与您共享的技能以及您的个人技能。",
-        "title": "技能"
+        "title": "技能",
+        "chatDescription": "聊天在某类任务中遵循的说明。此页面显示内置技能、与您共享的技能以及您自己的技能。开启技能后，聊天即可使用它。"
       },
       "loadError": {
         "description": "请查看控制台了解详情，并尝试刷新页面。",

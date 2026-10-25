@@ -76,6 +76,13 @@ The tool returns a `file_link`; share it as [file_name](file_link) and briefly d
 If the tool reports invalid arguments, fix them and call it again.
 """.lstrip()
 
+READ_SKILL_GUIDANCE = """
+## read_skill
+The user added skills: instructions that tell you how to do a type of task. The `read_skill` tool description lists them. \
+When a request matches a skill, call `read_skill` with its name before you do the task, then follow its instructions. \
+Read other files in the skill only when the instructions need them. You cannot run skill scripts; use them as reference.
+""".lstrip()
+
 GENERATE_IMAGE_GUIDANCE = """
 ## generate_image
 NEVER use generate_image unless the user specifically requests an image.

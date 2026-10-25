@@ -1,11 +1,11 @@
 # Skills
 
-> Agent Skills for Craft. A skill is an `SKILL.md` bundle, optionally with
-> supporting files, that gets rendered per user and pushed onto a session's
-> sandbox so the coding agent can read it as instructions. This is a Craft
-> feature, not a chat configuration surface: `backend/onyx/chat/` has no
-> reference to skills, and there is no admin route for skills in
-> `web/src/lib/admin-routes.ts`. Management happens through the same
+> Agent Skills. A skill is an `SKILL.md` bundle, optionally with
+> supporting files, that gets rendered per user. Craft pushes the rendered
+> files onto a session's sandbox so the coding agent can read them as
+> instructions. Chat reads the same rendered files through the `read_skill`
+> tool (§4.5), so skills also work when Craft is off. Users manage skills in
+> the Craft library or in Settings (§1). Management uses the same
 > user-facing router as browsing, gated by the `MANAGE_SKILLS` permission.
 
 **Verified against:** `268e4d5a3d` (2026-10-05)
@@ -22,7 +22,9 @@
 `web/src/sections/cards/SkillCard.tsx`,
 `web/src/sections/modals/skills/`, `web/src/sections/modals/SkillPreviewModal.tsx`,
 `web/src/app/craft/components/SkillsStaleNotice.tsx`,
-`web/src/app/craft/v1/skills/`
+`web/src/app/craft/v1/skills/`, `web/src/lib/skills/routes.ts`,
+`web/src/app/app/settings/skills/`, `web/src/app/admin/settings/skills/`,
+`backend/onyx/tools/tool_implementations/skills/` (shared with `[[tools-framework]]`)
 
 **Read first:** `[[craft-sandboxes]]` for the sandbox this component pushes
 files into, `[[craft-external-apps]]` for the credential and policy layer some
@@ -86,6 +88,22 @@ what not to attempt (§4.2) - the sandbox proxy is still the real enforcement
 point (`[[craft-external-apps]]`), this is just guidance to save a wasted
 turn.
 
+The same library is in Settings, so skills work when Craft is off. A server
+user opens Settings > Skills (`/app/settings/skills`). The Deep X desktop app
+shows it in the "You" group of its admin Settings (`/admin/settings/skills`).
+Both render `SkillsPage` with the built-in and custom skills, the enable
+switches, preview, upload (.zip or `SKILL.md`), GitHub import, edit and
+delete. The settings pages say "chat" where the Craft library says "Craft",
+and create and edit open the settings editor routes, not `/craft/v1/skills/*`.
+`/craft/*` redirects to `/app` when Craft is off (`web/src/app/craft/layout.tsx`).
+`web/src/lib/skills/routes.ts:SKILL_LIBRARY_ROUTES` holds the three route sets.
+
+In chat, an enabled skill is listed in the description of the `read_skill`
+tool. Before a task that matches a skill, the model reads its instructions
+and follows them (§4.5). While Craft is off, chat leaves out Craft-only
+built-in skills (`read_skill_tool.py:CRAFT_ONLY_BUILT_IN_SKILL_IDS`, now
+`craft-documentation`).
+
 If a skill changes while a session is already running (edited, toggled,
 shared, an app's policy changed), the running agent keeps whatever it already
 loaded until the user reloads. The UI surfaces this as a stale-skills notice
@@ -124,6 +142,14 @@ the hash record (§4.4). There is no separate admin router: management
 authorization is `Permission.MANAGE_SKILLS`, checked inline
 (`db/skill.py:_skill_select_for_management_policy`,
 `has_global_permission`/`has_permission`), not a distinct `/admin/*` surface.
+
+### Web routes
+
+| Route | File | Notes |
+|---|---|---|
+| `/craft/v1/skills`, `/new`, `/edit/[id]` | `web/src/app/craft/v1/skills/` | Craft library (`library="craft"`, the default). Needs Craft. |
+| `/app/settings/skills`, `/new`, `/edit/[id]` | `web/src/app/app/settings/skills/` | Personal Settings on a server (`library="userSettings"`). Every user. The settings layout shows these as full pages without its tab list. |
+| `/admin/settings/skills`, `/new`, `/edit/[id]` | `web/src/app/admin/settings/skills/` | Deep X desktop app, "You" group (`ADMIN_ROUTES.SKILLS`, `localOnly`). `/app/settings/skills` redirects here on that engine. |
 
 ### Environment / configuration
 
@@ -399,6 +425,45 @@ push actually succeeded get their hash updated
 therefore self-heals on the next push attempt rather than recording a hash
 for content that never landed.
 
+### 4.5 Skills in chat: the `read_skill` tool
+
+```
+tool_constructor._construct_tools_impl   tools/tool_constructor.py
+  list_runtime_skills_for_user           db/skill.py        effective skills, same as a push
+  SkillIndexEntry (name, description)    -> ReadSkillTool    skipped when the list is empty or the user is anonymous
+ReadSkillTool.run(name, path?)           tools/tool_implementations/skills/read_skill_tool.py
+  load_effective_skill_files             new DB session, lists the effective skills again
+    build_skill_files_for_user           skills/push.py     _assemble_fileset for one skill, paths relative to the skill root
+  read_skill_text_file                   skills/content.py  path safety, UTF-8 only, size cap
+```
+
+`ReadSkillTool` (LLM name `read_skill`, `in_code_tool_id` `ReadSkillTool`) is a
+built-in chat tool. Migration `cc0a3373c60c_seed_read_skill_tool.py` seeds its
+`Tool` row and attaches it to the default persona. The constructor builds it
+only when the user has at least one effective skill: built-in skills,
+enabled valid custom skills, and skills of external apps that are ready for
+the user. The tool description carries the index: at most
+`MAX_INDEXED_SKILLS` (50) skills, each description cut to
+`MAX_INDEX_DESCRIPTION_CHARS` (200). It tells the model to read a matching
+skill before the task and to follow it.
+
+A call without `path` returns `SKILL.md` without its frontmatter, the list of
+the other files with their sizes, and a note. The note says that some skills
+were written for a sandbox, so the model must do that work with its chat tools
+and must not claim to run a script. A call with `path` returns that file.
+`read_skill_text_file` refuses unsafe paths (absolute, `..`, backslash), unknown
+files, binary or non-UTF-8 files, and files over `MAX_SKILL_FILE_BYTES` (100 KB).
+The tool does not run scripts.
+
+The files come from `_assemble_fileset`, so chat gets what a sandbox gets:
+built-in templates (`company-search`, external-app skills) are rendered for the
+user, with placeholders and the unavailable-actions list filled. The tool
+lists the effective skills again on each call, so a skill turned off during a
+chat is refused. The saved tool result is a one-line summary, not the
+instructions, so a later turn calls the tool again. `prompts/tool_prompts.py:
+READ_SKILL_GUIDANCE` adds a short system-prompt section when the tool is
+configured. There is no approval step.
+
 ---
 
 ## 5. Contracts and invariants
@@ -479,6 +544,9 @@ for content that never landed.
 - Craft session provisioning and reload (`[[craft-sessions]]`,
   `[[craft-sandboxes]]`) consume `build_user_skills_payload` as one half of
   "managed content," alongside the user library.
+- `[[tools-framework]]`: the `read_skill` chat tool (§4.5) reads effective
+  skills through `list_runtime_skills_for_user` and
+  `push.py:build_skill_files_for_user`.
 
 ---
 
@@ -493,6 +561,7 @@ for content that never landed.
 | changes sharing (`Skill__User`, `Skill__UserGroup`, `public_permission`) | `skill_visible_to_user`/`_is_editable_by_user` (both must move together), the scoped-manager GATE 2 check in `api.py:_assert_group_share_within_scope`, and `set_skill_public_permission`'s app-association guard |
 | changes enable/disable semantics | §5.5 above; verify explicit opt-outs survive updates and required policies override them |
 | changes GitHub ingestion (`ingest_from_github.py`) | path-traversal/symlink checks, `GITHUB_SKILL_MAX_COUNT`, and that `parse_skill_document`'s validation still runs before any bundle is stored |
+| changes `list_runtime_skills_for_user` or `_assemble_fileset` | the `read_skill` chat tool (§4.5) uses both, so chat sees the same change |
 | changes what gets pushed or where (`SKILLS_MOUNT_PATH`, `push_to_sandbox(es)`) | `[[craft-sandboxes]]`'s sidecar `/push` contract and the `managed` volume mount |
 
 ---
@@ -516,6 +585,10 @@ cd web && bun run test -- src/sections/modals/skills/ImportSkillsFromGitHubModal
 cd web && bun run test -- src/sections/skills/SkillBundlePicker.test.tsx
 cd web && bun run test -- src/sections/skills/SkillFileTree.test.tsx
 cd web && bun run test -- src/app/craft/components/SkillsStaleNotice.test.tsx
+
+# The read_skill chat tool and the single-skill fileset helper
+uv run pytest backend/tests/unit/onyx/tools/tool_implementations/skills
+uv run pytest backend/tests/unit/onyx/skills/test_push.py
 ```
 
 See `backend/AGENTS.md` for authoritative test commands and required env.

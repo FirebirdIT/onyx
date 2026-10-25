@@ -22,6 +22,7 @@ export type AdminNavItemId =
   | "personalization"
   | "account"
   | "publishedLinks"
+  | "skills"
   | "languageModels"
   | "webSearch"
   | "imageGeneration"
@@ -86,6 +87,7 @@ export const NAV_ITEM_IDS: Record<
   PERSONALIZATION: "personalization",
   ACCOUNT: "account",
   PUBLISHED_LINKS: "publishedLinks",
+  SKILLS: "skills",
   LLM_MODELS: "languageModels",
   DECISION_MODELS: "decisionModels",
   WEB_SEARCH: "webSearch",

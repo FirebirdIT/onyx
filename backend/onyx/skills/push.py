@@ -219,6 +219,23 @@ def _assemble_fileset(
     return files
 
 
+def build_skill_files_for_user(
+    skill: Skill, user: User, db_session: Session
+) -> dict[str, bytes]:
+    """Return one skill's files, keyed by path relative to the skill root.
+
+    Uses the same rendering as a sandbox push, so built-in templates and
+    external-app placeholders are filled for ``user``. An invalid or
+    unreadable skill returns an empty map.
+    """
+    prefix = f"{skill.name}/"
+    return {
+        path[len(prefix) :]: content
+        for path, content in _assemble_fileset([skill], user, db_session).items()
+        if path.startswith(prefix)
+    }
+
+
 def build_skills_fileset_for_user(user: User, db_session: Session) -> FileSet:
     """Return a flat ``{path: bytes}`` map of every skill the user can see."""
     skills = list_runtime_skills_for_user(user=user, db_session=db_session)

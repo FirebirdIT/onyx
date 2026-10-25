@@ -1,5 +1,6 @@
 import type { IconProps } from "@opal/types";
 import {
+  SvgBlocks,
   SvgCpu,
   SvgExcelFile,
   SvgGlobe,
@@ -35,6 +36,7 @@ export const CREATE_SPREADSHEET_TOOL_ID = "CreateSpreadsheetTool";
 export const CREATE_PRESENTATION_TOOL_ID = "CreatePresentationTool";
 export const CREATE_PDF_TOOL_ID = "CreatePdfTool";
 export const PUBLISH_HTML_TOOL_ID = "PublishHtmlTool";
+export const READ_SKILL_TOOL_ID = "ReadSkillTool";
 
 // The Word, Excel, PowerPoint and PDF tools. Settings pages switch them as one group.
 export const OFFICE_FILE_TOOL_IDS: readonly string[] = [
@@ -60,6 +62,7 @@ export const SYSTEM_TOOL_ICONS: Record<
   [CREATE_PRESENTATION_TOOL_ID]: SvgPowerpointFile,
   [CREATE_PDF_TOOL_ID]: SvgPdfFile,
   [PUBLISH_HTML_TOOL_ID]: SvgShare,
+  [READ_SKILL_TOOL_ID]: SvgBlocks,
 };
 
 import { ADMIN_ROUTES } from "@/lib/admin-routes";

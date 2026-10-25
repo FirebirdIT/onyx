@@ -141,6 +141,7 @@ test("the Deep X desktop engine shows personal settings first, then only the pag
     "personalization",
     "account",
     "publishedLinks",
+    "skills",
     "languageModels",
     "webSearch",
     "imageGeneration",
@@ -160,4 +161,5 @@ test("personal settings pages stay out of the admin panel of a server", () => {
   ).map((item) => item.link);
   expect(links).not.toContain(ADMIN_ROUTES.PERSONAL_GENERAL.path);
   expect(links).not.toContain(ADMIN_ROUTES.PUBLISHED_LINKS.path);
+  expect(links).not.toContain(ADMIN_ROUTES.SKILLS.path);
 });

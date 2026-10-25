@@ -22,7 +22,10 @@ const LOCAL_ENGINE_PAGES: Record<string, Route> = {
   "/app/settings/chat-preferences": ADMIN_ROUTES.PERSONALIZATION.path,
   "/app/settings/accounts-access": ADMIN_ROUTES.ACCOUNT.path,
   "/app/settings/published-links": ADMIN_ROUTES.PUBLISHED_LINKS.path,
+  "/app/settings/skills": ADMIN_ROUTES.SKILLS.path,
 };
+
+const SKILLS_PATH = "/app/settings/skills";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -84,6 +87,7 @@ export default function Layout({ children }: LayoutProps) {
       href: "/app/settings/published-links",
       label: t("tabs.publishedLinks.label"),
     },
+    { href: SKILLS_PATH, label: t("tabs.skills.label") },
   ];
 
   // A route outside `tabs` selects nothing, so the select shows its
@@ -92,6 +96,11 @@ export default function Layout({ children }: LayoutProps) {
 
   if (localEngine) {
     return null;
+  }
+
+  // The skills library and editor are full pages with their own header.
+  if (pathname.startsWith(SKILLS_PATH)) {
+    return <>{children}</>;
   }
 
   return (

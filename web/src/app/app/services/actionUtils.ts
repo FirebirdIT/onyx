@@ -7,8 +7,10 @@ import {
   CREATE_PDF_TOOL_ID,
   CREATE_SPREADSHEET_TOOL_ID,
   PUBLISH_HTML_TOOL_ID,
+  READ_SKILL_TOOL_ID,
 } from "@/lib/tools/constants";
 import {
+  SvgBlocks,
   SvgCpu,
   SvgExcelFile,
   SvgGlobe,
@@ -88,6 +90,7 @@ export function getIconForAction(
     return SvgPowerpointFile;
   if (action.in_code_tool_id === CREATE_PDF_TOOL_ID) return SvgPdfFile;
   if (action.in_code_tool_id === PUBLISH_HTML_TOOL_ID) return SvgShare;
+  if (action.in_code_tool_id === READ_SKILL_TOOL_ID) return SvgBlocks;
   if (isSearchTool(action)) return SvgSearch;
   if (isWebSearchTool(action)) return SvgGlobe;
   if (isImageGenerationTool(action)) return SvgImage;

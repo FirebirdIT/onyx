@@ -123,7 +123,7 @@ these components are the map into it.
 | | Component | What it covers |
 |---|---|---|
 | ✅ | [craft-admin](components/craft-admin.md) | The three Craft admin pages: access, apps, preferences. Map into `docs/craft/`. |
-| ✅ | [skills](components/skills.md) | Capability bundles pushed into a Craft sandbox. Surfaced at `/craft/v1/skills`, tied to external apps. |
+| ✅ | [skills](components/skills.md) | Capability bundles pushed into a Craft sandbox and read in chat through `read_skill`. Surfaced at `/craft/v1/skills` and in Settings > Skills, tied to external apps. |
 | ✅ | [craft-sessions](components/craft-sessions.md) | Craft session lifecycle, turns, history. |
 | ✅ | [craft-sandboxes](components/craft-sandboxes.md) | Kubernetes sandbox provisioning, snapshot and restore. |
 | ✅ | [craft-streaming](components/craft-streaming.md) | The opencode-serve client and event stream. |
