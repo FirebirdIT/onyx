@@ -3,7 +3,7 @@
 The Deep X desktop app. It runs the Deep X engine on this computer as normal
 processes, with no Docker, and it opens the engine at `http://localhost:9999`
 in a native window. It can also open a remote Deep X server. The engine runs on
-macOS only for now (published bundle: Apple silicon). On other computers, use
+macOS only for now (Apple silicon and Intel bundles). On other computers, use
 a remote server.
 
 Built with [Tauri](https://tauri.app) v2.
@@ -115,7 +115,12 @@ cargo test
 ```
 
 To test the engine with a local bundle, set `DEEPX_ENGINE_BUNDLE` to the
-`.tar.gz` that `native-engine/build-bundle.sh` makes. Do not run the engine in
+`.tar.gz` that `native-engine/build-bundle.sh` makes. `TARGET_ARCH=x86_64` builds
+the Intel bundle on an Apple silicon Mac (Rosetta must be installed). The Intel
+bundle installs `native-engine/intel-overrides.txt` in place of the locked
+`cryptography` and `pyOpenSSL`, because `cryptography` 49 and newer have no Intel
+macOS wheels. The build fails if `uv` would compile a package that has native
+code from source. Do not run the engine in
 development while another program uses port 9999.
 
 ## Building
