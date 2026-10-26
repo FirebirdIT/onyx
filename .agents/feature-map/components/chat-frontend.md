@@ -372,6 +372,11 @@ Craft uses the same parser with bounded preview limits; chat keeps its complete-
   displayed single model straight from `llmManager.currentLlm` unless the user has
   explicitly added more than one model (`useMultiModelChat.ts`, `currentLlmModel`
   memo), so it never drifts out of sync with the manager in single-model mode.
+  Each model row's second line comes from `ModelSelectorContent.tsx`. A Deep X Route chat
+  model shows what it is for: the text is `chat.modelSelector.modelPurpose.*`, keyed by
+  `modelPurposeKey` (`lib/languageModels/modelPurpose.ts`), because the Deep X Route
+  catalog has no descriptions. Other models show the model id when it differs from the
+  display name. Add a new Deep X Route model to that map and to all 9 message files.
 
 ---
 

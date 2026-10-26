@@ -13509,6 +13509,15 @@
       "autoItem": {
         "label": "Auto",
         "description": "Choisit le meilleur modèle pour chaque message"
+      },
+      "modelPurpose": {
+        "pro": "Le meilleur choix par défaut pour le code, les agents et les outils",
+        "lite": "Le plus rapide et le moins cher, pour les tâches simples",
+        "corePlus": "Discussion, rédaction et analyse au quotidien",
+        "core": "Ancien modèle pour la discussion au quotidien",
+        "ultra": "Qualité maximale pour les tâches les plus difficiles",
+        "reason": "Raisonne étape par étape : maths, logique, plans. Plus lent",
+        "vision": "Répond aux questions sur les images"
       }
     },
     "nrf": {
