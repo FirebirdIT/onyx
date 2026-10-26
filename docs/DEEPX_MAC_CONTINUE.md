@@ -9,17 +9,21 @@ Background: `docs/DEEPX_WINDOWS.md`.
 
 - The engine code runs on Windows without Docker. It was tested in the app.
 - The hub accepts `windows-x86_64` in production (deployed 2026-10-26).
-- **Engine 0.2.3:** the Windows bundle
-  `deepx-engine-0.2.3-windows-x86_64.tar.gz` and its `.sha256` file are
-  uploaded to the draft release `native-v0.2.3`, and `native.json` there has a
-  `windows-x86_64` entry next to the two macOS entries.
-- **Desktop 0.1.8:** the draft release `desktop-v0.1.8` has the Windows
-  installers `Deep.X_0.1.8_x64-setup.exe` and `Deep.X_0.1.8_x64_en-US.msi`.
+- **Engine 0.2.3 (live):** the Mac published `native-v0.2.3`. The Windows
+  computer then added `deepx-engine-0.2.3-windows-x86_64.tar.gz` (built from
+  the same commit, `4e9c7d210`) with its `.sha256` file, and a `native.json`
+  with all 3 platforms. The hub serves the 3 platforms.
+- **Desktop 0.1.8 (draft):** the draft release `desktop-v0.1.8` has the
+  Windows installers `Deep.X_0.1.8_x64-setup.exe` and
+  `Deep.X_0.1.8_x64_en-US.msi`, built from `c71c21181` (the draft's target).
   The `-setup.exe` is **not signed for the updater yet** (no `.sig` file),
-  because the key is on the Mac. The target of that draft is the commit the
-  installers were built from.
+  because the key is on the Mac. Drafts are hidden from the hub.
+- **Tested:** the `-setup.exe` installed on Windows; the app downloaded engine
+  0.2.3 from the live hub, started it and opened the sign-up page; quitting
+  stopped every engine process. The app was then uninstalled.
 
-Drafts are hidden from the hub, so nothing is live yet.
+Read this note on `main`. Step 2 checks out the draft's target, which has an
+older copy of it.
 
 ## Rules
 
@@ -28,27 +32,18 @@ Drafts are hidden from the hub, so nothing is live yet.
 - `latest.json` of the newest `desktop-v*` release must list every platform,
   or some installed apps stop getting updates.
 
-## 1. Publish engine 0.2.3
+## 1. Engine 0.2.3 (done, keep Windows in it)
 
-1. Check that all 3 bundles and their `.sha256` files are in the draft:
-   ```bash
-   gh release view native-v0.2.3 --json assets --jq '.assets[].name'
-   ```
-2. Check `native.json`. It must have `"version": "0.2.3"` and the
-   `darwin-aarch64`, `darwin-x86_64` and `windows-x86_64` entries:
-   ```bash
-   gh release download native-v0.2.3 -p native.json -O - | jq .
-   ```
-   If you upload a new `native.json` (for example after you rebuild a macOS
-   bundle), keep the `windows-x86_64` entry. Each bundle has its version
-   inside, and the app refuses a bundle whose version is not the one in
-   `native.json`. So never point a 0.2.3 `native.json` at a 0.2.2 bundle.
-3. Publish it:
-   ```bash
-   gh release edit native-v0.2.3 --draft=false --latest
-   ```
-4. After up to 5 minutes, `https://deepx-hub.vercel.app/api/engine/native`
-   shows version 0.2.3 with 3 platforms.
+Nothing to do, but check that
+`https://deepx-hub.vercel.app/api/engine/native` shows version 0.2.3 with
+`darwin-aarch64`, `darwin-x86_64` and `windows-x86_64`.
+
+From now on, every `native-v*` release needs a Windows bundle too, or Windows
+apps cannot get the engine of that version. Build it on the Windows computer
+(`desktop/native-engine/build-bundle.ps1 <version>`) from the same commit. If
+you upload a new `native.json`, keep the `windows-x86_64` entry. Each bundle
+has its version inside, and the app refuses a bundle whose version is not the
+one in `native.json`, so never point a newer `native.json` at an older bundle.
 
 ## 2. Sign the Windows installer
 
@@ -117,8 +112,7 @@ The release must now have 8 files: `.dmg`, `.app.tar.gz` and its `.sig`,
 
 ## 5. Publish and check
 
-1. Publish **after** engine 0.2.3 (step 1), so a new Windows app finds an
-   engine for Windows:
+1. Publish:
    ```bash
    gh release edit desktop-v0.1.8 --draft=false --latest
    ```
