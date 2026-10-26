@@ -37,6 +37,15 @@ computer. It tells you what to change, how to test it, and how to ship it.
   on Windows (step 4). The code runner tests passed on macOS against the
   0.2.5 arm64 bundle (20 passed, 3 Windows-only tests skipped). The checks
   left on Windows are in `docs/DEEPX_WINDOWS_CONTINUE.md`.
+- **Blocker: Microsoft Defender removes the Windows app** (2026-10-26). It
+  reports `Trojan:Win32/Bearfoos.A!ml` (a machine-learning guess, not a
+  known signature) about 10 seconds after the engine starts, stops the app,
+  and deletes `deepx.exe`, the Start Menu shortcut and the uninstall entry.
+  This happened to 0.1.8 and 0.1.9 on this computer. An on-demand scan of the
+  same files finds nothing; the published `-setup.exe` matches the local
+  build byte for byte. The app is not Authenticode-signed. Fix: sign the
+  Windows app (**Code signing** below) and report the files to Microsoft as a
+  false positive. Until then, Windows users may not be able to run Deep X.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
@@ -243,6 +252,39 @@ carries both platforms:
 If the Windows engine is not ready, you can still stop the Docker screen:
 remove the Windows links from `downloads.json` in the next release, so that
 nobody downloads 0.1.2.
+
+### Code signing (Windows)
+
+The Windows app and installer are not Authenticode-signed, so Microsoft
+Defender guesses that the app is malware and SmartScreen warns about an
+unknown publisher. This is separate from the updater signature (minisign),
+which the Mac makes.
+
+1. **Report the false positive** (each new unsigned version can be flagged
+   again). At https://www.microsoft.com/wdsi/filesubmission, sign in, choose
+   "Software developer", product "Microsoft Defender Antivirus", and send the
+   `-setup.exe` and the installed `deepx.exe`. Detection:
+   `Trojan:Win32/Bearfoos.A!ml`. Say that it is the Deep X desktop app (Tauri,
+   Rust), installed per user, which downloads its engine and starts it as
+   local processes. Ask for the detection to be removed.
+2. **Sign the app.** Microsoft's Azure Trusted Signing (Artifact Signing) is
+   the cheapest option: create a Trusted Signing account, pass identity
+   validation, create a certificate profile, and give an app registration the
+   "Trusted Signing Certificate Profile Signer" role. Then, on the Windows
+   computer:
+   - `cargo install trusted-signing-cli`
+   - Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and `AZURE_TENANT_ID` in
+     the shell (never commit them).
+   - Build with a config overlay, so builds without the account still work:
+     ```powershell
+     $sign = '{"bundle":{"windows":{"signCommand":"trusted-signing-cli -e <endpoint> -a <account> -c <profile> -d \"Deep X\" %1"}}}'
+     bun run tauri build --bundles "nsis,msi" --config $sign
+     ```
+     Tauri then signs `deepx.exe`, the uninstaller and both installers.
+   - Check with `Get-AuthenticodeSignature` that the `-setup.exe` and the
+     installed `deepx.exe` are `Valid`.
+   The Mac makes the updater `.sig` after this, from the signed `-setup.exe`,
+   so the order of the release steps stays the same.
 
 ## Rules
 
