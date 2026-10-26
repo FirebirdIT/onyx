@@ -29,6 +29,8 @@ import { CompletedHeader } from "@/app/app/message/messageComponents/timeline/he
 import { StoppedHeader } from "@/app/app/message/messageComponents/timeline/headers/StoppedHeader";
 import { ParallelStreamingHeader } from "@/app/app/message/messageComponents/timeline/headers/ParallelStreamingHeader";
 import { useStreamingStartTime } from "@/app/app/stores/useChatSessionStore";
+import { Section } from "@opal/layouts";
+import { ElapsedTime } from "@/app/app/message/messageComponents/timeline/headers/ElapsedTime";
 import { ExpandedTimelineContent } from "./ExpandedTimelineContent";
 import { CollapsedStreamingContent } from "./CollapsedStreamingContent";
 import { TimelineRoot } from "@/app/app/message/messageComponents/timeline/primitives/TimelineRoot";
@@ -350,17 +352,30 @@ export const AgentTimeline = React.memo(function AgentTimeline({
       <TimelineContainer
         agent={chatState.agent}
         headerContent={
-          <div className="flex w-full h-full items-center ps-(--timeline-header-padding-left) pe-(--timeline-header-padding-right)">
+          <div className="flex w-full h-full items-center justify-between ps-(--timeline-header-padding-left) pe-(--timeline-header-padding-right)">
             <TextLoader>{headerText}</TextLoader>
+            <ElapsedTime streamingStartTime={streamingStartTime} />
           </div>
         }
       />
     );
   }
 
-  // Display content only (no timeline steps) - but show header for image generation
+  // Display content only (no timeline steps). While the answer streams, the
+  // header shows how long it has run.
   if (uiState === TimelineUIState.DISPLAY_CONTENT_ONLY) {
-    return <TimelineContainer agent={chatState.agent} />;
+    return (
+      <TimelineContainer
+        agent={chatState.agent}
+        headerContent={
+          stopPacketSeen ? undefined : (
+            <Section flexDirection="row" justifyContent="end" padding={1}>
+              <ElapsedTime streamingStartTime={streamingStartTime} />
+            </Section>
+          )
+        }
+      />
+    );
   }
 
   return (
