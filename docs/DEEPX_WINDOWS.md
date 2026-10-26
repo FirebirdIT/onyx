@@ -31,10 +31,12 @@ computer. It tells you what to change, how to test it, and how to ship it.
   with `build-bundle.ps1 <version>` and writes `native.json`. Each bundle has
   its version inside, and the app refuses a bundle with another version than
   `native.json` names.
-- **Code tools on Windows (in the code, not released yet):** the code runner
-  runs chat code in an AppContainer on Windows (step 4). It needs a Windows
-  bundle with the job Python (the next engine release) and a desktop app
-  that starts the runner when the bundle has one (the next desktop release).
+- **Code tools on Windows (staged, not released yet):** the code runner
+  runs chat code in an AppContainer on Windows (step 4). This computer staged
+  2 drafts from commit `db0744a44`: `native-v0.2.5` (the Windows bundle with
+  the job Python, and `native-windows.json`) and `desktop-v0.1.9` (the Windows
+  installers, not signed yet). The Mac finishes both:
+  `docs/DEEPX_MAC_CONTINUE.md`.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
