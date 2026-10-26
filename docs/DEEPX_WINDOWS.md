@@ -9,9 +9,10 @@ computer. It tells you what to change, how to test it, and how to ship it.
   0.2.x). The engine is a bundle of Python, Node, Postgres and sandbox-runtime.
   The desktop app downloads it from the hub and starts each service as a
   process.
-- Desktop **0.1.8** is released for macOS and Windows (2026-10-26). Windows
+- Desktop **0.1.9** is released for macOS and Windows (2026-10-26). Windows
   runs the engine without Docker. Windows 0.1.2 still asks for Docker and has
-  no update path, so its users install 0.1.8 from the download page.
+  no update path, so its users install the newest desktop from the download
+  page.
 - The desktop engine code now supports Windows (steps 2 and 4 below are done),
   and `desktop/native-engine/build-bundle.ps1` builds the Windows bundle
   (step 1). The hub accepts `windows-x86_64` (step 3, deployed on
@@ -25,18 +26,16 @@ computer. It tells you what to change, how to test it, and how to ship it.
   app is force-ended, all engine processes end with it. Not tested yet: a
   chat with Deep X Route (it needs a key and spends credits) and a clean
   Windows user account.
-- Engine 0.2.4 is live for macOS and Windows (`native-v0.2.4`, 2026-10-26).
+- Engine 0.2.5 is live for macOS and Windows (`native-v0.2.5`, 2026-10-26).
   Every `native-v*` release needs the 3 bundles, built from one commit: the
   Mac builds the 2 macOS bundles, and this computer builds the Windows one
   with `build-bundle.ps1 <version>` and writes `native.json`. Each bundle has
   its version inside, and the app refuses a bundle with another version than
   `native.json` names.
-- **Code tools on Windows (staged, not released yet):** the code runner
-  runs chat code in an AppContainer on Windows (step 4). This computer staged
-  2 drafts from commit `db0744a44`: `native-v0.2.5` (the Windows bundle with
-  the job Python, and `native-windows.json`) and `desktop-v0.1.9` (the Windows
-  installers, not signed yet). The Mac finishes both:
-  `docs/DEEPX_MAC_CONTINUE.md`.
+- **Code tools on Windows are released** (engine 0.2.5 and desktop 0.1.9,
+  from commit `db0744a44`): the code runner runs chat code in an AppContainer
+  on Windows (step 4). The code runner tests passed on macOS against the
+  0.2.5 arm64 bundle (20 passed, 3 Windows-only tests skipped).
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
