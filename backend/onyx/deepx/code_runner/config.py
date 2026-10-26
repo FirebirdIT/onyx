@@ -2,6 +2,7 @@
 
 import os
 import shlex
+import sys
 from pathlib import Path
 
 
@@ -14,9 +15,14 @@ def _int_env(name: str, default: int) -> int:
     return value if value > 0 else default
 
 
+# Windows has no sandbox-runtime: jobs run in an AppContainer
+# (windows_sandbox.py), and there is no bash.
+IS_WINDOWS = sys.platform == "win32"
+
 # The API level of the code-interpreter container that this service matches.
-# Sessions and bash need 0.4.0.
-API_VERSION = "0.4.0"
+# Sessions and bash need 0.4.0. Windows has no bash, so it reports the level
+# before them, and the backend does not offer the bash tool.
+API_VERSION = "0.3.0" if IS_WINDOWS else "0.4.0"
 
 # Jobs, sessions and stored files live here. Everything under it is temporary.
 DATA_DIR = Path(
@@ -55,6 +61,8 @@ EXTRA_READ: list[str] = [
 
 MAX_CONCURRENT_JOBS = _int_env("DEEPX_CODE_RUNNER_MAX_JOBS", 2)
 MAX_MEMORY_MB = _int_env("DEEPX_CODE_RUNNER_MAX_MEMORY_MB", 2048)
+# Windows only: the most processes that one job can run at a time.
+MAX_JOB_PROCESSES = _int_env("DEEPX_CODE_RUNNER_MAX_JOB_PROCESSES", 64)
 MAX_TIMEOUT_MS = _int_env("DEEPX_CODE_RUNNER_MAX_TIMEOUT_MS", 10 * 60 * 1000)
 MAX_SESSION_TTL_SECONDS = _int_env("DEEPX_CODE_RUNNER_MAX_SESSION_TTL", 2 * 60 * 60)
 MAX_UPLOAD_BYTES = _int_env("DEEPX_CODE_RUNNER_MAX_UPLOAD_MB", 200) * 1024 * 1024

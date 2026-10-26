@@ -128,9 +128,11 @@ sandboxes execution; Onyx trusts the URL configured in `CODE_INTERPRETER_BASE_UR
 
 **Deep X local code runner.** `backend/onyx/deepx/code_runner/` is one implementation of that
 service, for the Deep X desktop engine with no Docker (`python -m onyx.deepx.code_runner`).
-It serves the API at level `0.4.0` (`config.py:API_VERSION`), so sessions and `bash` work.
-The backend does not use it unless `CODE_INTERPRETER_BASE_URL` points to it. Each job runs
-inside Anthropic's sandbox-runtime (`srt`, set by `DEEPX_CODE_RUNNER_SRT_COMMAND`):
+It serves the API at level `0.4.0` (`config.py:API_VERSION`), so sessions and `bash` work;
+on Windows it serves `0.3.0`, with no sessions and no `bash`.
+The backend does not use it unless `CODE_INTERPRETER_BASE_URL` points to it. On macOS and
+Linux each job runs inside Anthropic's sandbox-runtime (`srt`, set by
+`DEEPX_CODE_RUNNER_SRT_COMMAND`):
 - **Files:** a job cannot read under `DEEPX_CODE_RUNNER_DENY_READ` (the home folder by
   default). The exceptions are its own job folder and the job Python's folders
   (`sandbox.py:python_roots`). It can write only to its job folders, and its temp folder
@@ -146,7 +148,14 @@ inside Anthropic's sandbox-runtime (`srt`, set by `DEEPX_CODE_RUNNER_SRT_COMMAND
   files, and skips symlinks, so a job cannot use a link to copy out a user file.
 
 The runner builds the matplotlib font cache once, at startup, and copies it into each job.
-It does not support Windows yet.
+
+On Windows each job runs in its own AppContainer inside a job object
+(`windows_sandbox.py`, which `sandbox.py:_start_job` runs as a launcher script). The
+AppContainer has no capabilities: no network (no local ports either), and it opens only
+files that let in every AppContainer (Windows, and the job Python, which
+`sandbox.py:prepare_windows_sandbox` grants once) or its own SID (the job folder, granted in
+`_start_windows_job`). The job object ends every job process with the job and caps processes
+and committed memory. `workspace.py:_job_files` skips junctions as well as symlinks.
 
 ### 4.2 `run_python`: call chain
 
@@ -359,7 +368,8 @@ cd backend && uv run pytest tests/unit/onyx/tools/tool_implementations/bash/test
 cd backend && uv run pytest tests/unit/onyx/tools/test_coding_agent_repo_setup.py
 
 # External dependency unit: talks to a real/near-real Code Interpreter service
-# (test_code_runner.py runs the Deep X runner; set DEEPX_TEST_SRT_COMMAND and DEEPX_TEST_JOB_PYTHON)
+# (test_code_runner.py runs the Deep X runner; set DEEPX_TEST_JOB_PYTHON, and on macOS and Linux
+# DEEPX_TEST_SRT_COMMAND; Windows uses the AppContainer sandbox)
 cd backend && uv run pytest tests/external_dependency_unit/tools/test_python_tool.py
 cd backend && uv run pytest tests/external_dependency_unit/tools/test_python_tool_server_enabled.py
 

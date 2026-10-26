@@ -3,6 +3,7 @@
 import asyncio
 import shutil
 import subprocess
+import sys
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -21,6 +22,8 @@ from onyx.deepx.code_runner.models import (
 from onyx.deepx.code_runner.sandbox import (
     ProcessResult,
     build_matplotlib_cache,
+    end_windows_job,
+    prepare_windows_sandbox,
     python_roots,
     run_in_sandbox,
 )
@@ -57,9 +60,15 @@ class Session:
 
 class Runner:
     def __init__(self, data_dir: Path) -> None:
+        self._data_dir = data_dir
         self._jobs_dir = data_dir / "jobs"
         self._sessions_dir = data_dir / "sessions"
         for folder in (self._jobs_dir, self._sessions_dir):
+            # A folder left here is a job that did not end cleanly, so its
+            # AppContainer (Windows) may be left too.
+            if folder.is_dir():
+                for leftover in folder.iterdir():
+                    end_windows_job(leftover.name)
             shutil.rmtree(folder, ignore_errors=True)
             folder.mkdir(parents=True)
         self.store = FileStore(data_dir / "files")
@@ -74,12 +83,17 @@ class Runner:
         try:
             self._readable = [*python_roots(config.JOB_PYTHON), *config.EXTRA_READ]
             build_matplotlib_cache(config.JOB_PYTHON, self._mpl_cache)
-            subprocess.run(
-                [*config.SRT_COMMAND, "--version"],
-                capture_output=True,
-                check=True,
-                timeout=30,
-            )
+            if sys.platform == "win32":
+                prepare_windows_sandbox(
+                    config.JOB_PYTHON, self._readable, self._data_dir
+                )
+            else:
+                subprocess.run(
+                    [*config.SRT_COMMAND, "--version"],
+                    capture_output=True,
+                    check=True,
+                    timeout=30,
+                )
         except (OSError, subprocess.SubprocessError) as e:
             self.problem = "The sandbox or the job Python is not available"
             logger.error("%s: %s", self.problem, e)
@@ -156,6 +170,11 @@ class Runner:
         self, ttl_seconds: int, files: list[StagedFile]
     ) -> CreateSessionResponse:
         self._require_ready()
+        if config.IS_WINDOWS:
+            # Sessions exist for bash, which Windows does not have.
+            raise OnyxError(
+                OnyxErrorCode.NOT_IMPLEMENTED, "Bash is not available on Windows"
+            )
         session_id = uuid.uuid4().hex
         ttl = min(ttl_seconds, config.MAX_SESSION_TTL_SECONDS)
         dirs = self._new_dirs(self._sessions_dir, files)

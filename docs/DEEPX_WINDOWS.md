@@ -25,22 +25,16 @@ computer. It tells you what to change, how to test it, and how to ship it.
   app is force-ended, all engine processes end with it. Not tested yet: a
   chat with Deep X Route (it needs a key and spends credits) and a clean
   Windows user account.
-- Engine 0.2.3 is live for macOS and Windows (`native-v0.2.3`).
-- **Next, on the Windows computer: engine 0.2.4.** The draft `native-v0.2.4`
-  has the macOS bundles and `native-darwin.json`, built from commit
-  `3af008cfb` (the draft's target). Drafts are hidden from the hub. To
-  finish it:
-  1. Check out the draft's target commit and build the Windows bundle:
-     `build-bundle.ps1 0.2.4`.
-  2. Upload the `.tar.gz` and its `.sha256` file to the draft.
-  3. Write `native.json` with version `0.2.4` and all 3 platforms: copy the
-     2 `darwin-*` entries from `native-darwin.json`, and add
-     `windows-x86_64`. Upload it, and delete `native-darwin.json` from the
-     release.
-  4. Publish: `gh release edit native-v0.2.4 --draft=false --latest`.
-  5. After up to 5 minutes, check that
-     `https://deepx-hub.vercel.app/api/engine/native` shows 0.2.4 with the
-     3 platforms.
+- Engine 0.2.4 is live for macOS and Windows (`native-v0.2.4`, 2026-10-26).
+  Every `native-v*` release needs the 3 bundles, built from one commit: the
+  Mac builds the 2 macOS bundles, and this computer builds the Windows one
+  with `build-bundle.ps1 <version>` and writes `native.json`. Each bundle has
+  its version inside, and the app refuses a bundle with another version than
+  `native.json` names.
+- **Code tools on Windows (in the code, not released yet):** the code runner
+  runs chat code in an AppContainer on Windows (step 4). It needs a Windows
+  bundle with the job Python (the next engine release) and a desktop app
+  that starts the runner when the bundle has one (the next desktop release).
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
@@ -149,19 +143,34 @@ On Windows, run the hub's `pnpm install` and `pnpm test` with Node 22 or
 later. With an older Node, pnpm skips rolldown's Windows binary and vitest
 does not start.
 
-### 4. Code runner (no sandbox-runtime on Windows) (done)
+### 4. Code runner: AppContainer sandbox (done)
 
-The code runner (`backend/onyx/deepx/code_runner/`) runs user code inside
-Anthropic sandbox-runtime (`srt`). `srt` supports only macOS and Linux.
-`sandbox.py` also uses `os.killpg` and process groups.
+The code runner (`backend/onyx/deepx/code_runner/`) runs chat code inside
+Anthropic sandbox-runtime (`srt`) on macOS. `srt` supports only macOS and
+Linux, so on Windows each job runs in its own **AppContainer** inside a job
+object (`windows_sandbox.py`), the sandbox that Edge and Store apps use:
 
-Do **not** run model-written code without a sandbox. On Windows the
-`code_runner` service does not start (`HAS_CODE_RUNNER` in `native/env.rs`),
-and `CODE_INTERPRETER_BASE_URL` is set to an **empty** string. Leaving it unset
-is not enough: the backend then uses its default `http://localhost:8000`, and
-the code tools show. Add a Windows sandbox later as its own task (for example
-Windows Sandbox, a restricted token with a Job Object, or WSL with
-bubblewrap).
+- **Files:** the AppContainer has no capabilities, so it opens only files
+  whose ACL lets it in. The runner grants the job Python to every
+  AppContainer once (read only), and the job folder to the job's own
+  AppContainer. A job cannot read the user's files or another job's folder.
+- **Network:** no internet, no DNS, and no local ports (also not the engine's
+  own).
+- **Processes:** the launcher (`windows_sandbox.py` run as a script) puts the
+  job in a job object that ends every job process when the job ends, allows
+  64 processes and blocks the clipboard and other windows. Committed memory
+  is capped at 4 times `DEEPX_CODE_RUNNER_MAX_MEMORY_MB`; the memory watchdog
+  stops a job at that limit of memory in use, as on macOS.
+- **Output files:** the runner skips symlinks and junctions when it collects
+  them. Windows also refuses to let an AppContainer make a junction.
+- **No bash:** Windows has no bash, so the runner reports API level 0.3.0,
+  and the backend offers the Python tool but not the bash tool.
+
+The desktop app starts the code runner when the bundle has `jobpython\`
+(`Bundle::has_code_runner`). Without it, `CODE_INTERPRETER_BASE_URL` is set to
+an **empty** string: unset, the backend would use its default
+`http://localhost:8000`, and the code tools would show. Windows bundles before
+the AppContainer change have no `jobpython\`, so they have no code tools.
 
 ### 5. Desktop app version
 
@@ -174,6 +183,11 @@ version for macOS and Windows.
 1. Unit tests: `cd desktop/src-tauri` and run `cargo test`. They pass on
    Windows, with Windows cases for the paths, the `PATH` separator, the
    platform name, the unpacking and the job stop.
+   The code runner tests run against the real AppContainer sandbox: set
+   `DEEPX_TEST_JOB_PYTHON` to a job Python (a python-build-standalone with
+   `desktop/native-engine/job-requirements.txt`), and from `backend/` run
+   `pytest tests/external_dependency_unit/deepx/test_code_runner.py
+   tests/unit/onyx/deepx/test_code_runner_workspace.py`.
 2. Build the bundle. Check that the app's unpacking reads it:
    `$env:DEEPX_TEST_ARCHIVE="<archive>"; $env:DEEPX_TEST_TARGET="<folder>";
    cargo test unpacks_a_real_bundle -- --ignored`. Then set
