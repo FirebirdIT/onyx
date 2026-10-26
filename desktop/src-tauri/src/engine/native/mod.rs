@@ -15,7 +15,7 @@ use crate::engine::{emit_progress, EngineStatus, ServiceStatus};
 use crate::route::keystore;
 use crate::secure_random::random_hex;
 use bundle::Bundle;
-use env::{free_port, NativeInput, Ports, HAS_CODE_RUNNER, LOOPBACK, NATIVE_WEB_PORT};
+use env::{free_port, NativeInput, Ports, LOOPBACK, NATIVE_WEB_PORT};
 use process::{run_to_end, ServiceSpec, ServiceState, Supervised};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -259,7 +259,7 @@ async fn start_services(
 ) -> Result<Vec<Supervised>, String> {
     let mut services = Vec::new();
     let result = async {
-        if HAS_CODE_RUNNER {
+        if bundle.has_code_runner() {
             emit_progress(app, "start", "Starting the code runner");
             services.push(Supervised::start(python_spec(
                 "code_runner",

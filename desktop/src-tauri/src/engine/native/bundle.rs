@@ -81,6 +81,11 @@ impl Bundle {
             self.root.join("jobpython/bin/python3")
         }
     }
+    /// Bundles with a job Python have the code runner. Windows bundles before
+    /// 0.2.5 have none.
+    pub fn has_code_runner(&self) -> bool {
+        self.job_python().is_file()
+    }
     pub fn node(&self) -> PathBuf {
         self.node_bin_dir()
             .join(format!("node{}", std::env::consts::EXE_SUFFIX))

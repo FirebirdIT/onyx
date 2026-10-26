@@ -1,12 +1,14 @@
 """The local code runner against the backend's real CodeInterpreterClient.
 
-Needs sandbox-runtime and a job Python with pandas and matplotlib. Set
-DEEPX_TEST_SRT_COMMAND (for example "node /path/srt/dist/cli.js") and
-DEEPX_TEST_JOB_PYTHON. The tests are skipped when they are not set.
+Needs a job Python with pandas and matplotlib (DEEPX_TEST_JOB_PYTHON), and on
+macOS and Linux sandbox-runtime (DEEPX_TEST_SRT_COMMAND, for example
+"node /path/srt/dist/cli.js"). Windows uses its AppContainer sandbox. The
+tests are skipped when the settings are not set.
 """
 
 import os
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -30,13 +32,14 @@ from onyx.tools.tool_implementations.python.code_interpreter_client import (
 SRT_COMMAND = os.environ.get("DEEPX_TEST_SRT_COMMAND", "")
 JOB_PYTHON = os.environ.get("DEEPX_TEST_JOB_PYTHON", "")
 
-pytestmark = [
-    pytest.mark.skipif(
-        not (SRT_COMMAND and JOB_PYTHON),
-        reason="DEEPX_TEST_SRT_COMMAND and DEEPX_TEST_JOB_PYTHON are not set",
-    ),
-    pytest.mark.skipif(sys.platform == "win32", reason="POSIX only"),
-]
+IS_WINDOWS = sys.platform == "win32"
+
+pytestmark = pytest.mark.skipif(
+    not JOB_PYTHON or not (SRT_COMMAND or IS_WINDOWS),
+    reason="DEEPX_TEST_JOB_PYTHON (and DEEPX_TEST_SRT_COMMAND) are not set",
+)
+posix_only = pytest.mark.skipif(IS_WINDOWS, reason="macOS and Linux only")
+windows_only = pytest.mark.skipif(not IS_WINDOWS, reason="Windows only")
 
 TOKEN = "test-runner-token"
 CSV = b"month,sales\nJan,10\nFeb,14\nMar,9\n"
@@ -51,7 +54,8 @@ def _free_port() -> int:
 @pytest.fixture(scope="module")
 def runner_url(tmp_path_factory: pytest.TempPathFactory) -> Generator[str, None, None]:
     patch = pytest.MonkeyPatch()
-    patch.setattr(config, "SRT_COMMAND", SRT_COMMAND.split())
+    if SRT_COMMAND:
+        patch.setattr(config, "SRT_COMMAND", SRT_COMMAND.split())
     patch.setattr(config, "JOB_PYTHON", JOB_PYTHON)
     patch.setattr(config, "MAX_MEMORY_MB", 400)
     patch.setattr(config, "API_TOKEN", TOKEN)
@@ -104,7 +108,8 @@ def test_health_reports_the_session_api_level(runner_url: str) -> None:
     with CodeInterpreterClient(runner_url) as client:
         health = client.health()
         assert health.healthy, health.error
-        assert client.supports(CodeInterpreterClient.create_session)
+        # Windows has no bash, so no sessions, and the bash tool is not offered.
+        assert client.supports(CodeInterpreterClient.create_session) != IS_WINDOWS
 
 
 def test_staged_csv_makes_chart_and_excel(runner_url: str) -> None:
@@ -155,6 +160,61 @@ attempt('tcp', lambda: socket.create_connection(('1.1.1.1', 443), timeout=5))
     assert not (Path.home() / "deepx-runner-escape.txt").exists()
 
 
+@windows_only
+def test_job_cannot_reach_local_ports(runner_url: str) -> None:
+    port = int(runner_url.rsplit(":", 1)[1])
+    code = f"""
+import socket
+try:
+    socket.create_connection(('127.0.0.1', {port}), timeout=5).close()
+    print('ALLOWED')
+except OSError as e:
+    print('blocked', e)
+"""
+    with CodeInterpreterClient(runner_url) as client:
+        stdout, _, result = _run(client, code)
+    assert result.exit_code == 0
+    assert "blocked" in stdout, stdout
+
+
+@windows_only
+def test_junction_to_a_user_folder_is_not_followed(
+    runner_url: str, tmp_path: Path
+) -> None:
+    secret = tmp_path / "secret"
+    secret.mkdir()
+    (secret / "secret.txt").write_text("user data")
+    code = (
+        "import subprocess\n"
+        f"subprocess.run(['cmd', '/c', 'mklink', '/J', 'leak', {str(secret)!r}])\n"
+    )
+    with CodeInterpreterClient(runner_url) as client:
+        _, _, result = _run(client, code)
+    assert result.files == []
+
+
+@windows_only
+def test_child_processes_end_with_the_job(runner_url: str) -> None:
+    code = (
+        "import subprocess, sys\n"
+        "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(600)'])\n"
+        "print(child.pid)\n"
+    )
+    with CodeInterpreterClient(runner_url) as client:
+        stdout, stderr, result = _run(client, code)
+    assert result.exit_code == 0, stderr
+    pid = stdout.strip()
+    time.sleep(1)
+    tasks = subprocess.run(
+        ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert pid not in tasks
+
+
+@posix_only
 def test_symlink_to_a_user_file_is_not_returned(runner_url: str) -> None:
     code = f"import os; os.symlink({str(Path.home() / '.zshrc')!r}, 'leak.txt')\n"
     with CodeInterpreterClient(runner_url) as client:
@@ -192,6 +252,7 @@ def test_bad_staged_path_is_rejected(runner_url: str) -> None:
     assert response.status_code == 400
 
 
+@posix_only
 def test_bash_session_keeps_files_and_has_no_network(runner_url: str) -> None:
     with CodeInterpreterClient(runner_url) as client:
         csv_id = client.upload_file(CSV, "sales.csv")

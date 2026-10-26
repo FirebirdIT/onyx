@@ -1,4 +1,8 @@
-"""Run one job inside sandbox-runtime, with time and memory limits."""
+"""Run one job inside the sandbox, with time and memory limits.
+
+The sandbox is sandbox-runtime on macOS and Linux, and an AppContainer in a job
+object on Windows (windows_sandbox.py).
+"""
 
 import asyncio
 import codecs
@@ -7,6 +11,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -23,6 +28,13 @@ from onyx.utils.logger import setup_logger
 logger = setup_logger()
 
 _READ_CHUNK_BYTES = 4096
+
+# Run as a script, it starts a job in an AppContainer (Windows only).
+_WINDOWS_LAUNCHER = Path(__file__).with_name("windows_sandbox.py")
+# The job object limits committed memory, a backstop for the memory watchdog
+# (which measures memory in use, as on macOS). Committed memory is much larger:
+# numpy, pandas and matplotlib commit about 550 MB to use about 100 MB.
+_WINDOWS_HARD_MEMORY_FACTOR = 4
 
 
 @dataclass(frozen=True)
@@ -76,6 +88,76 @@ def build_matplotlib_cache(job_python: str, cache_dir: Path) -> None:
         shutil.rmtree(cache_dir, ignore_errors=True)
 
 
+def windows_profile_name(job_id: str) -> str:
+    """The AppContainer of the job in the folder `job_id`."""
+    return f"deepx.job.{job_id}"
+
+
+def prepare_windows_sandbox(job_python: str, roots: list[str], data_dir: Path) -> None:
+    """Let every AppContainer read the job Python, then run it once in an
+    AppContainer. Raises OSError or SubprocessError when that fails."""
+    if sys.platform != "win32":
+        raise OSError("The Windows sandbox runs only on Windows")
+    from onyx.deepx.code_runner import windows_sandbox
+
+    # icacls takes seconds on the job Python, so grant each root only once. The
+    # marker is inside the root, so a new copy of the root is granted again.
+    for root in roots:
+        marker = Path(root) / ".deepx-appcontainer-read"
+        if not marker.exists():
+            windows_sandbox.grant(root, windows_sandbox.ALL_APP_PACKAGES_SID, "RX")
+            marker.touch()
+
+    check_dir = data_dir / "check"
+    shutil.rmtree(check_dir, ignore_errors=True)
+    check_dir.mkdir(parents=True)
+    profile = windows_profile_name("check")
+    try:
+        sid = windows_sandbox.create_profile(profile)
+        windows_sandbox.grant(str(check_dir), sid, "M")
+        subprocess.run(
+            [
+                sys.executable,
+                "-I",
+                str(_WINDOWS_LAUNCHER),
+                sid,
+                str(config.MAX_MEMORY_MB * 1024 * 1024),
+                str(config.MAX_JOB_PROCESSES),
+                job_python,
+                "-c",
+                "import sys",
+            ],
+            cwd=check_dir,
+            env=_windows_env(check_dir, check_dir),
+            capture_output=True,
+            check=True,
+            timeout=60,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+    finally:
+        windows_sandbox.delete_profile(profile)
+        shutil.rmtree(check_dir, ignore_errors=True)
+
+
+def _start_windows_job(dirs: JobDirs) -> str:
+    """Make the job's AppContainer and let it use the job's folders. Returns
+    the AppContainer's SID."""
+    if sys.platform != "win32":
+        raise OSError("The Windows sandbox runs only on Windows")
+    from onyx.deepx.code_runner import windows_sandbox
+
+    sid = windows_sandbox.create_profile(windows_profile_name(dirs.root.name))
+    windows_sandbox.grant(str(dirs.root), sid, "M")
+    return sid
+
+
+def end_windows_job(job_id: str) -> None:
+    if sys.platform == "win32":
+        from onyx.deepx.code_runner import windows_sandbox
+
+        windows_sandbox.delete_profile(windows_profile_name(job_id))
+
+
 def sandbox_settings(dirs: JobDirs, readable: list[str]) -> dict:
     """srt rules: read nothing in the denied folders except the job and the
     runtimes, write only the job's own folders, and no network."""
@@ -105,16 +187,41 @@ def _job_env(dirs: JobDirs, job_python: str) -> dict[str, str]:
     }
 
 
+def _windows_env(home: Path, tmp: Path) -> dict[str, str]:
+    """The Windows settings that programs expect. CreateProcess needs
+    LOCALAPPDATA to start an AppContainer, and gives the job the AppContainer's
+    own folder in its place."""
+    system_root = os.environ.get("SYSTEMROOT", "C:\\Windows")
+    return {
+        "SYSTEMROOT": system_root,
+        "WINDIR": system_root,
+        "COMSPEC": os.environ.get("COMSPEC", f"{system_root}\\System32\\cmd.exe"),
+        "PATHEXT": os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD"),
+        "LOCALAPPDATA": os.environ.get("LOCALAPPDATA", ""),
+        "USERPROFILE": str(home),
+        "TEMP": str(tmp),
+        "TMP": str(tmp),
+    }
+
+
 def _kill_group(process: asyncio.subprocess.Process) -> None:
     """Kill the job's process group, and every descendant that left it."""
     try:
         descendants = psutil.Process(process.pid).children(recursive=True)
     except psutil.NoSuchProcess:
         descendants = []
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
+    if sys.platform == "win32":
+        # The launcher's job object ends every job process when it ends.
+        if process.returncode is None:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
     for child in descendants:
         try:
             child.kill()
@@ -200,6 +307,49 @@ async def _next_event(queue: _Queue, deadline: float) -> OutputEvent | None | bo
         return False
 
 
+async def _start_job(
+    dirs: JobDirs, command: list[str], readable: list[str]
+) -> asyncio.subprocess.Process:
+    """Start `command` in the sandbox, with pipes for its standard streams."""
+    env = _job_env(dirs, config.JOB_PYTHON)
+    pipe = asyncio.subprocess.PIPE
+    if sys.platform == "win32":
+        sid = await asyncio.to_thread(_start_windows_job, dirs)
+        hard_memory = int(
+            config.MAX_MEMORY_MB * 1024 * 1024 * _WINDOWS_HARD_MEMORY_FACTOR
+        )
+        env.update(_windows_env(dirs.home, dirs.tmp))
+        return await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-I",
+            str(_WINDOWS_LAUNCHER),
+            sid,
+            str(hard_memory),
+            str(config.MAX_JOB_PROCESSES),
+            *command,
+            cwd=dirs.work,
+            env=env,
+            stdin=pipe,
+            stdout=pipe,
+            stderr=pipe,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+    settings_path = dirs.root / "srt-settings.json"
+    settings_path.write_text(json.dumps(sandbox_settings(dirs, readable)))
+    return await asyncio.create_subprocess_exec(
+        *config.SRT_COMMAND,
+        "-s",
+        str(settings_path),
+        *command,
+        cwd=dirs.work,
+        env=env,
+        stdin=pipe,
+        stdout=pipe,
+        stderr=pipe,
+        start_new_session=True,
+    )
+
+
 async def run_in_sandbox(
     dirs: JobDirs,
     command: list[str],
@@ -210,23 +360,13 @@ async def run_in_sandbox(
 ) -> AsyncIterator[OutputEvent]:
     """Run `command` in the sandbox. Yields output as it comes, then puts the
     result into `result_box`. Closing the iterator stops the job."""
-    settings_path = dirs.root / "srt-settings.json"
-    settings_path.write_text(json.dumps(sandbox_settings(dirs, readable)))
     started = time.monotonic()
     deadline = started + min(timeout_ms, config.MAX_TIMEOUT_MS) / 1000
-
-    process = await asyncio.create_subprocess_exec(
-        *config.SRT_COMMAND,
-        "-s",
-        str(settings_path),
-        *command,
-        cwd=dirs.work,
-        env=_job_env(dirs, config.JOB_PYTHON),
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        start_new_session=True,
-    )
+    try:
+        process = await _start_job(dirs, command, readable)
+    except BaseException:
+        end_windows_job(dirs.root.name)
+        raise
     queue: _Queue = asyncio.Queue()
     stopped_for_memory: list[bool] = []
     tasks = [
@@ -267,3 +407,4 @@ async def run_in_sandbox(
         _kill_group(process)
         for task in tasks:
             task.cancel()
+        end_windows_job(dirs.root.name)

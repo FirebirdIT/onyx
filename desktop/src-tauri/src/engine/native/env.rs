@@ -9,11 +9,6 @@ use std::path::Path;
 pub const NATIVE_WEB_PORT: u16 = 9999;
 pub const LOOPBACK: &str = "127.0.0.1";
 
-/// The code runner runs chat code inside sandbox-runtime, which supports only
-/// macOS and Linux. Windows has no code runner (and so no code tools) until it
-/// has a sandbox: model-written code never runs without one.
-pub const HAS_CODE_RUNNER: bool = cfg!(unix);
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ports {
     pub postgres: u16,
@@ -59,7 +54,7 @@ pub fn backend_env(input: &NativeInput<'_>) -> Env {
     let backend = input.bundle.backend_dir();
     // Empty, not unset: the backend has a default address, and an empty one
     // hides the code tools.
-    let runner_url = if HAS_CODE_RUNNER {
+    let runner_url = if input.bundle.has_code_runner() {
         format!("http://{LOOPBACK}:{}", input.ports.runner)
     } else {
         String::new()
@@ -97,17 +92,12 @@ pub fn backend_env(input: &NativeInput<'_>) -> Env {
     env
 }
 
-/// The settings of the code runner.
+/// The settings of the code runner. It runs chat code inside sandbox-runtime
+/// on macOS, and inside an `AppContainer` on Windows (sandbox-runtime supports
+/// only macOS and Linux).
 pub fn runner_env(input: &NativeInput<'_>, data_dir: &Path) -> Env {
     let bundle = input.bundle;
-    // The runner splits this value like a shell command line, and the app
-    // folder has a space ("Application Support").
-    let srt = format!(
-        "{} {}",
-        shell_quote(&bundle.node().to_string_lossy()),
-        shell_quote(&bundle.srt_cli().to_string_lossy())
-    );
-    pairs(&[
+    let mut env = pairs(&[
         ("DEEPX_CODE_RUNNER_HOST", LOOPBACK),
         ("DEEPX_CODE_RUNNER_PORT", &input.ports.runner.to_string()),
         ("DEEPX_CODE_RUNNER_TOKEN", input.runner_token),
@@ -116,11 +106,21 @@ pub fn runner_env(input: &NativeInput<'_>, data_dir: &Path) -> Env {
             "DEEPX_CODE_RUNNER_PYTHON",
             &bundle.job_python().to_string_lossy(),
         ),
-        ("DEEPX_CODE_RUNNER_SRT_COMMAND", &srt),
         ("PYTHONPATH", &bundle.backend_dir().to_string_lossy()),
         ("PYTHONDONTWRITEBYTECODE", "1"),
         ("PATH", &path_with(&bundle.node_bin_dir())),
-    ])
+    ]);
+    if cfg!(unix) {
+        // The runner splits this value like a shell command line, and the app
+        // folder has a space ("Application Support").
+        let srt = format!(
+            "{} {}",
+            shell_quote(&bundle.node().to_string_lossy()),
+            shell_quote(&bundle.srt_cli().to_string_lossy())
+        );
+        env.push(("DEEPX_CODE_RUNNER_SRT_COMMAND".to_string(), srt));
+    }
+    env
 }
 
 /// The settings of the web server.
@@ -141,6 +141,7 @@ pub fn web_env(input: &NativeInput<'_>) -> Env {
 }
 
 /// Quote `value` for a POSIX shell (and Python `shlex.split`).
+#[cfg_attr(windows, allow(dead_code))]
 fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\\''"))
 }
@@ -217,12 +218,8 @@ mod tests {
         assert_eq!(env["DB_READONLY_PASSWORD"], readonly_password(&secrets));
         assert_eq!(env["DB_READONLY_PASSWORD"].len(), 32);
         assert_ne!(env["DB_READONLY_PASSWORD"], "password");
-        let runner_url = if HAS_CODE_RUNNER {
-            "http://127.0.0.1:5003"
-        } else {
-            ""
-        };
-        assert_eq!(env["CODE_INTERPRETER_BASE_URL"], runner_url);
+        // This bundle has no job Python, so no code runner.
+        assert_eq!(env["CODE_INTERPRETER_BASE_URL"], "");
         assert_eq!(env["CODE_INTERPRETER_API_TOKEN"], "tok");
         assert_eq!(env["DISABLE_VECTOR_DB"], "true");
         assert_eq!(env["DEEPX_PRESETS_URL"], "https://hub.example/api/presets");
@@ -260,6 +257,34 @@ mod tests {
             runner_token: "tok",
         };
         assert!(!map(backend_env(&input)).contains_key("DEEPX_ROUTE_API_KEY"));
+    }
+
+    #[test]
+    fn a_bundle_with_a_job_python_has_the_code_runner() {
+        let dir = tempfile::tempdir().unwrap();
+        let with_runner = Bundle {
+            root: dir.path().to_path_buf(),
+            ..bundle()
+        };
+        let job_python = with_runner.job_python();
+        std::fs::create_dir_all(job_python.parent().unwrap()).unwrap();
+        std::fs::write(&job_python, "").unwrap();
+        let secrets = secrets();
+        let input = NativeInput {
+            bundle: &with_runner,
+            ports: PORTS,
+            secrets: &secrets,
+            route_api_key: None,
+            hub_url: "https://hub.example",
+            runner_token: "tok",
+        };
+        let env = map(backend_env(&input));
+        assert_eq!(env["CODE_INTERPRETER_BASE_URL"], "http://127.0.0.1:5003");
+        let runner = map(runner_env(&input, Path::new("/d")));
+        assert_eq!(
+            runner.contains_key("DEEPX_CODE_RUNNER_SRT_COMMAND"),
+            cfg!(unix)
+        );
     }
 
     #[cfg(unix)]

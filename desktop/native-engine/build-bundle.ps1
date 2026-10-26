@@ -8,8 +8,10 @@
 #   node\       Node.js, for the web server
 #   web\        the Next.js standalone server
 #   postgres\   PostgreSQL (theseus-rs/postgresql-binaries)
-# There is no jobpython\ and no srt\: sandbox-runtime supports only macOS and
-# Linux, so the Windows engine has no code runner (see engine/native/env.rs).
+#   jobpython\  a second CPython with the libraries that chat code imports
+# There is no srt\: sandbox-runtime supports only macOS and Linux. On Windows
+# the code runner runs jobs in an AppContainer
+# (backend/onyx/deepx/code_runner/windows_sandbox.py).
 # Output: deepx-engine-<version>-windows-x86_64.tar.gz, its .sha256 file, and
 # a native.json entry for the release.
 #
@@ -143,6 +145,11 @@ foreach ($item in "onyx", "shared_configs", "alembic", "alembic_tenants", "alemb
     Copy-Item -Recurse (Join-Path $Repo "backend\$item") $backend
 }
 Get-ChildItem $backend -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
+
+Log "Job Python and the chat code libraries"
+$jobPython = Join-Path $Bundle "jobpython"
+Copy-Python $jobPython
+Run uv pip install -q --no-config --no-build --python (Join-Path $jobPython "python.exe") -r (Join-Path $PSScriptRoot "job-requirements.txt")
 
 Log "Node.js $NodeVersion"
 $nodeZip = "node-$NodeVersion-win-x64.zip"

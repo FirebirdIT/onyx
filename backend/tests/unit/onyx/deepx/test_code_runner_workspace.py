@@ -1,6 +1,7 @@
 """File rules of the local code runner: staged paths and returned files."""
 
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -36,19 +37,28 @@ def test_only_new_or_changed_regular_files_are_returned(tmp_path: Path) -> None:
     stage_files(store, [StagedFile(path="in.csv", file_id=input_id)], work)
     before = snapshot(work)
 
-    (work / "chart.png").write_bytes(b"png")
+    (work / "chart.png").write_bytes(b"png\r\n\x1a")
     (work / "out").mkdir()
     (work / "out" / "report.xlsx").write_bytes(b"xlsx")
-    secret = tmp_path / "secret.txt"
-    secret.write_text("private")
-    os.symlink(secret, work / "leak.txt")
+    secret = tmp_path / "secret"
+    secret.mkdir()
+    (secret / "secret.txt").write_text("private")
+    if sys.platform == "win32":
+        # A symlink needs a privilege on Windows, but anyone can make a junction.
+        import _winapi
+
+        _winapi.CreateJunction(str(secret), str(work / "leak"))
+    else:
+        os.symlink(secret / "secret.txt", work / "leak.txt")
+        os.symlink(secret, work / "leak")
 
     outputs = collect_outputs(store, work, before, max_files=10, max_bytes=1024)
 
     assert [f.path for f in outputs] == ["chart.png", "out/report.xlsx"]
     first_id = outputs[0].file_id
     assert first_id is not None
-    assert store.content_path(first_id).read_bytes() == b"png"
+    # Copied as bytes, also on Windows.
+    assert store.content_path(first_id).read_bytes() == b"png\r\n\x1a"
 
 
 def test_output_limits_stop_collection(tmp_path: Path) -> None:

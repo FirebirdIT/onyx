@@ -5,8 +5,10 @@ import os
 import re
 import shutil
 import stat
+import sys
 import tempfile
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
@@ -38,10 +40,17 @@ class JobDirs:
     @staticmethod
     def create(parent: Path) -> "JobDirs":
         root = parent / uuid.uuid4().hex
-        tmp = Path(tempfile.mkdtemp(prefix="deepx-job-", dir=_SHORT_TMP_ROOT)).resolve()
+        if sys.platform == "win32":
+            # The job's AppContainer can use only the folders under `root`.
+            tmp = root / "tmp"
+        else:
+            tmp = Path(
+                tempfile.mkdtemp(prefix="deepx-job-", dir=_SHORT_TMP_ROOT)
+            ).resolve()
         dirs = JobDirs(root=root, work=root / "work", home=root / "home", tmp=tmp)
         dirs.work.mkdir(parents=True)
         dirs.home.mkdir()
+        tmp.mkdir(exist_ok=True)
         return dirs
 
     def writable(self) -> list[str]:
@@ -69,9 +78,14 @@ class FileStore:
 
     def save_copy(self, source: Path, filename: str) -> str | None:
         """Copy a job file into the store. Returns None when `source` is not a
-        regular file when it is opened, so a link swapped in late is not read."""
+        regular file when it is opened, so a link swapped in late is not read.
+        On Windows the job's processes have all ended by then."""
+        if sys.platform == "win32":
+            flags = os.O_RDONLY | os.O_BINARY
+        else:
+            flags = os.O_RDONLY | os.O_NOFOLLOW
         try:
-            fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
+            fd = os.open(source, flags)
         except OSError:
             return None
         with os.fdopen(fd, "rb") as handle:
@@ -118,16 +132,34 @@ def stage_files(store: FileStore, files: list[StagedFile], work: Path) -> None:
         shutil.copyfile(store.content_path(staged.file_id), target)
 
 
-def snapshot(work: Path) -> Snapshot:
-    state: Snapshot = {}
-    for path in work.rglob("*"):
+def _is_link(info: os.stat_result) -> bool:
+    """A symlink, or on Windows any reparse point, such as a junction."""
+    if stat.S_ISLNK(info.st_mode):
+        return True
+    if sys.platform == "win32":
+        return bool(info.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    return False
+
+
+def _job_files(folder: Path) -> Iterator[tuple[Path, os.stat_result]]:
+    """The regular files under `folder`, in name order. Links and junctions
+    are not followed: the runner reads files outside the sandbox, so a link
+    could otherwise copy a file of the user out of a job."""
+    for path in sorted(folder.iterdir()):
         info = path.lstat()
-        if stat.S_ISREG(info.st_mode):
-            state[path.relative_to(work).as_posix()] = (
-                info.st_size,
-                info.st_mtime_ns,
-            )
-    return state
+        if _is_link(info):
+            continue
+        if stat.S_ISDIR(info.st_mode):
+            yield from _job_files(path)
+        elif stat.S_ISREG(info.st_mode):
+            yield path, info
+
+
+def snapshot(work: Path) -> Snapshot:
+    return {
+        path.relative_to(work).as_posix(): (info.st_size, info.st_mtime_ns)
+        for path, info in _job_files(work)
+    }
 
 
 def collect_outputs(
@@ -137,20 +169,11 @@ def collect_outputs(
     max_files: int,
     max_bytes: int,
 ) -> list[WorkspaceFile]:
-    """Store the files that the job made or changed, and list them.
-
-    Symlinks are skipped: the runner reads files outside the sandbox, so a link
-    could otherwise copy a file of the user out of a job.
-    """
+    """Store the files that the job made or changed, and list them."""
     outputs: list[WorkspaceFile] = []
     total_bytes = 0
-    for path in sorted(work.rglob("*")):
+    for path, info in _job_files(work):
         relative = path.relative_to(work).as_posix()
-        info = path.lstat()
-        if stat.S_ISDIR(info.st_mode):
-            continue
-        if not stat.S_ISREG(info.st_mode):
-            continue
         if before.get(relative) == (info.st_size, info.st_mtime_ns):
             continue
         if len(outputs) >= max_files or total_bytes + info.st_size > max_bytes:
