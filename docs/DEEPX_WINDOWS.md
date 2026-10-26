@@ -9,8 +9,9 @@ computer. It tells you what to change, how to test it, and how to ship it.
   0.2.x). The engine is a bundle of Python, Node, Postgres and sandbox-runtime.
   The desktop app downloads it from the hub and starts each service as a
   process.
-- Windows is on desktop **0.1.2**. That build is older than the Docker removal,
-  so its setup still asks for Docker Desktop.
+- Desktop **0.1.8** is released for macOS and Windows (2026-10-26). Windows
+  runs the engine without Docker. Windows 0.1.2 still asks for Docker and has
+  no update path, so its users install 0.1.8 from the download page.
 - The desktop engine code now supports Windows (steps 2 and 4 below are done),
   and `desktop/native-engine/build-bundle.ps1` builds the Windows bundle
   (step 1). The hub accepts `windows-x86_64` (step 3, deployed on
@@ -24,11 +25,22 @@ computer. It tells you what to change, how to test it, and how to ship it.
   app is force-ended, all engine processes end with it. Not tested yet: a
   chat with Deep X Route (it needs a key and spends credits) and a clean
   Windows user account.
-- Engine 0.2.3 is live for Windows (`native-v0.2.3` has the Windows bundle).
-  The draft `desktop-v0.1.8` has the Windows installers, and an installed
-  0.1.8 downloaded engine 0.2.3 from the hub and started it.
-- What is left: the Mac signs the Windows installer, builds the macOS app and
-  publishes `desktop-v0.1.8`. Steps: `docs/DEEPX_MAC_CONTINUE.md`.
+- Engine 0.2.3 is live for macOS and Windows (`native-v0.2.3`).
+- **Next, on the Windows computer: engine 0.2.4.** The draft `native-v0.2.4`
+  has the macOS bundles and `native-darwin.json`, built from commit
+  `3af008cfb` (the draft's target). Drafts are hidden from the hub. To
+  finish it:
+  1. Check out the draft's target commit and build the Windows bundle:
+     `build-bundle.ps1 0.2.4`.
+  2. Upload the `.tar.gz` and its `.sha256` file to the draft.
+  3. Write `native.json` with version `0.2.4` and all 3 platforms: copy the
+     2 `darwin-*` entries from `native-darwin.json`, and add
+     `windows-x86_64`. Upload it, and delete `native-darwin.json` from the
+     release.
+  4. Publish: `gh release edit native-v0.2.4 --draft=false --latest`.
+  5. After up to 5 minutes, check that
+     `https://deepx-hub.vercel.app/api/engine/native` shows 0.2.4 with the
+     3 platforms.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
