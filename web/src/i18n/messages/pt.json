@@ -13509,6 +13509,15 @@
       "autoItem": {
         "label": "Auto",
         "description": "Escolhe o melhor modelo para cada mensagem"
+      },
+      "modelPurpose": {
+        "pro": "A melhor opção padrão para código, agentes e ferramentas",
+        "lite": "O mais rápido e barato, para tarefas simples",
+        "corePlus": "Chat do dia a dia, escrita e análise",
+        "core": "Modelo anterior para chat do dia a dia",
+        "ultra": "Qualidade máxima para as tarefas mais difíceis",
+        "reason": "Raciocina passo a passo: matemática, lógica e planos. Mais lento",
+        "vision": "Responde a perguntas sobre imagens"
       }
     },
     "nrf": {

@@ -32,6 +32,7 @@ import {
   groupLlmOptions,
   llmOptionKey,
 } from "@/lib/languageModels/options";
+import { modelPurposeKey } from "@/lib/languageModels/modelPurpose";
 import { ReasoningEffortOverride } from "@/lib/languageModels/types";
 import {
   ALL_REASONING_STOPS,
@@ -630,12 +631,16 @@ export default function ModelSelectorContent({
     const selected = isSelected(option);
     const disabled = isDisabled?.(option) ?? false;
 
-    // Skip the model-id description when it would just repeat the display name.
+    // A known model shows what it is for. Otherwise show the model id, unless
+    // it would just repeat the display name.
+    const purposeKey = option.isAuto ? null : modelPurposeKey(option);
     const description: string | undefined = option.isAuto
       ? t("autoItem.description")
-      : option.modelName !== option.displayName
-        ? option.modelName
-        : undefined;
+      : purposeKey
+        ? t(`modelPurpose.${purposeKey}`)
+        : option.modelName !== option.displayName
+          ? option.modelName
+          : undefined;
 
     return (
       <Disabled key={llmOptionKey(option)} disabled={disabled}>

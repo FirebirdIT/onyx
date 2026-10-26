@@ -13509,6 +13509,15 @@
       "autoItem": {
         "label": "Auto",
         "description": "Picks the best model for each message"
+      },
+      "modelPurpose": {
+        "pro": "Best default for coding, agents and tools",
+        "lite": "Fastest and cheapest, for quick and simple tasks",
+        "corePlus": "Everyday chat, writing and analysis",
+        "core": "Older model for everyday chat",
+        "ultra": "Highest quality, for the hardest tasks",
+        "reason": "Thinks step by step: maths, logic and plans. Slower",
+        "vision": "Answers questions about images"
       }
     },
     "nrf": {
