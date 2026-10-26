@@ -3,6 +3,14 @@
 This note is for the Windows computer (you, or a Claude session on Windows).
 The Mac finished both releases on 2026-10-26. Read it on `main`.
 
+**Status (2026-10-26, Windows):** the releases check out (both live, 3
+platforms each; the Windows `-setup.exe` matches the local build and its
+updater signature is valid). Steps 2 to 4 are **blocked**: Microsoft Defender
+removes `deepx.exe` (`Trojan:Win32/Bearfoos.A!ml`) soon after the engine
+starts. Engine 0.2.5 downloaded and its database and backend started before
+that. See the blocker in **Current state** and **Code signing (Windows)** in
+`docs/DEEPX_WINDOWS.md`.
+
 ## What the Mac did
 
 - **Engine 0.2.5 (`native-v0.2.5`) is live.** It has the 3 bundles
