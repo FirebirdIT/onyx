@@ -35,7 +35,8 @@ computer. It tells you what to change, how to test it, and how to ship it.
 - **Code tools on Windows are released** (engine 0.2.5 and desktop 0.1.9,
   from commit `db0744a44`): the code runner runs chat code in an AppContainer
   on Windows (step 4). The code runner tests passed on macOS against the
-  0.2.5 arm64 bundle (20 passed, 3 Windows-only tests skipped).
+  0.2.5 arm64 bundle (20 passed, 3 Windows-only tests skipped). The checks
+  left on Windows are in `docs/DEEPX_WINDOWS_CONTINUE.md`.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
