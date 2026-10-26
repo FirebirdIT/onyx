@@ -1,5 +1,10 @@
 # Continue on the Mac: engine 0.2.5 and desktop 0.1.9
 
+> **Done (2026-10-26).** Engine 0.2.5 and desktop 0.1.9 are live on the hub
+> with 3 platforms each. The code runner tests passed on macOS (20 passed,
+> 3 Windows-only tests skipped). The test now parses
+> `DEEPX_TEST_SRT_COMMAND` with `shlex.split`, so the quoted form below works.
+
 This note is for the Mac (you, or a Claude session on the Mac). The Windows
 computer did its part of 2 releases. They bring the Python code tool to
 Windows (an AppContainer sandbox, see step 4 of `docs/DEEPX_WINDOWS.md`). The

@@ -7,6 +7,7 @@ tests are skipped when the settings are not set.
 """
 
 import os
+import shlex
 import socket
 import subprocess
 import sys
@@ -55,7 +56,7 @@ def _free_port() -> int:
 def runner_url(tmp_path_factory: pytest.TempPathFactory) -> Generator[str, None, None]:
     patch = pytest.MonkeyPatch()
     if SRT_COMMAND:
-        patch.setattr(config, "SRT_COMMAND", SRT_COMMAND.split())
+        patch.setattr(config, "SRT_COMMAND", shlex.split(SRT_COMMAND))
     patch.setattr(config, "JOB_PYTHON", JOB_PYTHON)
     patch.setattr(config, "MAX_MEMORY_MB", 400)
     patch.setattr(config, "API_TOKEN", TOKEN)
