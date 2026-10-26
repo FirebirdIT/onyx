@@ -265,6 +265,13 @@ Packets are grouped into timeline blocks by `usePacketProcessor` /
 `packetProcessor` (`message/messageComponents/timeline/hooks/usePacketProcessor.ts`,
 `packetProcessor.ts`), upstream of `RendererComponent`.
 
+While an answer runs, the timeline header shows a live timer (`ElapsedTime`,
+`timeline/headers/ElapsedTime.tsx`, and `StreamingHeader`). It counts from the session's
+`streamingStartTime` (`useChatSessionStore`), which `useChatController` sets on the first
+streamed packet and clears when the answer ends. The timer shows while the agent waits,
+while tools run (expanded or collapsed), and while answer text streams. A completed
+answer with tool steps shows its total time in `CompletedHeader`.
+
 ### 4.5 Citations and markdown
 
 `MemoizedAnchor` (`message/MemoizedTextComponents.tsx:MemoizedAnchor`) is the

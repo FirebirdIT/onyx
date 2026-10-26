@@ -3,9 +3,9 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { SvgFold, SvgExpand } from "@opal/icons";
-import { Button } from "@opal/components";
+import { Button, Text } from "@opal/components";
 import { TextLoader } from "@opal/loaders";
-import { useStreamingDuration } from "../hooks/useStreamingDuration";
+import { useStreamingDuration } from "@/app/app/message/messageComponents/timeline/hooks/useStreamingDuration";
 import { formatDurationSeconds } from "@opal/time";
 
 export interface StreamingHeaderProps {
@@ -36,14 +36,19 @@ export const StreamingHeader = React.memo(function StreamingHeader({
     streamingStartTime,
     toolProcessingDuration
   );
-  const showElapsedTime =
-    isExpanded && streamingStartTime && elapsedSeconds > 0;
+  const showElapsedTime = streamingStartTime && elapsedSeconds > 0;
 
   return (
     <>
       <div className="px-(--timeline-header-text-padding-x) py-(--timeline-header-text-padding-y)">
         <TextLoader>{headerText}</TextLoader>
       </div>
+
+      {!collapsible && showElapsedTime && (
+        <Text font="secondary-mono" color="text-03">
+          {formatDurationSeconds(elapsedSeconds)}
+        </Text>
+      )}
 
       {collapsible &&
         (buttonTitle ? (
@@ -61,9 +66,13 @@ export const StreamingHeader = React.memo(function StreamingHeader({
             prominence="tertiary"
             size="md"
             onClick={onToggle}
-            rightIcon={SvgFold}
-            aria-label={t("collapseButton.ariaLabel")}
-            aria-expanded={true}
+            rightIcon={isExpanded ? SvgFold : SvgExpand}
+            aria-label={
+              isExpanded
+                ? t("collapseButton.ariaLabel")
+                : t("expandButton.ariaLabel")
+            }
+            aria-expanded={isExpanded}
           >
             {formatDurationSeconds(elapsedSeconds)}
           </Button>
