@@ -69,3 +69,6 @@ plans
 !.claude/settings.json
 
 /test-results/
+
+# Local output of the impeccable design skill
+/.impeccable/
