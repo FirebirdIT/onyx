@@ -24,7 +24,11 @@ computer. It tells you what to change, how to test it, and how to ship it.
   app is force-ended, all engine processes end with it. Not tested yet: a
   chat with Deep X Route (it needs a key and spends credits) and a clean
   Windows user account.
-- What is left: the release.
+- Engine 0.2.3 is live for Windows (`native-v0.2.3` has the Windows bundle).
+  The draft `desktop-v0.1.8` has the Windows installers, and an installed
+  0.1.8 downloaded engine 0.2.3 from the hub and started it.
+- What is left: the Mac signs the Windows installer, builds the macOS app and
+  publishes `desktop-v0.1.8`. Steps: `docs/DEEPX_MAC_CONTINUE.md`.
 - GitHub Actions is turned off on `FirebirdIT/onyx`. You build and publish
   releases on the Windows computer by hand.
 
@@ -185,12 +189,16 @@ carries both platforms:
    `native-v<ver>` release. Its `native.json` must keep the `darwin-aarch64` and
    `darwin-x86_64` entries and add `windows-x86_64`. Copy the macOS bundles
    from the last `native-v*` release, or rebuild them on the Mac.
-2. Build the desktop app on Windows with the signing key:
-   ```powershell
-   $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Raw <path-to-key>
-   $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content -Raw <path-to-password-file>).Trim()
-   bun run tauri build --bundles nsis,msi
-   ```
+2. Build the desktop app on Windows. Set the version in the working copy only
+   (`Cargo.toml`, `tauri.conf.json`, `package.json`, as the release workflow
+   does), run `bun run tauri build --bundles nsis,msi`, and then restore those
+   files and `Cargo.lock`. Without the signing key, leave
+   `createUpdaterArtifacts` off and upload the installers to a draft
+   `desktop-v<ver>`. The Mac then signs the `-setup.exe` with
+   `bun run tauri signer sign` (see `docs/DEEPX_MAC_CONTINUE.md`), so the key
+   stays on the Mac. With the key on Windows, set
+   `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` and
+   turn `createUpdaterArtifacts` on instead.
 3. Build the macOS app of the same version on the Mac (universal build,
    `APPLE_SIGNING_IDENTITY="-"`, as for 0.1.6).
 4. Create one `desktop-v<ver>` release with `gh release create`, with the
