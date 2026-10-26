@@ -1,5 +1,9 @@
 # Continue on the Mac: Windows release of Deep X
 
+**Done (2026-10-26):** the Mac signed the Windows installer, built the macOS
+app and published `desktop-v0.1.8` with all 3 platforms. Keep this note for
+the next release that the Windows computer starts.
+
 This note is for the Mac (you, or a Claude session on the Mac). The Windows
 computer did its part. The Mac finishes the release, because the Tauri
 updater signing key stays on the Mac and the macOS app builds only there.
