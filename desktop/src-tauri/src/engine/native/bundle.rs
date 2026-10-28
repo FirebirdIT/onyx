@@ -18,6 +18,9 @@ use tokio::io::AsyncWriteExt;
 const HUB_TIMEOUT: Duration = Duration::from_secs(8);
 const CURRENT_FILE: &str = "current.json";
 const LOCAL_BUNDLE_ENV: &str = "DEEPX_ENGINE_BUNDLE";
+/// How long to retry moving the unpacked bundle into place.
+const RENAME_WAIT: Duration = Duration::from_secs(180);
+const RENAME_RETRY: Duration = Duration::from_millis(500);
 
 /// The platform name of this computer in bundle file names.
 pub const fn current_platform() -> Option<&'static str> {
@@ -293,7 +296,14 @@ async fn install(bundles_dir: &Path, archive: &Path, version: &str) -> Result<Bu
         return Err("The engine bundle has a different version than the hub said".to_string());
     }
     let _ = fs::remove_dir_all(&target);
-    fs::rename(&partial, &target).map_err(|e| format!("Failed to install the engine: {e}"))?;
+    rename_when_free(&partial, &target, RENAME_WAIT)
+        .await
+        .map_err(|e| {
+            format!(
+                "Failed to install the engine: {e}. Antivirus software may still be \
+                 checking the new files. Try again in a few minutes."
+            )
+        })?;
     write_current(bundles_dir, version)?;
     remove_other_versions(bundles_dir, version);
     Bundle::load(&target)
@@ -342,6 +352,21 @@ async fn unpack(archive: &Path, target: &Path, only: Option<&str>) -> Result<(),
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// Rename `from` to `to`, and retry while it fails until `wait` has passed.
+/// Antivirus software opens the files that were just unpacked to scan them,
+/// and Windows refuses to rename a folder while a file in it is open.
+async fn rename_when_free(from: &Path, to: &Path, wait: Duration) -> std::io::Result<()> {
+    let deadline = tokio::time::Instant::now() + wait;
+    loop {
+        match fs::rename(from, to) {
+            Err(_) if tokio::time::Instant::now() < deadline => {
+                tokio::time::sleep(RENAME_RETRY).await;
+            }
+            result => return result,
+        }
+    }
 }
 
 fn remove_other_versions(bundles_dir: &Path, keep: &str) {
@@ -514,6 +539,35 @@ mod tests {
     #[test]
     fn windows_has_a_platform_name() {
         assert_eq!(current_platform(), Some("windows-x86_64"));
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn the_bundle_moves_in_once_its_files_are_closed() {
+        use std::os::windows::fs::OpenOptionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let from = dir.path().join("0.1.0.partial");
+        let to = dir.path().join("0.1.0");
+        fs::create_dir_all(from.join("python")).unwrap();
+        // Hold a file open the way an antivirus scan does.
+        let held = fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .share_mode(0)
+            .open(from.join("python/python.exe"))
+            .unwrap();
+        assert!(rename_when_free(&from, &to, Duration::ZERO).await.is_err());
+        let scan = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(1500));
+            drop(held);
+        });
+        rename_when_free(&from, &to, Duration::from_secs(20))
+            .await
+            .unwrap();
+        scan.join().unwrap();
+        assert!(to.join("python/python.exe").is_file());
+        assert!(!from.exists());
     }
 
     #[cfg(windows)]
