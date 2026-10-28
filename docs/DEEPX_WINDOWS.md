@@ -37,6 +37,18 @@ computer. It tells you what to change, how to test it, and how to ship it.
   on Windows (step 4). The code runner tests passed on macOS against the
   0.2.5 arm64 bundle (20 passed, 3 Windows-only tests skipped). The checks
   left on Windows are in `docs/DEEPX_WINDOWS_CONTINUE.md`.
+- **Desktop 0.1.10 is a Windows-only release (2026-10-28,
+  `desktop-v0.1.10`, commit `a1bf3428e`).** On a client's computer, the
+  engine install failed with a permission error and left `0.2.5.partial`:
+  antivirus software held the unpacked files open, and Windows refuses to
+  rename a folder with an open file. 0.1.10 retries the rename for up to 3
+  minutes. The release has the 2 Windows installers and a `downloads.json`
+  (Windows 0.1.10, and the macOS 0.1.9 `.dmg` from `desktop-v0.1.9`), but
+  **no `latest.json`**: the hub then serves `latest.json` of 0.1.9, so no app
+  is offered 0.1.10 yet. To offer it as an update, the Mac signs the
+  0.1.10 `-setup.exe` and builds the next release with all 3 platforms, as
+  in `docs/DEEPX_MAC_CONTINUE.md`. Existing Windows 0.1.9 installs with an
+  installed engine do not need 0.1.10.
 - **Defender no longer flags 0.1.9 here (2026-10-28).** With real-time
   protection on and definitions 1.461.233.0, 0.1.9 started engine 0.2.5 and
   ran a code job with no detection. Each new unsigned version can be flagged
