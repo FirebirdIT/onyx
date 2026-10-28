@@ -37,7 +37,16 @@ computer. It tells you what to change, how to test it, and how to ship it.
   on Windows (step 4). The code runner tests passed on macOS against the
   0.2.5 arm64 bundle (20 passed, 3 Windows-only tests skipped). The checks
   left on Windows are in `docs/DEEPX_WINDOWS_CONTINUE.md`.
-- **Blocker: Microsoft Defender removes the Windows app** (2026-10-26). It
+- **Defender no longer flags 0.1.9 here (2026-10-28).** With real-time
+  protection on and definitions 1.461.233.0, 0.1.9 started engine 0.2.5 and
+  ran a code job with no detection. Each new unsigned version can be flagged
+  again, so the signing below still matters. Tested on 2026-10-26/28 (with
+  real-time protection off for the first part): 0.1.8 offered 0.1.9, the
+  update installed and restarted; 0.1.9 downloaded and started engine 0.2.5
+  (health 200); a code job made `chart.png` and `sales.xlsx` and could not
+  read Documents, reach the internet or the engine's ports. Not tested yet:
+  a live chat (needs an account and a Deep X Route key in the app).
+- **Earlier: Microsoft Defender removed the Windows app** (2026-10-26). It
   reports `Trojan:Win32/Bearfoos.A!ml` (a machine-learning guess, not a
   known signature) about 10 seconds after the engine starts, stops the app,
   and deletes `deepx.exe`, the Start Menu shortcut and the uninstall entry.

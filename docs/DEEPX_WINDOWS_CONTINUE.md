@@ -11,6 +11,12 @@ starts. Engine 0.2.5 downloaded and its database and backend started before
 that. See the blocker in **Current state** and **Code signing (Windows)** in
 `docs/DEEPX_WINDOWS.md`.
 
+**Update (2026-10-28):** step 2 is done (0.1.8 updated to 0.1.9, engine
+0.2.5 runs, health 200), and Defender with new definitions no longer flags
+0.1.9. A code job through the runner worked with real-time protection on.
+Left: the live chat of step 3 (needs an account and the Route key, typed
+into the app by the user) and step 4.
+
 ## What the Mac did
 
 - **Engine 0.2.5 (`native-v0.2.5`) is live.** It has the 3 bundles
